@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Limpia espacios y genera listado (SAP / "ngnix")</title>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Ubuntu,"Helvetica Neue",Arial;background:#0f172a;color:#e5e7eb;margin:0;padding:20px}
+    h1{font-size:22px}
+    .container{max-width:1000px;margin:auto}
+    textarea{width:100%;min-height:280px;margin:8px 0;padding:10px;border-radius:6px;border:1px solid #1f2937;background:#111827;color:#e5e7eb;resize:vertical;font-family:monospace}
+    .btn{background:#22c55e;color:#fff;border:none;padding:10px 16px;margin:4px 4px 4px 0;border-radius:8px;cursor:pointer;font-weight:bold}
+    .btn:hover{background:#16a34a}
+    .btn.secondary{background:#3b82f6}
+    .btn.secondary:hover{background:#2563eb}
+    .stats{margin:6px 0;color:#9ca3af}
+    .options{margin:8px 0}
+    .options label{margin-right:16px}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🧹 Limpia espacios → salida para SAP (1 por línea)</h1>
+    <div class="stats" id="stats">Ingresados: 0 · Limpios: 0</div>
+    <label>Pega aquí tu listado crudo:</label>
+    <textarea id="input"></textarea>
+
+    <div class="options">
+      <label><input type="checkbox" id="dedupe"> Quitar duplicados</label>
+      <label><input type="checkbox" id="trimInternal"> Eliminar espacios internos</label>
+      <label><input type="checkbox" id="numericSort"> Ordenar numéricamente</label>
+    </div>
+
+    <button class="btn" id="processBtn">⚡ Procesar</button>
+    <button class="btn secondary" id="copyBtn">📄 Copiar salida</button>
+
+    <label>Salida limpia (ngnix):</label>
+    <textarea id="output" readonly></textarea>
+
+    <label>Salida en una sola línea (separado por espacios):</label>
+    <textarea id="singleLine" readonly></textarea>
+  </div>
+
+  <script>
+    const input = document.getElementById("input");
+    const output = document.getElementById("output");
+    const singleLine = document.getElementById("singleLine");
+    const stats = document.getElementById("stats");
+
+    function normalize(text){
+      return text.replace(/\r\n?|\n/g, "\n");
+    }
+
+    function process(){
+      const raw = normalize(input.value);
+      const lines = raw.split("\n");
+      let cleaned=[];
+      const seen=new Set();
+      const dedupe=document.getElementById("dedupe").checked;
+      const trimInternal=document.getElementById("trimInternal").checked;
+
+      for (let line of lines){
+        line=line.trim();
+        if(trimInternal) line=line.replace(/\s+/g,"");
+        if(!line) continue;
+        if(dedupe){
+          if(seen.has(line)) continue;
+          seen.add(line);
+        }
+        cleaned.push(line);
+      }
+
+      if(document.getElementById("numericSort").checked){
+        cleaned.sort((a,b)=>Number(a)-Number(b));
+      }
+
+      output.value=cleaned.join("\n");
+      singleLine.value=cleaned.join(" ");
+      stats.textContent=`Ingresados: ${lines.filter(Boolean).length} · Limpios: ${cleaned.length}`;
+    }
+
+    document.getElementById("processBtn").addEventListener("click",process);
+
+    document.getElementById("copyBtn").addEventListener("click",()=>{
+      output.select();
+      document.execCommand("copy");
+    });
+  </script>
+</body>
+</html>
