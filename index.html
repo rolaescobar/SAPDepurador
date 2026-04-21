@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Depurador de Accesos SAP - Orden Final</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; background-color: #f4f7f6; color: #333; }
+        .container { max-width: 100%; margin: auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h2 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+        .section { margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        label { font-weight: bold; display: block; margin-bottom: 5px; }
+        select, textarea, input[type="text"] { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 14px; }
+        .btn-group { display: flex; gap: 10px; margin-top: 10px; }
+        button { background-color: #3498db; color: white; padding: 12px 24px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: bold; }
+        button:hover { background-color: #2980b9; }
+        .btn-export { background-color: #27ae60; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 11px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #2c3e50; color: white; white-space: nowrap; }
+        .header-extra { background-color: #d5f5e3; color: #145a32; }
+        .header-gris { background-color: #ebedef; color: #2c3e50; }
+        .status-si { color: #27ae60; font-weight: bold; }
+        .status-no { color: #c0392b; font-weight: bold; }
+        .empty-cell { background-color: #fcfcfc; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Depurador de Accesos SAP</h2>
+
+    <div class="section">
+        <label>1. Cargar Archivos Maestro</label>
+        <p>DB Transacciones: <input type="file" id="fileDB" accept=".xlsx, .xls"></p>
+        <p>Roles por Usuario (RLUSUARIO): <input type="file" id="fileUsers" accept=".xlsx, .xls"></p>
+    </div>
+
+    <div class="section">
+        <div style="display: flex; gap: 15px;">
+            <div style="flex: 1;"><label>2. ID Usuario:</label><input type="text" id="userId" placeholder="Ej: SF500028"></div>
+            <div style="flex: 1;">
+                <label>3. Módulo:</label>
+                <select id="moduloSelect">
+                    <option value="MM">MM</option><option value="SD">SD</option><option value="FI">FI</option>
+                    <option value="QM">QM</option><option value="PM">PM</option><option value="TM">TM</option>
+                    <option value="EWM">EWM</option><option value="FIORI">FIORI</option><option value="PP">PP</option><option value="CO">CO</option>
+                </select>
+            </div>
+        </div>
+        <label>4. Transacciones a Depurar:</label>
+        <textarea id="txArea" rows="4"></textarea>
+        <div class="btn-group">
+            <button onclick="procesarAnalisis()">Ejecutar Análisis</button>
+            <button id="btnDownload" class="btn-export" style="display:none;" onclick="exportarExcel()">Descargar Resultado XLSX</button>
+        </div>
+    </div>
+
+    <div id="resultadoArea" style="overflow-x: auto;">
+        <table id="resultTable" style="display:none;">
+            <thead>
+                <tr>
+                    <th>Usuario</th>
+                    <th>Nombre</th>
+                    <th>Modulo</th>
+                    <th>Rol Simple</th>
+                    <th>Rol Compuesto</th>
+                    <th>Tipo Rol</th>
+                    <th>Transacción en Rol</th>
+                    <th>Nombre de la Tx</th>
+                    <th>¿Es Transacción a Quitar?</th>
+                    <th>¿Lo tiene asignado el usuario?</th>
+                    <th class="header-gris">Observaciones</th>
+                    <th class="header-gris">Acción Final</th>
+                    <th class="header-extra">¿La Tx Existe en otro Rol?</th>
+                    <th class="header-extra">¿En cual Rol simple existe?</th> <th class="header-extra">¿En cual Rol compuesto existe?</th> <th class="header-extra">¿Lo tiene asignado el usuario?</th>
+                    <th class="header-extra">Tipo</th>
+                </tr>
+            </thead>
+            <tbody id="resultBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    let dataDB = [];
+    let dataUsers = [];
+    let rolesComplexity = {};
+
+    document.getElementById('fileDB').addEventListener('change', (e) => readExcel(e, d => {
+        dataDB = d;
+        calcularComplejidad();
+    }));
+    document.getElementById('fileUsers').addEventListener('change', (e) => readExcel(e, d => dataUsers = d));
+
+    function readExcel(e, callback) {
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+            const wb = XLSX.read(evt.target.result, { type: 'binary' });
+            callback(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]));
+        };
+        reader.readAsBinaryString(e.target.files[0]);
+    }
+
+    function calcularComplejidad() {
+        const counts = {};
+        dataDB.forEach(item => {
+            const rol = item['ROL SIMPLE'];
+            const tx = item['TRANSACCION'];
+            if (!rol || !tx) return;
+            if (!counts[rol]) counts[rol] = new Set();
+            counts[rol].add(tx);
+        });
+        for (let r in counts) rolesComplexity[r] = counts[r].size > 1 ? "Multifuncional" : "Monofuncional";
+    }
+
+    function procesarAnalisis() {
+        const user = document.getElementById('userId').value.trim().toUpperCase();
+        const mod = document.getElementById('moduloSelect').value;
+        const txsInput = [...new Set(document.getElementById('txArea').value.split('\n').map(t => t.trim().toUpperCase()).filter(t => t !== ""))];
+        const tbody = document.getElementById('resultBody');
+        tbody.innerHTML = "";
+
+        const userRows = dataUsers.filter(u => String(u['Usuario']).toUpperCase() === user);
+        const userRoles = userRows.map(u => String(u['Rol']).toUpperCase());
+        const userName = userRows[0]?.['Nombre completo'] || 'N/A';
+
+        txsInput.forEach(txBuscada => {
+            const allMatches = dataDB.filter(d => String(d['TRANSACCION']).toUpperCase() === txBuscada);
+            if (allMatches.length === 0) return;
+
+            let principal = allMatches.find(m => userRoles.includes(String(m['ROL SIMPLE']).toUpperCase())) || allMatches[0];
+            let otrosRoles = allMatches.filter(m => m !== principal);
+
+            const totalFilas = Math.max(1, otrosRoles.length);
+            const nombreTxVal = principal['NOMBRE TRANSACCION'] || 'N/A';
+
+            for (let i = 0; i < totalFilas; i++) {
+                const extra = otrosRoles[i];
+                const esPrimeraFila = (i === 0);
+                
+                const rolSimpleVal = esPrimeraFila ? String(principal['ROL SIMPLE']).toUpperCase() : "";
+                const rolCompuestoVal = esPrimeraFila ? (principal['ROL COMPUESTO'] || 'N/A') : "";
+                const tipoRolVal = esPrimeraFila ? (rolesComplexity[rolSimpleVal] || 'Multifuncional') : "";
+                const aQuitarVal = esPrimeraFila ? "Si" : "";
+                
+                let asignadoHtml = esPrimeraFila ? 
+                    `<td class="${userRoles.includes(String(principal['ROL SIMPLE']).toUpperCase()) ? 'status-si' : 'status-no'}">${userRoles.includes(String(principal['ROL SIMPLE']).toUpperCase()) ? 'Si' : 'No'}</td>` : 
+                    `<td class="empty-cell"></td>`;
+
+                let extraHtml = `<td>No</td><td></td><td></td><td></td><td></td>`;
+                if (extra) {
+                    const rolExtraSimple = String(extra['ROL SIMPLE']).toUpperCase();
+                    const tieneExtra = userRoles.includes(rolExtraSimple);
+                    extraHtml = `
+                        <td class="status-si">Si</td>
+                        <td>${rolExtraSimple}</td> <td>${extra['ROL COMPUESTO'] || 'N/A'}</td> <td class="${tieneExtra ? 'status-si' : 'status-no'}">${tieneExtra ? 'Si' : 'No'}</td>
+                        <td>${rolesComplexity[rolExtraSimple] || 'Monofuncional'}</td>
+                    `;
+                }
+
+                tbody.innerHTML += `<tr>
+                    <td>${user}</td>
+                    <td>${userName}</td>
+                    <td>${mod}</td>
+                    <td class="${!esPrimeraFila ? 'empty-cell' : ''}">${rolSimpleVal}</td>
+                    <td class="${!esPrimeraFila ? 'empty-cell' : ''}">${rolCompuestoVal}</td>
+                    <td class="${!esPrimeraFila ? 'empty-cell' : ''}">${tipoRolVal}</td>
+                    <td><strong>${txBuscada}</strong></td>
+                    <td>${nombreTxVal}</td>
+                    <td class="${!esPrimeraFila ? 'empty-cell' : ''}">${aQuitarVal}</td>
+                    ${asignadoHtml}
+                    <td class="header-gris"></td>
+                    <td class="header-gris"></td>
+                    ${extraHtml}
+                </tr>`;
+            }
+        });
+        document.getElementById('resultTable').style.display = "table";
+        document.getElementById('btnDownload').style.display = "block";
+    }
+
+    function exportarExcel() {
+        XLSX.writeFile(XLSX.utils.table_to_book(document.getElementById("resultTable")), `Depuracion_${document.getElementById('userId').value}.xlsx`);
+    }
+</script>
+</body>
+</html>
