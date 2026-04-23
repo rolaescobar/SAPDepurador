@@ -8,7 +8,11 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
     <script>
-        mermaid.initialize({ startOnLoad: false, theme: 'dark' });
+        mermaid.initialize({ 
+            startOnLoad: false, 
+            theme: 'dark',
+            securityLevel: 'loose'
+        });
     </script>
     <style>
         body { background-color: #0b1120; color: #e2e8f0; font-family: 'Inter', sans-serif; overflow-x: hidden; }
@@ -29,36 +33,30 @@
         .input-field { background-color: #0b1120; border: 1px solid #374151; color: white; }
         .input-field:focus { border-color: #f59e0b; outline: none; }
 
-        /* Contenedor del diagrama en el modal */
-     #diagramContainer {
-    max-height: 400px; /* Aumentamos un poco la altura visual */
-    overflow-y: auto;  /* Activamos el scroll vertical */
-    overflow-x: hidden; /* Evitamos scroll horizontal molesto */
-    cursor: zoom-in;
-    position: relative;
-    border: 1px solid rgba(245, 158, 11, 0.2);
-    background: rgba(255, 255, 255, 0.02);
-    border-radius: 1rem;
-    margin-bottom: 1.5rem;
-    padding: 20px;
-    display: block; /* Cambiamos de flex a block para que el scroll funcione bien */
-}
-/* Personalización de la barra de scroll para que no se vea fea */
-#diagramContainer::-webkit-scrollbar {
-    width: 6px;
-}
-#diagramContainer::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.1);
-}
-#diagramContainer::-webkit-scrollbar-thumb {
-    background: rgba(245, 158, 11, 0.3);
-    border-radius: 10px;
-}
-#diagramContainer::-webkit-scrollbar-thumb:hover {
-    background: rgba(245, 158, 11, 0.5);
-}
+        /* Contenedor del diagrama con Scroll Interno */
+        #diagramContainer {
+            max-height: 400px; 
+            overflow-y: auto;
+            overflow-x: hidden;
+            cursor: zoom-in;
+            position: relative;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 1rem;
+            margin-bottom: 1.5rem;
+            padding: 20px;
+            display: block;
+        }
 
-        #diagramContainer svg { max-width: 100%; height: auto; }
+        /* Scrollbar Minimalista para el Diagrama */
+        #diagramContainer::-webkit-scrollbar { width: 6px; }
+        #diagramContainer::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.1); }
+        #diagramContainer::-webkit-scrollbar-thumb { 
+            background: rgba(245, 158, 11, 0.3); 
+            border-radius: 10px; 
+        }
+
+        #mermaidDiv svg { max-width: 100%; height: auto; margin: 0 auto; display: block; }
 
         /* Overlay para el Zoom (Pantalla Completa) */
         #diagramZoomOverlay {
@@ -98,9 +96,9 @@
         <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
             <div class="lg:col-span-1">
                 <div class="bg-slate-900/50 p-6 rounded-3xl border border-slate-800">
-                    <h2 class="text-amber-400 font-bold mb-4 text-sm uppercase">Nuevo Proceso / Diagrama</h2>
-                    <input type="text" id="titulo" placeholder="Título (ej: Flujo GRC)" class="w-full input-field p-3 rounded-xl text-sm mb-3">
-                    <textarea id="contenido" rows="8" placeholder="Escribe tu nota o pega código Mermaid..." class="w-full input-field p-3 rounded-xl text-sm mb-3 font-mono"></textarea>
+                    <h2 class="text-amber-400 font-bold mb-4 text-sm uppercase tracking-widest">Nueva Idea</h2>
+                    <input type="text" id="titulo" placeholder="Título del proceso" class="w-full input-field p-3 rounded-xl text-sm mb-3">
+                    <textarea id="contenido" rows="10" placeholder="Escribe tu nota. Si incluyes un diagrama de Mermaid (flowchart TD...), se renderizará automáticamente abajo." class="w-full input-field p-3 rounded-xl text-sm mb-3 font-mono"></textarea>
                     <button onclick="guardarNota()" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-amber-900/20">
                         Lanzar a la Nube
                     </button>
@@ -115,9 +113,9 @@
 
     <div id="modalIdea" class="fixed inset-0 bg-black/90 hidden items-center justify-center p-4 z-[200] backdrop-blur-md overflow-y-auto">
         <div class="bg-slate-900 border border-amber-500/30 p-6 md:p-10 rounded-3xl max-w-4xl w-full shadow-2xl my-10">
-            <h3 id="modalTitulo" class="text-3xl font-bold text-amber-400 mb-6"></h3>
+            <h3 id="modalTitulo" class="text-3xl font-bold text-amber-400 mb-6 tracking-tight"></h3>
             
-            <div id="diagramContainer" class="hidden" title="Click para expandir diagrama">
+            <div id="diagramContainer" class="hidden">
                 <div class="mermaid" id="mermaidDiv"></div>
             </div>
 
@@ -126,7 +124,7 @@
             <div class="flex justify-between items-center border-t border-slate-800 pt-6">
                 <button onclick="cerrarModal()" class="text-slate-500 hover:text-white transition uppercase text-xs font-bold tracking-widest">Cerrar</button>
                 <div class="flex gap-6">
-                    <button id="btnEliminar" class="text-red-500 hover:text-red-400 text-sm italic">Eliminar permanentemente</button>
+                    <button id="btnEliminar" class="text-red-500 hover:text-red-400 text-sm italic">Eliminar</button>
                     <button id="btnEditar" class="bg-amber-600 hover:bg-amber-500 px-6 py-2 rounded-xl text-sm font-black transition">EDITAR</button>
                 </div>
             </div>
@@ -135,8 +133,8 @@
 
     <div id="diagramZoomOverlay" onclick="this.style.display='none'">
         <div id="zoomContent"></div>
-        <div class="absolute top-5 right-5 text-white/50 text-sm font-mono bg-black/40 px-3 py-1 rounded-full pointer-events-none">
-            ESC PARA CERRAR
+        <div class="absolute top-5 right-5 text-white/50 text-xs font-mono bg-black/60 px-4 py-2 rounded-full pointer-events-none">
+            HAGA CLIC O ESC PARA CERRAR
         </div>
     </div>
 
@@ -163,6 +161,7 @@
 
             document.getElementById('modalTitulo').innerText = nota.titulo;
 
+            // Detección de cualquier tipo de diagrama de Mermaid
             const mermaidRegex = /(flowchart|graph|sequenceDiagram|classDiagram|stateDiagram|erDiagram|gantt|pie)[\s\S]*/i;
             const match = nota.contenido.match(mermaidRegex);
 
@@ -181,7 +180,7 @@
                     try {
                         await mermaid.run({ nodes: [mermaidDiv] });
                         
-                        // Configurar el click para el Zoom
+                        // Acción de Zoom
                         diagCont.onclick = () => {
                             const zoomOverlay = document.getElementById('diagramZoomOverlay');
                             const zoomContent = document.getElementById('zoomContent');
@@ -189,8 +188,7 @@
                             zoomOverlay.style.display = 'flex';
                         };
                     } catch (e) {
-                        console.error("Error de renderizado:", e);
-                        mermaidDiv.innerHTML = "<div class='text-red-500 p-4 border border-red-900 rounded text-xs'>❌ Error en diagrama</div>";
+                        mermaidDiv.innerHTML = "<div class='text-red-500 p-4 border border-red-900 rounded text-xs'>❌ Error en la sintaxis del diagrama</div>";
                     }
                 }, 100);
             } else {
@@ -199,8 +197,9 @@
                 modal.style.display = 'flex';
             }
 
+            // Lógica de botones
             document.getElementById('btnEliminar').onclick = () => {
-                if(confirm('¿Borrar permanentemente?')) { 
+                if(confirm('¿Borrar definitivamente?')) { 
                     notas = notas.filter(n => n.id !== id); 
                     localStorage.setItem('sap_wiki_storage', JSON.stringify(notas)); 
                     cerrarModal(); 
@@ -231,7 +230,7 @@
                 el.innerText = nota.titulo;
                 el.style.top = `${Math.random() * 80 + 5}%`;
                 el.style.left = `${Math.random() * 80 + 5}%`;
-                el.style.opacity = Math.random() * 0.5 + 0.5;
+                el.style.opacity = Math.random() * 0.4 + 0.6;
                 const sizes = ['text-sm', 'text-base', 'text-lg', 'text-xl', 'text-2xl'];
                 el.classList.add(sizes[Math.floor(Math.random() * sizes.length)]);
                 el.style.color = i % 2 === 0 ? '#f8fafc' : '#fbbf24';
@@ -255,13 +254,16 @@
         function exportarDatos() { 
             const a = document.createElement('a'); 
             a.href = URL.createObjectURL(new Blob([JSON.stringify(notas, null, 2)], {type: 'application/json'})); 
-            a.download = `SAP_IdeaCloud_Backup_${new Date().toISOString().slice(0,10)}.json`; 
+            a.download = `SAP_ArchitectureCloud_${new Date().toISOString().slice(0,10)}.json`; 
             a.click(); 
         }
 
-        // Cerrar Zoom con Escape
+        // Listener global para cerrar con ESC
         document.addEventListener('keydown', (e) => {
-            if (e.key === "Escape") document.getElementById('diagramZoomOverlay').style.display = 'none';
+            if (e.key === "Escape") {
+                document.getElementById('diagramZoomOverlay').style.display = 'none';
+                cerrarModal();
+            }
         });
 
         renderNube();
