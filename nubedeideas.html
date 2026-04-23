@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nube de Ideas Pro - SAP Toolkit</title>
+    <title>SAP Architecture Cloud - Nube de Ideas</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
@@ -39,37 +39,46 @@
         .input-field { background-color: #0f172a; border: 1px solid #334155; color: white; transition: all 0.3s; }
         .input-field:focus { border-color: #f59e0b; outline: none; }
 
-        /* MODAL OPTIMIZADO */
+        /* MODAL CONFIGURATION */
         #modalContainer {
-            background: rgba(15, 23, 42, 0.9);
+            background: rgba(15, 23, 42, 0.95);
             backdrop-filter: blur(20px);
             border: 1px solid rgba(245, 158, 11, 0.3);
-            max-height: 85vh; /* Altura máxima para que no se salga de la pantalla */
+            max-height: 90vh;
             display: flex;
             flex-direction: column;
         }
 
-        /* Contenedores con Scroll */
-        .modal-scroll-area {
-            overflow-y: auto;
-            padding-right: 10px;
-        }
-
+        /* DIAGRAM CONTAINER WITH LEFT SCROLL */
         #diagramContainer {
-            min-height: 200px;
             max-height: 400px;
-            overflow: auto;
+            overflow: auto; /* Permite scroll vertical y horizontal */
             background: rgba(0, 0, 0, 0.3);
             border-radius: 1rem;
             border: 1px solid rgba(255, 255, 255, 0.05);
             margin-bottom: 1.5rem;
             cursor: zoom-in;
+            padding: 20px;
+            direction: rtl; /* Mueve el scroll a la izquierda */
         }
 
-        /* Scrollbars Estilizados */
-        ::-webkit-scrollbar { width: 5px; height: 5px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(245, 158, 11, 0.3); border-radius: 10px; }
+        /* Reset direction for content inside diagram */
+        #mermaidDiv {
+            direction: ltr; 
+            display: inline-block; /* Permite que el contenedor crezca con el diagrama para scroll horizontal */
+            min-width: 100%;
+        }
+
+        .modal-scroll-area {
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        /* CUSTOM SCROLLBARS */
+        #diagramContainer::-webkit-scrollbar { width: 8px; height: 8px; }
+        #diagramContainer::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); border-radius: 10px; }
+        #diagramContainer::-webkit-scrollbar-thumb { background: rgba(245, 158, 11, 0.4); border-radius: 10px; }
+        #diagramContainer::-webkit-scrollbar-thumb:hover { background: rgba(245, 158, 11, 0.6); }
 
         #diagramZoomOverlay {
             display: none; position: fixed; inset: 0; background: rgba(2, 6, 23, 0.98);
@@ -87,12 +96,12 @@
                 SAP Architecture Cloud
             </h1>
             <div class="flex gap-4 items-center">
-                <input type="text" id="buscador" onkeyup="filtrarNotas()" placeholder="Buscar..." class="input-field px-4 py-2 rounded-xl text-sm w-48">
+                <input type="text" id="buscador" onkeyup="filtrarNotas()" placeholder="Buscar procesos..." class="input-field px-4 py-2 rounded-xl text-sm w-48">
                 <div class="flex border-l border-slate-700 pl-4 gap-2">
-                    <button onclick="document.getElementById('importInput').click()" class="p-2 text-slate-400 hover:text-green-500" title="Importar JSON">
+                    <button onclick="document.getElementById('importInput').click()" class="p-2 text-slate-400 hover:text-green-500" title="Cargar Backup">
                         <i class="fas fa-upload"></i>
                     </button>
-                    <button onclick="exportarDatos()" class="p-2 text-slate-400 hover:text-amber-500" title="Exportar Backup">
+                    <button onclick="exportarDatos()" class="p-2 text-slate-400 hover:text-amber-500" title="Descargar Backup">
                         <i class="fas fa-download"></i>
                     </button>
                     <input type="file" id="importInput" class="hidden" accept=".json" onchange="importarDatos(event)">
@@ -102,11 +111,11 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
             <div class="lg:col-span-1">
-                <div class="bg-slate-900/40 p-6 rounded-[2rem] border border-slate-800 backdrop-blur-md">
-                    <h2 class="text-white font-bold mb-4 text-xs uppercase tracking-widest">Nueva Idea / Flujo</h2>
-                    <input type="text" id="titulo" placeholder="Título..." class="w-full input-field p-3 rounded-xl text-sm mb-3">
-                    <textarea id="contenido" rows="10" placeholder="Contenido o Mermaid..." class="w-full input-field p-3 rounded-xl text-sm mb-3 font-mono"></textarea>
-                    <button onclick="guardarNota()" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-3 rounded-xl transition active:scale-95">
+                <div class="bg-slate-900/40 p-6 rounded-[2rem] border border-slate-800 backdrop-blur-md shadow-xl">
+                    <h2 class="text-white font-bold mb-4 text-xs uppercase tracking-widest">Nueva Entrada</h2>
+                    <input type="text" id="titulo" placeholder="Título clave..." class="w-full input-field p-3 rounded-xl text-sm mb-3">
+                    <textarea id="contenido" rows="10" placeholder="Escribe tu nota o código Mermaid..." class="w-full input-field p-3 rounded-xl text-sm mb-3 font-mono"></textarea>
+                    <button onclick="guardarNota()" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-amber-900/20 active:scale-95">
                         Lanzar a la Nube
                     </button>
                 </div>
@@ -117,27 +126,27 @@
         </div>
     </div>
 
-    <div id="modalIdea" class="fixed inset-0 bg-slate-950/60 hidden items-center justify-center p-4 z-[200] backdrop-blur-sm">
-        <div id="modalContainer" class="relative p-6 md:p-10 rounded-[2.5rem] w-full max-w-3xl shadow-2xl animate-in fade-in zoom-in duration-200">
+    <div id="modalIdea" class="fixed inset-0 bg-slate-950/70 hidden items-center justify-center p-4 z-[200] backdrop-blur-sm">
+        <div id="modalContainer" class="relative p-6 md:p-10 rounded-[2.5rem] w-full max-w-4xl shadow-2xl animate-in fade-in zoom-in duration-200">
             
-            <button onclick="cerrarModal()" class="absolute top-6 right-6 text-slate-500 hover:text-amber-500 text-xl">
+            <button onclick="cerrarModal()" class="absolute top-6 right-6 text-slate-500 hover:text-amber-500 text-2xl transition">
                 <i class="fas fa-times"></i>
             </button>
 
-            <h3 id="modalTitulo" class="text-2xl font-black text-white mb-4 pr-10"></h3>
+            <h3 id="modalTitulo" class="text-2xl font-black text-white mb-6 pr-10 border-b border-white/10 pb-4"></h3>
             
-            <div class="modal-scroll-area flex-1">
+            <div class="modal-scroll-area flex-1 pr-4">
                 <div id="diagramContainer" class="hidden">
                     <div class="mermaid" id="mermaidDiv"></div>
                 </div>
-                <p id="modalContenido" class="text-slate-300 leading-relaxed text-lg whitespace-pre-line mb-6"></p>
+                <p id="modalContenido" class="text-slate-300 leading-relaxed text-lg whitespace-pre-line"></p>
             </div>
             
-            <div class="flex justify-between items-center border-t border-white/5 pt-6 mt-4">
+            <div class="flex justify-between items-center border-t border-white/5 pt-6 mt-6">
                 <button id="btnEliminar" class="text-slate-500 hover:text-red-500 text-[10px] font-black uppercase tracking-widest transition">
                     <i class="fas fa-trash-alt mr-2"></i> Borrar
                 </button>
-                <button id="btnEditar" class="bg-amber-600 hover:bg-amber-500 text-white px-8 py-2 rounded-xl text-sm font-bold transition">
+                <button id="btnEditar" class="bg-amber-600 hover:bg-amber-500 text-white px-10 py-3 rounded-2xl text-sm font-bold transition shadow-lg shadow-amber-900/20">
                     EDITAR
                 </button>
             </div>
@@ -189,7 +198,7 @@
                             document.getElementById('zoomContent').innerHTML = mermaidDiv.innerHTML;
                             document.getElementById('diagramZoomOverlay').style.display = 'flex';
                         };
-                    } catch (e) { mermaidDiv.innerHTML = "Error de sintaxis"; }
+                    } catch (e) { mermaidDiv.innerHTML = "Error de sintaxis en diagrama"; }
                 }, 100);
             } else {
                 diagCont.classList.add('hidden');
@@ -198,7 +207,11 @@
             }
 
             document.getElementById('btnEliminar').onclick = () => {
-                if(confirm('¿Eliminar?')) { notas = notas.filter(n => n.id !== id); localStorage.setItem('sap_wiki_storage', JSON.stringify(notas)); cerrarModal(); renderNube(); }
+                if(confirm('¿Eliminar permanentemente?')) { 
+                    notas = notas.filter(n => n.id !== id); 
+                    localStorage.setItem('sap_wiki_storage', JSON.stringify(notas)); 
+                    cerrarModal(); renderNube(); 
+                }
             };
             document.getElementById('btnEditar').onclick = () => {
                 document.getElementById('titulo').value = nota.titulo;
@@ -211,7 +224,10 @@
         function renderNube(filtro = "") {
             const canvas = document.getElementById('nubeCanvas');
             canvas.innerHTML = '';
-            const filtered = notas.filter(n => n.titulo.toLowerCase().includes(filtro.toLowerCase()));
+            const filtered = notas.filter(n => 
+                n.titulo.toLowerCase().includes(filtro.toLowerCase()) || 
+                n.contenido.toLowerCase().includes(filtro.toLowerCase())
+            );
             filtered.forEach((nota, i) => {
                 const el = document.createElement('div');
                 el.className = 'idea-flotante';
@@ -227,7 +243,6 @@
         function cerrarModal() { document.getElementById('modalIdea').style.display = 'none'; }
         function filtrarNotas() { renderNube(document.getElementById('buscador').value); }
         
-        // BACKUP Y RESTAURACIÓN
         function exportarDatos() { 
             const blob = new Blob([JSON.stringify(notas, null, 2)], {type: 'application/json'});
             const a = document.createElement('a');
