@@ -7,194 +7,187 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { background-color: #0b1120; color: #e2e8f0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .card { background-color: #161e2e; border: 1px solid #1f2937; }
-        .card:hover { border-color: #f59e0b; }
+        body { background-color: #0b1120; color: #e2e8f0; font-family: 'Inter', sans-serif; overflow-x: hidden; }
+        
+        /* Contenedor de la Nube Flotante */
+        #nubeCanvas {
+            position: relative;
+            min-height: 70vh;
+            width: 100%;
+            background: radial-gradient(circle, #1e293b 0%, #0b1120 100%);
+            border-radius: 2rem;
+            overflow: hidden;
+            border: 1px dashed #334155;
+        }
+
+        /* Estilo de las palabras/ideas flotantes */
+        .idea-flotante {
+            position: absolute;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            user-select: none;
+            padding: 5px 10px;
+            border-radius: 8px;
+        }
+
+        .idea-flotante:hover {
+            transform: scale(1.2);
+            background: rgba(245, 158, 11, 0.2);
+            color: #fbbf24 !important;
+            z-index: 100;
+        }
+
         .input-field { background-color: #0b1120; border: 1px solid #374151; color: white; }
         .input-field:focus { border-color: #f59e0b; outline: none; }
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
+        
+        .highlight { color: #f59e0b; font-weight: bold; text-decoration: underline; }
     </style>
 </head>
-<body class="p-4 md:p-10">
+<body class="p-4 md:p-6">
 
-    <div class="max-w-5xl mx-auto">
-        <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
-            <div>
-                <h1 class="text-3xl font-extrabold tracking-tight text-white flex items-center gap-2">
-                    <span class="text-amber-500"><i class="fas fa-lightbulb"></i></span> NUBE DE IDEAS
-                </h1>
-                <p class="text-slate-400 mt-1">Base de conocimientos técnica para consultoría SAP.</p>
-            </div>
-            
-            <div class="flex gap-3">
-                <input type="file" id="importFile" class="hidden" accept=".json" onchange="importarDatos(event)">
-                <button onclick="document.getElementById('importFile').click()" class="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg text-sm transition">
-                    <i class="fas fa-file-import mr-2"></i>Cargar Backup
-                </button>
-                <button onclick="exportarDatos()" class="bg-amber-600 hover:bg-amber-500 text-white px-4 py-2 rounded-lg text-sm transition shadow-lg shadow-amber-900/20">
-                    <i class="fas fa-download mr-2"></i>Descargar JSON
-                </button>
+    <div class="max-w-7xl mx-auto">
+        <header class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+            <h1 class="text-2xl font-black text-white uppercase tracking-tighter">
+                <i class="fas fa-cloud-upload-alt text-amber-500 mr-2"></i> SAP Idea Cloud
+            </h1>
+            <div class="flex gap-2">
+                <input type="text" id="buscador" onkeyup="filtrarNotas()" placeholder="Buscar concepto..." class="input-field px-4 py-2 rounded-lg text-sm w-64">
+                <button onclick="exportarDatos()" class="text-xs text-slate-500 hover:text-white"><i class="fas fa-download"></i></button>
             </div>
         </header>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
             <div class="lg:col-span-1">
-                <div class="card p-6 rounded-2xl sticky top-10 shadow-xl">
-                    <h2 id="formTitle" class="text-lg font-semibold mb-4 text-amber-400">Nueva Entrada</h2>
-                    <input type="hidden" id="editId">
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase">Título / Proceso</label>
-                            <input type="text" id="titulo" placeholder="Ej: Error SU53 - Roles" class="w-full input-field p-3 rounded-xl text-sm">
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase">Contenido Técnico</label>
-                            <textarea id="contenido" rows="8" placeholder="Escribe la respuesta o el proceso..." class="w-full input-field p-3 rounded-xl text-sm"></textarea>
-                        </div>
-                        <div class="flex gap-2">
-                            <button id="btnGuardar" onclick="guardarNota()" class="flex-grow bg-amber-600 hover:bg-amber-500 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-amber-900/40">
-                                Guardar Nota
-                            </button>
-                            <button id="btnCancelar" onclick="cancelarEdicion()" class="hidden bg-slate-700 hover:bg-slate-600 px-4 py-3 rounded-xl transition">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </div>
-                    </div>
+                <div class="bg-slate-900/50 p-6 rounded-3xl border border-slate-800">
+                    <h2 class="text-amber-400 font-bold mb-4 text-sm uppercase">Agregar Conocimiento</h2>
+                    <input type="text" id="titulo" placeholder="Palabra clave o Título" class="w-full input-field p-3 rounded-xl text-sm mb-3">
+                    <textarea id="contenido" rows="4" placeholder="Explicación técnica..." class="w-full input-field p-3 rounded-xl text-sm mb-3"></textarea>
+                    <button onclick="guardarNota()" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-3 rounded-xl transition">
+                        Lanzar a la Nube
+                    </button>
                 </div>
             </div>
 
-            <div class="lg:col-span-2">
-                <div class="mb-6 relative">
-                    <span class="absolute inset-y-0 left-3 flex items-center text-slate-500 pointer-events-none">
-                        <i class="fas fa-search"></i>
-                    </span>
-                    <input type="text" id="buscador" onkeyup="filtrarNotas()" placeholder="Filtrar por palabra clave..." class="w-full input-field pl-10 pr-4 py-3 rounded-2xl">
-                </div>
+            <div class="lg:col-span-3">
+                <div id="nubeCanvas">
+                    </div>
+            </div>
+        </div>
+    </div>
 
-                <div id="listaNotas" class="space-y-4"></div>
+    <div id="modalIdea" class="fixed inset-0 bg-black/80 hidden items-center justify-center p-4 z-[200] backdrop-blur-sm">
+        <div class="bg-slate-900 border border-amber-500/30 p-8 rounded-3xl max-w-lg w-full shadow-2xl">
+            <h3 id="modalTitulo" class="text-2xl font-bold text-amber-400 mb-4"></h3>
+            <p id="modalContenido" class="text-slate-300 leading-relaxed mb-6 whitespace-pre-line"></p>
+            <div class="flex justify-between">
+                <button onclick="cerrarModal()" class="text-slate-500 hover:text-white transition">Cerrar</button>
+                <div class="flex gap-4">
+                    <button id="btnEliminar" class="text-red-500 hover:underline text-sm">Eliminar</button>
+                    <button id="btnEditar" class="bg-amber-600 px-4 py-2 rounded-lg text-sm font-bold">Editar</button>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
         let notas = JSON.parse(localStorage.getItem('sap_wiki_storage')) || [];
-        let editando = false;
 
         function guardarNota() {
-            const titulo = document.getElementById('titulo').value;
-            const contenido = document.getElementById('contenido').value;
-            const editId = document.getElementById('editId').value;
+            const titulo = document.getElementById('titulo').value.trim();
+            const contenido = document.getElementById('contenido').value.trim();
+            if(!titulo || !contenido) return;
 
-            if(!titulo || !contenido) return alert("Completa los campos");
-
-            if (editando) {
-                // Actualizar nota existente
-                notas = notas.map(n => n.id == editId ? {...n, titulo, contenido} : n);
-                cancelarEdicion();
-            } else {
-                // Crear nueva nota
-                const nuevaNota = { id: Date.now(), titulo, contenido, fecha: new Date().toLocaleString() };
-                notas.unshift(nuevaNota);
-            }
-
-            actualizarVista();
+            const nuevaNota = { id: Date.now(), titulo, contenido };
+            notas.push(nuevaNota);
+            localStorage.setItem('sap_wiki_storage', JSON.stringify(notas));
+            
             limpiarCampos();
+            renderNube();
         }
 
-        function editarNota(id) {
+        function renderNube(filtro = "") {
+            const canvas = document.getElementById('nubeCanvas');
+            canvas.innerHTML = '';
+            
+            const notasFiltradas = notas.filter(n => 
+                n.titulo.toLowerCase().includes(filtro.toLowerCase()) || 
+                n.contenido.toLowerCase().includes(filtro.toLowerCase())
+            );
+
+            notasFiltradas.forEach((nota, index) => {
+                const el = document.createElement('div');
+                el.className = 'idea-flotante';
+                el.innerText = nota.titulo;
+                
+                // Lógica de "Nube": Posiciones aleatorias
+                const top = Math.random() * 80 + 5; // Entre 5% y 85%
+                const left = Math.random() * 80 + 5;
+                
+                // Tamaños aleatorios para dar jerarquía visual
+                const sizes = ['text-sm', 'text-base', 'text-lg', 'text-xl', 'text-2xl', 'text-3xl'];
+                const randomSize = sizes[Math.floor(Math.random() * sizes.length)];
+                
+                // Opacidad aleatoria para profundidad
+                const opacity = Math.random() * 0.5 + 0.5;
+
+                el.style.top = `${top}%`;
+                el.style.left = `${left}%`;
+                el.style.opacity = opacity;
+                el.style.color = index % 2 === 0 ? '#e2e8f0' : '#94a3b8'; // Alternar gris y blanco
+                el.classList.add(randomSize);
+
+                if(filtro && nota.titulo.toLowerCase().includes(filtro.toLowerCase())) {
+                    el.classList.add('highlight');
+                    el.style.opacity = "1";
+                    el.style.zIndex = "50";
+                }
+
+                el.onclick = () => verDetalle(nota.id);
+                canvas.appendChild(el);
+            });
+        }
+
+        function verDetalle(id) {
             const nota = notas.find(n => n.id === id);
-            if(nota) {
+            document.getElementById('modalTitulo').innerText = nota.titulo;
+            document.getElementById('modalContenido').innerText = nota.contenido;
+            document.getElementById('modalIdea').style.display = 'flex';
+            
+            document.getElementById('btnEliminar').onclick = () => {
+                if(confirm('¿Borrar idea?')) {
+                    notas = notas.filter(n => n.id !== id);
+                    localStorage.setItem('sap_wiki_storage', JSON.stringify(notas));
+                    cerrarModal();
+                    renderNube();
+                }
+            };
+            
+            document.getElementById('btnEditar').onclick = () => {
                 document.getElementById('titulo').value = nota.titulo;
                 document.getElementById('contenido').value = nota.contenido;
-                document.getElementById('editId').value = nota.id;
-                
-                // Cambiar UI a modo edición
-                editando = true;
-                document.getElementById('formTitle').innerText = "Editando Entrada";
-                document.getElementById('btnGuardar').innerText = "Actualizar Cambios";
-                document.getElementById('btnCancelar').classList.remove('hidden');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            }
+                notas = notas.filter(n => n.id !== id);
+                cerrarModal();
+                renderNube();
+            };
         }
 
-        function cancelarEdicion() {
-            editando = false;
-            document.getElementById('formTitle').innerText = "Nueva Entrada";
-            document.getElementById('btnGuardar').innerText = "Guardar Nota";
-            document.getElementById('btnCancelar').classList.add('hidden');
-            limpiarCampos();
-        }
-
+        function cerrarModal() { document.getElementById('modalIdea').style.display = 'none'; }
+        function filtrarNotas() { renderNube(document.getElementById('buscador').value); }
         function limpiarCampos() {
             document.getElementById('titulo').value = '';
             document.getElementById('contenido').value = '';
-            document.getElementById('editId').value = '';
         }
-
-        function eliminarNota(id) {
-            if(confirm('¿Eliminar definitivamente?')) {
-                notas = notas.filter(n => n.id !== id);
-                actualizarVista();
-            }
-        }
-
-        function actualizarVista() {
-            localStorage.setItem('sap_wiki_storage', JSON.stringify(notas));
-            const contenedor = document.getElementById('listaNotas');
-            contenedor.innerHTML = '';
-
-            notas.forEach(nota => {
-                contenedor.innerHTML += `
-                    <div class="card p-6 rounded-2xl shadow-sm border-l-4 border-l-amber-600">
-                        <div class="flex justify-between items-start mb-3">
-                            <h3 class="font-bold text-amber-100 text-lg">${nota.titulo}</h3>
-                            <div class="flex gap-2">
-                                <button onclick="editarNota(${nota.id})" class="text-slate-500 hover:text-blue-400 p-1">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button onclick="eliminarNota(${nota.id})" class="text-slate-500 hover:text-red-500 p-1">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <p class="text-slate-400 text-sm leading-relaxed whitespace-pre-line">${nota.contenido}</p>
-                    </div>
-                `;
-            });
-        }
-
-        function filtrarNotas() {
-            const term = document.getElementById('buscador').value.toLowerCase();
-            const cards = document.querySelectorAll('#listaNotas > div');
-            cards.forEach(card => {
-                card.style.display = card.innerText.toLowerCase().includes(term) ? 'block' : 'none';
-            });
-        }
-
         function exportarDatos() {
             const blob = new Blob([JSON.stringify(notas, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
-            a.href = url;
-            a.download = `NubeIdeas_Backup_${new Date().toISOString().slice(0,10)}.json`;
+            a.href = URL.createObjectURL(blob);
+            a.download = `SAP_Idea_Cloud.json`;
             a.click();
         }
 
-        function importarDatos(event) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const data = JSON.parse(e.target.result);
-                if(confirm('¿Reemplazar datos actuales?')) {
-                    notas = data;
-                    actualizarVista();
-                }
-            };
-            reader.readAsText(event.target.files[0]);
-        }
-
-        actualizarVista();
+        // Render inicial
+        renderNube();
     </script>
 </body>
 </html>
