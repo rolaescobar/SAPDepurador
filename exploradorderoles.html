@@ -6,20 +6,25 @@
     <title>Explorador de Arquitectura SAP - Auditoría Proactiva</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        :root { --sap-blue: #001e62; --accent: #6a1b9a; --bg: #f4f7f9; }
+        :root { --sap-blue: #001e62; --accent: #6a1b9a; --success: #1b5e20; --bg: #f4f7f9; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 20px; font-size: 13px; }
         .container { max-width: 1600px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
         .header { text-align: center; border-bottom: 3px solid var(--sap-blue); margin-bottom: 25px; padding-bottom: 10px; }
         .section-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
-        .card { border: 1px solid #e0e4e8; padding: 20px; border-radius: 8px; background: #fff; }
+        .card { border: 1px solid #e0e4e8; padding: 20px; border-radius: 8px; background: #fff; display: flex; flex-direction: column; }
         h3 { margin-top: 0; color: var(--sap-blue); }
         textarea { width: 100%; height: 120px; margin: 10px 0; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-family: monospace; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; text-transform: uppercase; transition: 0.3s; margin-bottom: 10px; }
+        
+        .btn-group { display: flex; gap: 10px; margin-bottom: 10px; }
+        button { flex: 1; padding: 12px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; text-transform: uppercase; transition: 0.3s; }
+        
         .btn-roles { background: var(--sap-blue); color: white; }
         .btn-tcodes { background: var(--accent); color: white; }
-        .table-wrap { overflow-x: auto; max-height: 450px; border: 1px solid #eee; margin-top: 10px; border-radius: 5px; }
+        .btn-download { background: var(--success); color: white; flex: 0 0 50px; } /* Botón pequeño para icono */
+        
+        .table-wrap { overflow-x: auto; max-height: 450px; border: 1px solid #eee; margin-top: 10px; border-radius: 5px; flex-grow: 1; }
         table { width: 100%; border-collapse: collapse; font-size: 11px; }
-        thead th { position: sticky; top: 0; background: #f8f9fa; color: #333; padding: 10px; border-bottom: 2px solid #ddd; text-align: left; }
+        thead th { position: sticky; top: 0; background: #f8f9fa; color: #333; padding: 10px; border-bottom: 2px solid #ddd; text-align: left; z-index: 5; }
         td { padding: 8px; border-bottom: 1px solid #eee; }
         .badge-role { background: #e8eaf6; color: #1a237e; padding: 2px 5px; border-radius: 3px; font-weight: bold; }
         .badge-tcode { background: #fff3e0; color: #e65100; padding: 2px 5px; border-radius: 3px; font-weight: bold; }
@@ -45,7 +50,10 @@
             <h3>🔍 Desglose de Contenido (Rol)</h3>
             <p>Lista todas las transacciones dentro de estos Roles Compuestos.</p>
             <textarea id="inputRoles" placeholder="Pegar Roles..."></textarea>
-            <button class="btn-roles" onclick="analizarRoles()">Ver Transacciones Internas</button>
+            <div class="btn-group">
+                <button class="btn-roles" onclick="analizarRoles()">Analizar Contenido</button>
+                <button class="btn-download" title="Descargar Excel" onclick="descargarExcel('tblRoles', 'Desglose_Contenido_Roles')">💾</button>
+            </div>
             
             <div class="table-wrap">
                 <table id="tblRoles">
@@ -65,7 +73,10 @@
             <h3>🔎 Ubicación de Transacción (T-Code)</h3>
             <p>¿En qué roles están estas TX y qué tipo de rol es?</p>
             <textarea id="inputTcodes" placeholder="Pegar T-Codes..."></textarea>
-            <button class="btn-tcodes" onclick="buscarTcodes()">Buscar Impacto en Roles</button>
+            <div class="btn-group">
+                <button class="btn-tcodes" onclick="buscarTcodes()">Buscar en Roles</button>
+                <button class="btn-download" title="Descargar Excel" onclick="descargarExcel('tblTcodes', 'Ubicacion_Tcodes_en_Roles')">💾</button>
+            </div>
 
             <div class="table-wrap">
                 <table id="tblTcodes">
@@ -86,27 +97,29 @@
 
 <script>
 let masterDB = [];
-let conteoRoles = {}; // Para el cálculo de Mono/Multi
+let conteoRoles = {};
 
 document.getElementById('fMaster').addEventListener('change', async (e) => {
     const file = e.target.files[0];
+    if(!file) return;
     const data = await file.arrayBuffer();
     const wb = XLSX.read(data);
     masterDB = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: "" });
     
-    // Pre-calcular conteo de roles para rapidez
     conteoRoles = {};
     masterDB.forEach(row => {
         const rc = String(row["ROL COMPUESTO"] || "").trim();
         if(rc) conteoRoles[rc] = (conteoRoles[rc] || 0) + 1;
     });
     
-    alert("Base maestra cargada correctamente.");
+    alert("Base maestra cargada correctamente (" + masterDB.length + " registros).");
 });
 
 function analizarRoles() {
     if(masterDB.length === 0) return alert("Cargue la DBTRANSACCIONES.");
     const roles = document.getElementById('inputRoles').value.toUpperCase().split('\n').map(x=>x.trim()).filter(x=>x);
+    if(roles.length === 0) return alert("Pegue al menos un nombre de rol.");
+    
     const tbody = document.querySelector('#tblRoles tbody');
     tbody.innerHTML = "";
 
@@ -127,6 +140,8 @@ function analizarRoles() {
 function buscarTcodes() {
     if(masterDB.length === 0) return alert("Cargue la DBTRANSACCIONES.");
     const txs = document.getElementById('inputTcodes').value.toUpperCase().split('\n').map(x=>x.trim()).filter(x=>x);
+    if(txs.length === 0) return alert("Pegue al menos un T-Code.");
+
     const tbody = document.querySelector('#tblTcodes tbody');
     tbody.innerHTML = "";
 
@@ -147,6 +162,16 @@ function buscarTcodes() {
             tbody.appendChild(tr);
         }
     });
+}
+
+function descargarExcel(tablaId, nombreArchivo) {
+    const table = document.getElementById(tablaId);
+    if (table.rows.length <= 1) {
+        alert("No hay datos en la tabla para exportar.");
+        return;
+    }
+    const wb = XLSX.utils.table_to_book(table, { sheet: "Resultados" });
+    XLSX.writeFile(wb, nombreArchivo + ".xlsx");
 }
 </script>
 </body>
