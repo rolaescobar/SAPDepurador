@@ -49,24 +49,30 @@
             flex-direction: column;
         }
 
-        /* DIAGRAM CONTAINER WITH LEFT SCROLL */
+        /* DIAGRAM CONTAINER WITH DUAL SCROLL */
         #diagramContainer {
-            max-height: 400px;
-            overflow: auto; /* Permite scroll vertical y horizontal */
-            background: rgba(0, 0, 0, 0.3);
+            max-height: 450px;
+            overflow: auto !important; /* Forzamos scroll en ambos ejes */
+            background: rgba(0, 0, 0, 0.4);
             border-radius: 1rem;
             border: 1px solid rgba(255, 255, 255, 0.05);
             margin-bottom: 1.5rem;
             cursor: zoom-in;
-            padding: 20px;
-            direction: rtl; /* Mueve el scroll a la izquierda */
+            padding: 25px;
+            direction: rtl; /* Barra vertical a la izquierda */
         }
 
-        /* Reset direction for content inside diagram */
+        /* Contenedor interno para evitar compresión del SVG */
         #mermaidDiv {
             direction: ltr; 
-            display: inline-block; /* Permite que el contenedor crezca con el diagrama para scroll horizontal */
-            min-width: 100%;
+            display: block; 
+            min-width: fit-content; /* Obliga al contenedor a estirarse horizontalmente */
+            margin: 0 auto;
+        }
+
+        #mermaidDiv svg {
+            max-width: none !important; /* Permite que el SVG mantenga su ancho original */
+            height: auto;
         }
 
         .modal-scroll-area {
@@ -75,10 +81,10 @@
         }
 
         /* CUSTOM SCROLLBARS */
-        #diagramContainer::-webkit-scrollbar { width: 8px; height: 8px; }
-        #diagramContainer::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); border-radius: 10px; }
-        #diagramContainer::-webkit-scrollbar-thumb { background: rgba(245, 158, 11, 0.4); border-radius: 10px; }
-        #diagramContainer::-webkit-scrollbar-thumb:hover { background: rgba(245, 158, 11, 0.6); }
+        #diagramContainer::-webkit-scrollbar { width: 10px; height: 10px; }
+        #diagramContainer::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.3); border-radius: 10px; }
+        #diagramContainer::-webkit-scrollbar-thumb { background: rgba(245, 158, 11, 0.4); border-radius: 10px; border: 2px solid rgba(0,0,0,0); background-clip: padding-box; }
+        #diagramContainer::-webkit-scrollbar-thumb:hover { background: rgba(245, 158, 11, 0.7); background-clip: padding-box; }
 
         #diagramZoomOverlay {
             display: none; position: fixed; inset: 0; background: rgba(2, 6, 23, 0.98);
@@ -194,9 +200,12 @@
                 setTimeout(async () => {
                     try {
                         await mermaid.run({ nodes: [mermaidDiv] });
-                        diagCont.onclick = () => {
-                            document.getElementById('zoomContent').innerHTML = mermaidDiv.innerHTML;
-                            document.getElementById('diagramZoomOverlay').style.display = 'flex';
+                        diagCont.onclick = (e) => {
+                            // Solo activar zoom si el click es en el diagrama, no en el scroll
+                            if (e.target.closest('svg')) {
+                                document.getElementById('zoomContent').innerHTML = mermaidDiv.innerHTML;
+                                document.getElementById('diagramZoomOverlay').style.display = 'flex';
+                            }
                         };
                     } catch (e) { mermaidDiv.innerHTML = "Error de sintaxis en diagrama"; }
                 }, 100);
