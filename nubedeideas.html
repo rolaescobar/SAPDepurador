@@ -103,35 +103,39 @@ async function verDetalle(id) {
 
     document.getElementById('modalTitulo').innerText = nota.titulo;
 
-    // Regex para encontrar el bloque de Mermaid (desde flowchart/graph hasta el final)
+    // Regex mejorada para capturar el diagrama
     const mermaidRegex = /(flowchart|graph|sequenceDiagram|classDiagram|stateDiagram|erDiagram|gantt|pie)[\s\S]*/i;
     const match = nota.contenido.match(mermaidRegex);
 
     if (match) {
         diagCont.classList.remove('hidden');
-        // El diagrama es lo que encontró la Regex
-        const codigoMermaid = match[0];
-        // El texto es todo lo que está ANTES del diagrama
+        const codigoMermaid = match[0].trim();
         const textoLimpio = nota.contenido.replace(codigoMermaid, '').trim();
         
         modalContenido.innerText = textoLimpio;
+        
+        // Limpiamos y preparamos el div
         mermaidDiv.innerHTML = codigoMermaid;
         mermaidDiv.removeAttribute('data-processed');
         
-        try {
-            await mermaid.run({ nodes: [mermaidDiv] });
-        } catch (e) {
-            console.error("Error Mermaid:", e);
-            mermaidDiv.innerHTML = "<span class='text-red-500 font-mono text-xs'>Sintaxis de diagrama incorrecta</span>";
-        }
+        modal.style.display = 'flex';
+
+        // Pequeño delay para que el navegador renderice el modal antes que el diagrama
+        setTimeout(async () => {
+            try {
+                await mermaid.run({ nodes: [mermaidDiv] });
+            } catch (e) {
+                console.error("Error de renderizado:", e);
+                mermaidDiv.innerHTML = "<div class='text-red-500 p-4 border border-red-900 rounded'>❌ Error de sintaxis en el diagrama. Revisa comillas o caracteres especiales.</div>";
+            }
+        }, 100);
     } else {
         diagCont.classList.add('hidden');
         modalContenido.innerText = nota.contenido;
+        modal.style.display = 'flex';
     }
 
-    modal.style.display = 'flex';
-    
-    // Configurar botones de eliminar y editar (se mantienen igual)
+    // Configuración de botones (mantener igual)
     document.getElementById('btnEliminar').onclick = () => {
         if(confirm('¿Borrar?')) { notas = notas.filter(n => n.id !== id); localStorage.setItem('sap_wiki_storage', JSON.stringify(notas)); cerrarModal(); renderNube(); }
     };
