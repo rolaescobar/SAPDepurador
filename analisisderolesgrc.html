@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analizador GRC - Reporte Multifuncional vs Monofuncional</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root { --sap-blue: #001e62; --success: #1b5e20; --danger: #b71c1c; --bg: #f4f7f9; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 20px; font-size: 12px; }
+        .container { max-width: 1800px; margin: auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+        .card { border: 1px solid #e0e4e8; padding: 15px; border-radius: 8px; background: #ffffff; }
+        h3 { margin-top: 0; color: var(--sap-blue); border-bottom: 2px solid #eee; padding-bottom: 8px; font-size: 14px; text-transform: uppercase; }
+        label { display: block; margin: 8px 0 4px; font-weight: 600; color: #555; }
+        textarea, select, input { width: 100%; padding: 8px; border: 1px solid #ced4da; border-radius: 5px; box-sizing: border-box; }
+        textarea { height: 100px; font-family: 'Consolas', monospace; font-size: 11px; }
+        .btns { text-align: center; padding: 15px; border-top: 1px solid #eee; }
+        button { padding: 12px 40px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; text-transform: uppercase; transition: 0.3s; }
+        .run { background: var(--sap-blue); color: white; margin-right: 10px; }
+        .dl { background: var(--success); color: white; }
+        .table-wrap { overflow-x: auto; max-height: 550px; border: 1px solid #ddd; border-radius: 5px; margin-top: 10px; }
+        table { width: 100%; border-collapse: collapse; white-space: nowrap; }
+        thead th { position: sticky; top: 0; background: var(--sap-blue); color: white; padding: 10px; font-size: 11px; z-index: 10; }
+        td { padding: 8px; border-bottom: 1px solid #edf2f7; }
+        .mono { color: #007ad9; font-weight: bold; background: #e1f5fe; padding: 2px 6px; border-radius: 4px; }
+        .multi { color: #e65100; font-weight: bold; background: #fff3e0; padding: 2px 6px; border-radius: 4px; }
+        .keep { background: #c8e6c9; color: #1b5e20; padding: 4px 8px; border-radius: 4px; font-weight: bold; }
+        .remove { background: #ffcdd2; color: #b71c1c; padding: 4px 8px; border-radius: 4px; font-weight: bold; }
+        .tcode { font-weight: bold; color: #d32f2f; font-family: monospace; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2 style="text-align:center; color: var(--sap-blue); margin-top: 0;">Análisis de Roles y Transacciones GRC</h2>
+    
+    <div class="grid">
+        <div class="card">
+            <h3>1. Archivos</h3>
+            <label>DBTRANSACCIONES (.xlsx)</label>
+            <input type="file" id="fDb">
+            <label>Reporte GRC Limpio (.xlsx)</label>
+            <input type="file" id="fGrc">
+            <label>Módulo</label>
+            <select id="mod">
+                <option>MM</option><option>SD</option><option>FI</option><option>QM</option>
+                <option>PM</option><option>MM-LOGISTICA</option><option>FIORI</option><option>SOPORTE NEGOCIOS</option>
+            </select>
+        </div>
+
+        <div class="card">
+            <h3>2. Usuarios (ID, Nombre)</h3>
+            <label>Pegar lista:</label>
+            <textarea id="uFiltro" placeholder="SF500063, ROLANDO GARCIA"></textarea>
+        </div>
+
+        <div class="card">
+            <h3>3. Acciones</h3>
+            <label>MANTENER (Tcodes)</label>
+            <textarea id="tKeep" placeholder="Ej: VA01"></textarea>
+            <label>ELIMINAR (Tcodes)</label>
+            <textarea id="tRem" placeholder="Ej: SE16N"></textarea>
+        </div>
+    </div>
+
+    <div class="btns">
+        <button class="run" onclick="analizar()">INICIAR ANÁLISIS</button>
+        <button class="dl" onclick="exportar()">DESCARGAR REPORTE</button>
+    </div>
+
+    <div class="table-wrap">
+        <table id="resTbl">
+            <thead>
+                <tr>
+                    <th>MÓDULO</th>
+                    <th>ID USUARIO</th>
+                    <th>NOMBRE COMPLETO</th>
+                    <th>Rol/Perfil</th>
+                    <th>Rol compuesto/empresarial</th>
+                    <th>TRANSACCIÓN</th>
+                    <th>NOMBRE TRANSACCIÓN</th>
+                    <th>ID RIESGO</th>
+                    <th>ID REGLA</th>
+                    <th>NIVEL RIESGO</th>
+                    <th>TIPO DE ROL</th>
+                    <th>ACCIÓN</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+let dataFinal = [];
+
+async function leerExcel(file) {
+    const data = await file.arrayBuffer();
+    const wb = XLSX.read(data);
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    return XLSX.utils.sheet_to_json(ws, { defval: "" });
+}
+
+async function analizar() {
+    const f1 = document.getElementById('fDb').files[0];
+    const f2 = document.getElementById('fGrc').files[0];
+    const modActual = document.getElementById('mod').value;
+
+    if(!f1 || !f2) return alert("Cargue ambos archivos.");
+
+    // Diccionario de Usuarios
+    const dictUsuarios = {};
+    document.getElementById('uFiltro').value.split('\n').forEach(linea => {
+        const partes = linea.split(',');
+        const id = partes[0].trim().toUpperCase();
+        if(id) dictUsuarios[id] = partes[1] ? partes[1].trim() : "";
+    });
+
+    const db = await leerExcel(f1);
+    const grc = await leerExcel(f2);
+
+    const mK = document.getElementById('tKeep').value.toUpperCase().split('\n').map(x=>x.trim()).filter(x=>x);
+    const eK = document.getElementById('tRem').value.toUpperCase().split('\n').map(x=>x.trim()).filter(x=>x);
+
+    // Mapeo DBTRANSACCIONES: Conteo por ROL COMPUESTO y nombres de transacción
+    const conteoRolesDB = {}; // Para saber si es Mono o Multi
+    const nombresMaster = {}; // Para el nombre de la transacción
+
+    db.forEach(r => {
+        const rolMaster = String(r["ROL COMPUESTO"] || "").trim();
+        if(rolMaster) {
+            conteoRolesDB[rolMaster] = (conteoRolesDB[rolMaster] || 0) + 1;
+        }
+
+        const tc = String(r["TRANSACCION"] || "").trim().toUpperCase();
+        const nm = String(r["NOMBRE TRANSACCION"] || "").trim();
+        if(tc && nm && nm !== "0") {
+            nombresMaster[tc] = nm;
+        }
+    });
+
+    const tbody = document.querySelector('#resTbl tbody');
+    tbody.innerHTML = "";
+    dataFinal = [];
+
+    grc.forEach(r => {
+        const idGrc = String(r["ID usu."] || "").trim().toUpperCase();
+        if(!idGrc) return;
+        
+        if(Object.keys(dictUsuarios).length > 0 && !dictUsuarios[idGrc]) return;
+
+        const nombre = dictUsuarios[idGrc] || String(r["Nombre"] || "").trim();
+        const rolPerfil = String(r["Rol/Perfil"] || "").trim();
+        const rolCompGRC = String(r["Rol compuesto/empresarial"] || "").trim();
+        const tcodeGrc = String(r["Valor de"] || "").trim().toUpperCase();
+        
+        // 1. Cruce del Nombre de Transacción
+        const descTcode = nombresMaster[tcodeGrc] || "SIN DESCRIPCIÓN";
+
+        // 2. Lógica Mono vs Multi: Rol Compuesto (GRC) vs ROL COMPUESTO (DB)
+        const totalApariciones = conteoRolesDB[rolCompGRC] || 0;
+        let tipoRol = "NO ENCONTRADO EN DB";
+        if (totalApariciones > 1) tipoRol = "MULTIFUNCIONAL";
+        else if (totalApariciones === 1) tipoRol = "MONOFUNCIONAL";
+
+        // 3. Acción
+        let accion = "PENDIENTE";
+        if(mK.includes(tcodeGrc)) accion = "MANTENER";
+        else if(eK.includes(tcodeGrc)) accion = "ELIMINAR";
+
+        const registro = {
+            'MÓDULO': modActual,
+            'ID USUARIO': idGrc,
+            'NOMBRE COMPLETO': nombre,
+            'Rol/Perfil': rolPerfil,
+            'Rol compuesto/empresarial': rolCompGRC,
+            'TRANSACCIÓN': tcodeGrc,
+            'NOMBRE TRANSACCIÓN': descTcode,
+            'ID RIESGO': r["ID de riesgo de acceso"] || "",
+            'ID REGLA': r["ID de regla"] || "",
+            'NIVEL RIESGO': r["Nivel de riesgo"] || "",
+            'TIPO DE ROL': tipoRol,
+            'ACCIÓN': accion
+        };
+
+        dataFinal.push(registro);
+        
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><b>${registro['MÓDULO']}</b></td>
+            <td>${registro['ID USUARIO']}</td>
+            <td>${registro['NOMBRE COMPLETO']}</td>
+            <td><small>${registro['Rol/Perfil']}</small></td>
+            <td><small>${registro['Rol compuesto/empresarial']}</small></td>
+            <td class="tcode">${registro['TRANSACCIÓN']}</td>
+            <td>${registro['NOMBRE TRANSACCIÓN']}</td>
+            <td>${registro['ID RIESGO']}</td>
+            <td>${registro['ID REGLA']}</td>
+            <td>${registro['NIVEL RIESGO']}</td>
+            <td><span class="${tipoRol === 'MULTIFUNCIONAL'?'multi':'mono'}">${tipoRol}</span></td>
+            <td><span class="${accion==='MANTENER'?'keep':(accion==='ELIMINAR'?'remove':'')}">${accion}</span></td>
+        `;
+        tbody.appendChild(tr);
+    });
+
+    alert("Análisis completado para " + dataFinal.length + " registros.");
+}
+
+function exportar() {
+    if(dataFinal.length === 0) return alert("No hay datos para exportar.");
+    const ws = XLSX.utils.json_to_sheet(dataFinal);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Resultado");
+    XLSX.writeFile(wb, `Reporte_Depuracion_${document.getElementById('mod').value}.xlsx`);
+}
+</script>
+</body>
+</html>
