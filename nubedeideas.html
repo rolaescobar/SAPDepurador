@@ -30,19 +30,33 @@
         .input-field:focus { border-color: #f59e0b; outline: none; }
 
         /* Contenedor del diagrama en el modal */
-        #diagramContainer {
-            max-height: 350px; 
-            overflow: hidden;
-            cursor: zoom-in;
-            position: relative;
-            border: 1px solid rgba(245, 158, 11, 0.2);
-            background: #ffffff05;
-            border-radius: 1rem;
-            margin-bottom: 1.5rem;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
+     #diagramContainer {
+    max-height: 400px; /* Aumentamos un poco la altura visual */
+    overflow-y: auto;  /* Activamos el scroll vertical */
+    overflow-x: hidden; /* Evitamos scroll horizontal molesto */
+    cursor: zoom-in;
+    position: relative;
+    border: 1px solid rgba(245, 158, 11, 0.2);
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 1rem;
+    margin-bottom: 1.5rem;
+    padding: 20px;
+    display: block; /* Cambiamos de flex a block para que el scroll funcione bien */
+}
+/* Personalización de la barra de scroll para que no se vea fea */
+#diagramContainer::-webkit-scrollbar {
+    width: 6px;
+}
+#diagramContainer::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+}
+#diagramContainer::-webkit-scrollbar-thumb {
+    background: rgba(245, 158, 11, 0.3);
+    border-radius: 10px;
+}
+#diagramContainer::-webkit-scrollbar-thumb:hover {
+    background: rgba(245, 158, 11, 0.5);
+}
 
         #diagramContainer svg { max-width: 100%; height: auto; }
 
