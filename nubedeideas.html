@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SAP Wiki - Depurador Toolkit</title>
+    <title>Nube de Ideas - SAP Toolkit</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body { background-color: #0b1120; color: #e2e8f0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .card { background-color: #161e2e; border: 1px solid #1f2937; transition: transform 0.2s; }
-        .card:hover { border-color: #3b82f6; }
+        .card { background-color: #161e2e; border: 1px solid #1f2937; }
+        .card:hover { border-color: #f59e0b; }
         .input-field { background-color: #0b1120; border: 1px solid #374151; color: white; }
-        .input-field:focus { border-color: #3b82f6; outline: none; ring: 1px solid #3b82f6; }
+        .input-field:focus { border-color: #f59e0b; outline: none; }
         ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #0b1120; }
         ::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
     </style>
 </head>
@@ -22,19 +22,18 @@
         <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
             <div>
                 <h1 class="text-3xl font-extrabold tracking-tight text-white flex items-center gap-2">
-                    <span class="text-blue-500">⚙</span> SAP KNOWLEDGE WIKI
+                    <span class="text-amber-500"><i class="fas fa-lightbulb"></i></span> NUBE DE IDEAS
                 </h1>
-                <p class="text-slate-400 mt-1">Gestión de base de conocimientos técnica y funcional.</p>
+                <p class="text-slate-400 mt-1">Base de conocimientos técnica para consultoría SAP.</p>
             </div>
             
             <div class="flex gap-3">
                 <input type="file" id="importFile" class="hidden" accept=".json" onchange="importarDatos(event)">
-                <button onclick="document.getElementById('importFile').click()" class="flex items-center gap-2 bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
-                    <span>📥</span> Cargar Backup
+                <button onclick="document.getElementById('importFile').click()" class="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg text-sm transition">
+                    <i class="fas fa-file-import mr-2"></i>Cargar Backup
                 </button>
-                
-                <button onclick="exportarDatos()" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-lg shadow-blue-900/20">
-                    <span>💾</span> Descargar JSON
+                <button onclick="exportarDatos()" class="bg-amber-600 hover:bg-amber-500 text-white px-4 py-2 rounded-lg text-sm transition shadow-lg shadow-amber-900/20">
+                    <i class="fas fa-download mr-2"></i>Descargar JSON
                 </button>
             </div>
         </header>
@@ -42,60 +41,103 @@
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             
             <div class="lg:col-span-1">
-                <div class="card p-6 rounded-2xl sticky top-10">
-                    <h2 class="text-lg font-semibold mb-4 text-blue-400">Nueva Entrada</h2>
+                <div class="card p-6 rounded-2xl sticky top-10 shadow-xl">
+                    <h2 id="formTitle" class="text-lg font-semibold mb-4 text-amber-400">Nueva Entrada</h2>
+                    <input type="hidden" id="editId">
                     <div class="space-y-4">
                         <div>
-                            <label class="block text-xs font-medium text-slate-500 mb-1 uppercase">Título / Proceso</label>
-                            <input type="text" id="titulo" placeholder="Ej: Roles Agrupadores - Logi" class="w-full input-field p-3 rounded-xl text-sm">
+                            <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase">Título / Proceso</label>
+                            <input type="text" id="titulo" placeholder="Ej: Error SU53 - Roles" class="w-full input-field p-3 rounded-xl text-sm">
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-slate-500 mb-1 uppercase">Descripción / Solución</label>
-                            <textarea id="contenido" rows="6" placeholder="Escribe aquí la teoría o pasos del proceso..." class="w-full input-field p-3 rounded-xl text-sm"></textarea>
+                            <label class="block text-[10px] font-bold text-slate-500 mb-1 uppercase">Contenido Técnico</label>
+                            <textarea id="contenido" rows="8" placeholder="Escribe la respuesta o el proceso..." class="w-full input-field p-3 rounded-xl text-sm"></textarea>
                         </div>
-                        <button onclick="guardarNota()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-blue-900/40">
-                            Guardar Nota
-                        </button>
+                        <div class="flex gap-2">
+                            <button id="btnGuardar" onclick="guardarNota()" class="flex-grow bg-amber-600 hover:bg-amber-500 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-amber-900/40">
+                                Guardar Nota
+                            </button>
+                            <button id="btnCancelar" onclick="cancelarEdicion()" class="hidden bg-slate-700 hover:bg-slate-600 px-4 py-3 rounded-xl transition">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
 
             <div class="lg:col-span-2">
                 <div class="mb-6 relative">
-                    <span class="absolute inset-y-0 left-3 flex items-center text-slate-500">🔍</span>
-                    <input type="text" id="buscador" onkeyup="filtrarNotas()" placeholder="Buscar en el conocimiento acumulado..." class="w-full input-field pl-10 pr-4 py-3 rounded-2xl">
+                    <span class="absolute inset-y-0 left-3 flex items-center text-slate-500 pointer-events-none">
+                        <i class="fas fa-search"></i>
+                    </span>
+                    <input type="text" id="buscador" onkeyup="filtrarNotas()" placeholder="Filtrar por palabra clave..." class="w-full input-field pl-10 pr-4 py-3 rounded-2xl">
                 </div>
 
-                <div id="listaNotas" class="space-y-4">
-                    </div>
+                <div id="listaNotas" class="space-y-4"></div>
             </div>
         </div>
     </div>
 
     <script>
-        // Inicializar datos desde LocalStorage o array vacío
         let notas = JSON.parse(localStorage.getItem('sap_wiki_storage')) || [];
+        let editando = false;
 
         function guardarNota() {
             const titulo = document.getElementById('titulo').value;
             const contenido = document.getElementById('contenido').value;
+            const editId = document.getElementById('editId').value;
 
-            if(!titulo || !contenido) {
-                alert("Por favor completa ambos campos.");
-                return;
+            if(!titulo || !contenido) return alert("Completa los campos");
+
+            if (editando) {
+                // Actualizar nota existente
+                notas = notas.map(n => n.id == editId ? {...n, titulo, contenido} : n);
+                cancelarEdicion();
+            } else {
+                // Crear nueva nota
+                const nuevaNota = { id: Date.now(), titulo, contenido, fecha: new Date().toLocaleString() };
+                notas.unshift(nuevaNota);
             }
 
-            const nuevaNota = {
-                id: Date.now(),
-                titulo: titulo,
-                contenido: contenido,
-                fecha: new Date().toLocaleString()
-            };
-
-            notas.unshift(nuevaNota);
             actualizarVista();
+            limpiarCampos();
+        }
+
+        function editarNota(id) {
+            const nota = notas.find(n => n.id === id);
+            if(nota) {
+                document.getElementById('titulo').value = nota.titulo;
+                document.getElementById('contenido').value = nota.contenido;
+                document.getElementById('editId').value = nota.id;
+                
+                // Cambiar UI a modo edición
+                editando = true;
+                document.getElementById('formTitle').innerText = "Editando Entrada";
+                document.getElementById('btnGuardar').innerText = "Actualizar Cambios";
+                document.getElementById('btnCancelar').classList.remove('hidden');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        function cancelarEdicion() {
+            editando = false;
+            document.getElementById('formTitle').innerText = "Nueva Entrada";
+            document.getElementById('btnGuardar').innerText = "Guardar Nota";
+            document.getElementById('btnCancelar').classList.add('hidden');
+            limpiarCampos();
+        }
+
+        function limpiarCampos() {
             document.getElementById('titulo').value = '';
             document.getElementById('contenido').value = '';
+            document.getElementById('editId').value = '';
+        }
+
+        function eliminarNota(id) {
+            if(confirm('¿Eliminar definitivamente?')) {
+                notas = notas.filter(n => n.id !== id);
+                actualizarVista();
+            }
         }
 
         function actualizarVista() {
@@ -103,82 +145,55 @@
             const contenedor = document.getElementById('listaNotas');
             contenedor.innerHTML = '';
 
-            if(notas.length === 0) {
-                contenedor.innerHTML = `<div class="text-center py-20 text-slate-600 italic">No hay notas guardadas. Comienza agregando una o cargando un backup.</div>`;
-                return;
-            }
-
             notas.forEach(nota => {
                 contenedor.innerHTML += `
-                    <div class="card p-6 rounded-2xl shadow-sm border-l-4 border-l-blue-600">
+                    <div class="card p-6 rounded-2xl shadow-sm border-l-4 border-l-amber-600">
                         <div class="flex justify-between items-start mb-3">
-                            <h3 class="font-bold text-blue-100 text-lg">${nota.titulo}</h3>
-                            <button onclick="eliminarNota(${nota.id})" class="text-slate-600 hover:text-red-500 transition text-xl">×</button>
+                            <h3 class="font-bold text-amber-100 text-lg">${nota.titulo}</h3>
+                            <div class="flex gap-2">
+                                <button onclick="editarNota(${nota.id})" class="text-slate-500 hover:text-blue-400 p-1">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button onclick="eliminarNota(${nota.id})" class="text-slate-500 hover:text-red-500 p-1">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
                         </div>
                         <p class="text-slate-400 text-sm leading-relaxed whitespace-pre-line">${nota.contenido}</p>
-                        <div class="mt-4 pt-3 border-t border-slate-800 text-[10px] text-slate-600 font-mono uppercase tracking-widest">
-                            Registrado: ${nota.fecha}
-                        </div>
                     </div>
                 `;
             });
-        }
-
-        function eliminarNota(id) {
-            if(confirm('¿Estás seguro de eliminar esta nota técnica?')) {
-                notas = notas.filter(n => n.id !== id);
-                actualizarVista();
-            }
         }
 
         function filtrarNotas() {
             const term = document.getElementById('buscador').value.toLowerCase();
             const cards = document.querySelectorAll('#listaNotas > div');
             cards.forEach(card => {
-                const text = card.innerText.toLowerCase();
-                card.style.display = text.includes(term) ? 'block' : 'none';
+                card.style.display = card.innerText.toLowerCase().includes(term) ? 'block' : 'none';
             });
         }
 
         function exportarDatos() {
-            if(notas.length === 0) {
-                alert("No hay datos para exportar.");
-                return;
-            }
             const blob = new Blob([JSON.stringify(notas, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `SAP_Wiki_Backup_${new Date().toISOString().slice(0,10)}.json`;
+            a.download = `NubeIdeas_Backup_${new Date().toISOString().slice(0,10)}.json`;
             a.click();
-            URL.revokeObjectURL(url);
         }
 
         function importarDatos(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
             const reader = new FileReader();
             reader.onload = function(e) {
-                try {
-                    const importedData = JSON.parse(e.target.result);
-                    if(Array.isArray(importedData)) {
-                        if(confirm('¿Deseas reemplazar tus notas actuales con las del archivo?')) {
-                            notas = importedData;
-                            actualizarVista();
-                            alert("Backup cargado correctamente.");
-                        }
-                    } else {
-                        alert("El archivo no tiene el formato correcto.");
-                    }
-                } catch (err) {
-                    alert("Error al leer el archivo JSON.");
+                const data = JSON.parse(e.target.result);
+                if(confirm('¿Reemplazar datos actuales?')) {
+                    notas = data;
+                    actualizarVista();
                 }
             };
-            reader.readAsText(file);
+            reader.readAsText(event.target.files[0]);
         }
 
-        // Carga inicial al abrir la página
         actualizarVista();
     </script>
 </body>
