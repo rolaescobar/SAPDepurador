@@ -94,44 +94,55 @@ A[Inicio] --> B(Proceso SAP)" class="w-full input-field p-3 rounded-xl text-sm m
             renderNube();
         }
 
-        async function verDetalle(id) {
-            const nota = notas.find(n => n.id === id);
-            const modal = document.getElementById('modalIdea');
-            const diagCont = document.getElementById('diagramContainer');
-            const mermaidDiv = document.getElementById('mermaidDiv');
+async function verDetalle(id) {
+    const nota = notas.find(n => n.id === id);
+    const modal = document.getElementById('modalIdea');
+    const diagCont = document.getElementById('diagramContainer');
+    const mermaidDiv = document.getElementById('mermaidDiv');
+    const modalContenido = document.getElementById('modalContenido');
 
-            document.getElementById('modalTitulo').innerText = nota.titulo;
-            document.getElementById('modalContenido').innerText = nota.contenido;
-            
-            // Detectar si el contenido tiene Mermaid (ej: empieza con graph, sequenceDiagram, classDiagram)
-            const esDiagrama = /^\s*(graph|sequenceDiagram|classDiagram|stateDiagram|erDiagram|gantt|pie|flowchart)/i.test(nota.contenido);
+    document.getElementById('modalTitulo').innerText = nota.titulo;
 
-            if(esDiagrama) {
-                diagCont.classList.remove('hidden');
-                mermaidDiv.innerHTML = nota.contenido;
-                mermaidDiv.removeAttribute('data-processed'); // Forzar re-render
-                try {
-                    await mermaid.run({ nodes: [mermaidDiv] });
-                } catch (e) {
-                    mermaidDiv.innerHTML = "<span class='text-red-500'>Error en sintaxis de diagrama</span>";
-                }
-            } else {
-                diagCont.classList.add('hidden');
-            }
+    // Regex para encontrar el bloque de Mermaid (desde flowchart/graph hasta el final)
+    const mermaidRegex = /(flowchart|graph|sequenceDiagram|classDiagram|stateDiagram|erDiagram|gantt|pie)[\s\S]*/i;
+    const match = nota.contenido.match(mermaidRegex);
 
-            modal.style.display = 'flex';
-            
-            document.getElementById('btnEliminar').onclick = () => {
-                if(confirm('¿Borrar?')) { notas = notas.filter(n => n.id !== id); localStorage.setItem('sap_wiki_storage', JSON.stringify(notas)); cerrarModal(); renderNube(); }
-            };
-            document.getElementById('btnEditar').onclick = () => {
-                document.getElementById('titulo').value = nota.titulo;
-                document.getElementById('contenido').value = nota.contenido;
-                notas = notas.filter(n => n.id !== id);
-                cerrarModal();
-                renderNube();
-            };
+    if (match) {
+        diagCont.classList.remove('hidden');
+        // El diagrama es lo que encontró la Regex
+        const codigoMermaid = match[0];
+        // El texto es todo lo que está ANTES del diagrama
+        const textoLimpio = nota.contenido.replace(codigoMermaid, '').trim();
+        
+        modalContenido.innerText = textoLimpio;
+        mermaidDiv.innerHTML = codigoMermaid;
+        mermaidDiv.removeAttribute('data-processed');
+        
+        try {
+            await mermaid.run({ nodes: [mermaidDiv] });
+        } catch (e) {
+            console.error("Error Mermaid:", e);
+            mermaidDiv.innerHTML = "<span class='text-red-500 font-mono text-xs'>Sintaxis de diagrama incorrecta</span>";
         }
+    } else {
+        diagCont.classList.add('hidden');
+        modalContenido.innerText = nota.contenido;
+    }
+
+    modal.style.display = 'flex';
+    
+    // Configurar botones de eliminar y editar (se mantienen igual)
+    document.getElementById('btnEliminar').onclick = () => {
+        if(confirm('¿Borrar?')) { notas = notas.filter(n => n.id !== id); localStorage.setItem('sap_wiki_storage', JSON.stringify(notas)); cerrarModal(); renderNube(); }
+    };
+    document.getElementById('btnEditar').onclick = () => {
+        document.getElementById('titulo').value = nota.titulo;
+        document.getElementById('contenido').value = nota.contenido;
+        notas = notas.filter(n => n.id !== id);
+        cerrarModal();
+        renderNube();
+    };
+}
 
         function renderNube(filtro = "") {
             const canvas = document.getElementById('nubeCanvas');
