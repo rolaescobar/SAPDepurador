@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Validador de Roles RLS - Dark Mode</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        .bg-sap-dark { background-color: #0d1b2a; }
+        .bg-sap-header { background-color: #1b263b; }
+        .text-sap-accent { color: #415a77; }
+    </style>
+</head>
+<body class="bg-gray-900 p-8 text-gray-100">
+    <div class="max-w-6xl mx-auto bg-sap-dark rounded-xl shadow-2xl border border-gray-700 overflow-hidden">
+        <header class="bg-sap-header p-8 border-b border-gray-700">
+            <h1 class="text-3xl font-bold text-white">Validador de Roles RLS</h1>
+            <p class="text-gray-400">Control de acceso y auditoría de perfiles - Entorno Seguro</p>
+        </header>
+
+        <div class="p-8 grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="space-y-4">
+                <label class="block text-sm font-bold uppercase tracking-wider text-gray-400">Mandante:</label>
+                <select id="mandante" class="w-full p-3 bg-gray-800 border border-gray-600 rounded text-white focus:ring-2 focus:ring-blue-500">
+                    <option value="S4P">S4P</option>
+                    <option value="S4D">S4D</option>
+                    <option value="S4Q">S4Q</option>
+                    <option value="SAQ">SAQ</option>
+                    <option value="SAD">SAD</option>
+                    <option value="CNP">CNP</option>
+                    <option value="FOP">FOP</option>
+                    <option value="EWP">EWP</option>
+                    <option value="PTM">PTM</option>
+                    <option value="FOC">FOC</option>
+                    <option value="FOV">FOV</option>
+                    <option value="FOQ">FOQ</option>
+                    <option value="EWC">EWC</option>
+                    <option value="DPP">DPP</option>
+                </select>
+
+                <label class="block text-sm font-bold uppercase tracking-wider text-gray-400 pt-4">Cargar Archivo:</label>
+                <input type="file" id="upload" class="w-full p-2 bg-gray-800 border border-gray-600 rounded cursor-pointer file:bg-blue-600 file:text-white file:border-0 file:px-4 file:py-2 file:rounded hover:file:bg-blue-700">
+            </div>
+
+            <div class="md:col-span-2">
+                <label class="block text-sm font-bold uppercase tracking-wider text-gray-400 mb-2">Roles Solicitados (uno por línea):</label>
+                <textarea id="rolesArea" class="w-full h-48 p-4 bg-gray-800 border border-gray-600 rounded text-blue-300 font-mono focus:ring-2 focus:ring-blue-500" placeholder="Pega aquí los roles..."></textarea>
+            </div>
+        </div>
+
+        <div class="px-8 pb-8 flex gap-4">
+            <button onclick="procesar()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded font-bold transition duration-200 shadow-lg">Validar Roles</button>
+            <button onclick="exportarExcel()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-4 rounded font-bold transition duration-200 shadow-lg">Descargar Excel (.xlsx)</button>
+        </div>
+
+        <div id="resultadoContainer" class="p-8 hidden overflow-x-auto">
+            <table class="w-full text-sm text-left border border-gray-700">
+                <thead class="bg-gray-800 text-gray-300 uppercase text-xs">
+                    <tr>
+                        <th class="p-3 border-b border-gray-700">Mandante</th>
+                        <th class="p-3 border-b border-gray-700">Usuario</th>
+                        <th class="p-3 border-b border-gray-700">Nombre Completo</th>
+                        <th class="p-3 border-b border-gray-700">Rol Solicitado</th>
+                        <th class="p-3 border-b border-gray-700">Estado</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaBody" class="divide-y divide-gray-700"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        let datosProduccion = [];
+        document.getElementById('upload').addEventListener('change', (e) => {
+            const reader = new FileReader();
+            reader.readAsArrayBuffer(e.target.files[0]);
+            reader.onload = (e) => {
+                const wb = XLSX.read(e.target.result, {type: 'array'});
+                datosProduccion = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+                alert("Archivo cargado con " + datosProduccion.length + " registros.");
+            };
+        });
+
+        function procesar() {
+            const mandante = document.getElementById('mandante').value;
+            const roles = document.getElementById('rolesArea').value.split('\n').filter(r => r.trim() !== "");
+            const tbody = document.getElementById('tablaBody');
+            tbody.innerHTML = "";
+
+            roles.forEach(rolSolicitado => {
+                const match = datosProduccion.find(r => String(r.Rol).trim() === rolSolicitado.trim());
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-gray-800 transition";
+                tr.innerHTML = `
+                    <td class="p-3">${mandante}</td>
+                    <td class="p-3">${match ? match.Usuario : '-'}</td>
+                    <td class="p-3">${match ? match['Nombre completo'] : '-'}</td>
+                    <td class="p-3 font-mono text-blue-400">${rolSolicitado.trim()}</td>
+                    <td class="p-3 font-bold ${match ? 'text-emerald-400' : 'text-red-400'}">
+                        ${match ? 'APLICADO' : 'NO APLICADO'}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            document.getElementById('resultadoContainer').classList.remove('hidden');
+        }
+
+        function exportarExcel() {
+            const wb = XLSX.utils.table_to_book(document.querySelector('table'));
+            XLSX.writeFile(wb, "Reporte_Auditoria_Roles.xlsx");
+        }
+    </script>
+</body>
+</html>
