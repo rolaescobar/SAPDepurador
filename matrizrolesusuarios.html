@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Matriz de Roles vs Usuarios - Navy</title>
+    <title>Matriz de Roles vs Usuarios - Full Audit</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         body { font-family: 'Segoe UI', sans-serif; margin: 0; background-color: #0b1320; color: #d1d9e6; }
@@ -14,6 +14,7 @@
         tr:nth-child(even) { background-color: #122033; }
         
         .naranja { background-color: #d97706 !important; color: #ffffff; font-weight: bold; }
+        .rosa { background-color: #db2777 !important; color: #ffffff; font-weight: bold; }
         
         input[type="file"] { background: #16263d; padding: 8px; border-radius: 4px; color: white; border: 1px solid #2a4a75; }
         .button { padding: 12px 25px; margin-right: 10px; cursor: pointer; background: #2a4a75; color: white; border: none; border-radius: 4px; font-weight: bold; }
@@ -23,7 +24,7 @@
 </head>
 <body>
     <div class="container">
-        <h2>Matriz de Roles vs Usuarios (Dark Navy Mode)</h2>
+        <h2>Matriz de Roles vs Usuarios (Full Audit Mode)</h2>
         <p>1. Cargar DBROLES: <input type="file" id="fileRoles" accept=".xlsx" /></p>
         <p>2. Cargar RLUSUARIOS: <input type="file" id="fileUsuarios" accept=".xlsx" /></p>
         <button class="button" onclick="procesarCruce()">Generar Matriz</button>
@@ -33,7 +34,8 @@
 
     <script>
         let matrizFinal = [];
-        let rolesParaMarcar = new Set();
+        let rolesParaMarcarNaranja = new Set();
+        let rolesParaMarcarRosa = new Set();
 
         async function procesarCruce() {
             const fRoles = document.getElementById('fileRoles').files[0];
@@ -43,8 +45,14 @@
             const rolesData = await leerExcel(fRoles);
             const usersData = await leerExcel(fUsers);
 
+            // 1. Identificar repetidos y roles con visualización
+            let conteoRoles = {};
             let mapaBase = {};
             rolesData.forEach(r => {
+                // Conteo para duplicados
+                conteoRoles[r.ROL] = (conteoRoles[r.ROL] || 0) + 1;
+                
+                // Análisis para naranja
                 let desc = r.DESCRIPCION || "";
                 let esVisual = /visuali[sz]a/i.test(desc);
                 let nombreBase = desc.replace(/\(.*\)/i, "").trim();
@@ -52,16 +60,23 @@
                 if (esVisual) mapaBase[nombreBase].tieneVisual = true;
             });
 
-            rolesParaMarcar = new Set();
+            rolesParaMarcarNaranja = new Set();
+            rolesParaMarcarRosa = new Set();
+
             rolesData.forEach(r => {
+                // Si está repetido (conteo > 1)
+                if (conteoRoles[r.ROL] > 1) rolesParaMarcarRosa.add(r.ROL);
+                
+                // Si es ejecución y tiene visual
                 let desc = r.DESCRIPCION || "";
                 let esVisual = /visuali[sz]a/i.test(desc);
                 let nombreBase = desc.replace(/\(.*\)/i, "").trim();
                 if (!esVisual && mapaBase[nombreBase].tieneVisual) {
-                    rolesParaMarcar.add(r.ROL);
+                    rolesParaMarcarNaranja.add(r.ROL);
                 }
             });
 
+            // Resto de la lógica...
             let relacionUsuarioRol = {};
             usersData.forEach(u => { relacionUsuarioRol[`${u.Usuario}_${u.Rol}`] = true; });
 
@@ -99,10 +114,12 @@
             html += "<th>OBSERVACION</th></tr>";
             
             data.forEach(r => {
-                let clase = rolesParaMarcar.has(r.ROL) ? 'class="naranja"' : '';
+                let clase = rolesParaMarcarNaranja.has(r.ROL) ? 'class="naranja"' : (rolesParaMarcarRosa.has(r.ROL) ? 'class="rosa"' : '');
+                let obs = rolesParaMarcarNaranja.has(r.ROL) ? "REVISAR: Existe visual" : (rolesParaMarcarRosa.has(r.ROL) ? "ERROR: ROL DUPLICADO" : "OK");
+                
                 html += `<tr><td ${clase}>${r.ROL}</td><td ${clase}>${r.DESCRIPCION}</td>`;
                 usuarios.forEach(u => html += `<td>${r[u]}</td>`);
-                html += `<td ${clase}>${rolesParaMarcar.has(r.ROL) ? "REVISAR: Existe visual" : "OK"}</td></tr>`;
+                html += `<td ${clase}>${obs}</td></tr>`;
             });
             html += "</table>";
             document.getElementById('resultado').innerHTML = html;
@@ -110,17 +127,15 @@
 
         function exportarExcel() {
             if (matrizFinal.length === 0) return alert("Genera la matriz primero");
-
             let datosParaExcel = matrizFinal.map(fila => {
                 let nuevaFila = { ...fila };
-                nuevaFila["OBSERVACION"] = rolesParaMarcar.has(fila.ROL) ? "REVISAR: Existe visual" : "OK";
+                nuevaFila["OBSERVACION"] = rolesParaMarcarNaranja.has(fila.ROL) ? "REVISAR: Existe visual" : (rolesParaMarcarRosa.has(fila.ROL) ? "ERROR: ROL DUPLICADO" : "OK");
                 return nuevaFila;
             });
-
             const ws = XLSX.utils.json_to_sheet(datosParaExcel);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "MatrizUsuarios");
-            XLSX.writeFile(wb, "Matriz_Roles_Usuarios_Final.xlsx");
+            XLSX.writeFile(wb, "Matriz_Roles_Usuarios_Auditado.xlsx");
         }
     </script>
 </body>
