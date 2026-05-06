@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Validador de Conflictos SAP - Auditoría Pro</title>
+    <style>
+        body { background-color: #0a192f; color: #e6f1ff; font-family: 'Segoe UI', sans-serif; padding: 20px; }
+        .container { max-width: 1000px; margin: auto; background: #112240; padding: 25px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        h2 { color: #64ffda; border-bottom: 2px solid #233554; padding-bottom: 10px; }
+        .upload-section { padding: 15px; border: 1px dashed #64ffda; margin-bottom: 20px; }
+        button { background: #64ffda; color: #0a192f; border: none; padding: 12px 20px; cursor: pointer; font-weight: bold; margin: 5px; border-radius: 4px; }
+        .btn-export { background: #3b82f6; color: white; font-size: 12px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; background: #172a45; font-size: 13px; }
+        th, td { border: 1px solid #233554; padding: 8px; text-align: left; }
+        th { background-color: #233554; color: #64ffda; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>Análisis de Conflictos SAP</h2>
+    <div class="upload-section">
+        <p>1. DBTRANSACCIONES.xlsx: <input type="file" id="dbTrans" accept=".xlsx"></p>
+        <p>2. Archivo de Conflictos (ej. FBV0.xlsx): <input type="file" id="fileConflict" accept=".xlsx"></p>
+        <p>3. RLUSUARIOS.xlsx: <input type="file" id="rlUsers" accept=".xlsx"></p>
+    </div>
+    <button onclick="procesarConflictos()">Ejecutar Análisis</button>
+    <div id="contenedorResultados"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+    let dbTrans = [], fileConflict = [], rlUsers = [], nombreArchivo = "";
+    let cargados = { db: false, conflict: false, users: false };
+
+    document.getElementById('dbTrans').addEventListener('change', (e) => cargar(e, 'db'));
+    document.getElementById('fileConflict').addEventListener('change', (e) => {
+        nombreArchivo = e.target.files[0].name.replace('.xlsx', '');
+        cargar(e, 'conflict');
+    });
+    document.getElementById('rlUsers').addEventListener('change', (e) => cargar(e, 'users'));
+
+    function cargar(e, tipo) {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+            const data = new Uint8Array(evt.target.result);
+            const wb = XLSX.read(data, {type: 'array'});
+            const json = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+            if(tipo === 'db') { dbTrans = json; cargados.db = true; }
+            if(tipo === 'conflict') { fileConflict = json; cargados.conflict = true; }
+            if(tipo === 'users') { rlUsers = json; cargados.users = true; }
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    function procesarConflictos() {
+        if (!cargados.db || !cargados.conflict || !cargados.users) { alert("Carga los 3 archivos."); return; }
+
+        const colTrans = Object.keys(fileConflict[0]).find(k => k.toLowerCase().includes('transacc'));
+        const transList = [...new Set(fileConflict.map(r => String(r[colTrans] || "").trim().toUpperCase()))];
+        
+        renderSeccion('Transacciones que entran en conflicto con: ' + nombreArchivo, transList.map(t => ({Transaccion: t})));
+        
+        const rolesAsociados = dbTrans.filter(r => transList.includes(String(r.TRANSACCION || "").trim().toUpperCase()))
+            .map(r => ({ Rol: String(r["ROL COMPUESTO"] || "").trim(), Transaccion: r.TRANSACCION }));
+        renderSeccion('Roles Compuestos vinculados', rolesAsociados);
+
+        const listaRoles = [...new Set(rolesAsociados.map(r => r.Rol))];
+        const columnasExcluidas = ['Tipo rol', 'Tipo de asignación', 'Asignación (usuario de referencia)', 'Fecha de inicio', 'Fecha fin'];
+        
+        const reporte = rlUsers.filter(u => listaRoles.includes(String(u.Rol || "").trim()))
+            .map(u => {
+                let nuevoU = {...u};
+                columnasExcluidas.forEach(col => delete nuevoU[col]);
+                return nuevoU;
+            });
+        
+        renderSeccion('Usuarios detectados con riesgo (GRC)', reporte);
+    }
+
+    function renderSeccion(titulo, data) {
+        const div = document.createElement('div');
+        div.innerHTML = `<h3>${titulo}</h3>`;
+        if(data.length > 0) {
+            const btn = document.createElement('button');
+            btn.className = 'btn-export';
+            btn.innerText = 'Descargar a Excel';
+            btn.onclick = () => exportarExcel(data, titulo);
+            div.appendChild(btn);
+            
+            let table = document.createElement('table');
+            let head = table.insertRow();
+            Object.keys(data[0]).forEach(k => head.insertCell().innerHTML = `<th>${k}</th>`);
+            data.forEach(r => {
+                let row = table.insertRow();
+                Object.values(r).forEach(v => row.insertCell().innerText = v);
+            });
+            div.appendChild(table);
+        } else {
+            div.innerHTML += '<p>Sin resultados.</p>';
+        }
+        document.getElementById('contenedorResultados').appendChild(div);
+    }
+
+    function exportarExcel(data, nombre) {
+        const ws = XLSX.utils.json_to_sheet(data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Resultados");
+        XLSX.writeFile(wb, nombre + ".xlsx");
+    }
+</script>
+</body>
+</html>
