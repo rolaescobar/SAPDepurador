@@ -26,6 +26,8 @@
         .card-validator:hover { border-color: #10b981; box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.3); }
         .card-depurador:hover { border-color: #f59e0b; box-shadow: 0 10px 25px -5px rgba(245, 158, 11, 0.3); }
         .card-matriz:hover { border-color: #3b82f6; box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.3); }
+        .card-limpiador:hover { border-color: #8b5cf6; box-shadow: 0 10px 25px -5px rgba(139, 92, 246, 0.3); }
+        .card-nube:hover { border-color: #ec4899; box-shadow: 0 10px 25px -5px rgba(236, 72, 153, 0.3); }
 
         .icon-box {
             width: 64px; height: 64px; border-radius: 9999px;
@@ -44,72 +46,62 @@
     </header>
 
     <main class="flex-grow container mx-auto px-4 pb-20">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             
             <a href="depuradorderoles.html" class="glass-card card-depurador p-8 rounded-2xl flex flex-col items-center text-center">
-                <div class="icon-box bg-amber-500/20 text-amber-400">
-                    <i class="fas fa-filter"></i>
-                </div>
+                <div class="icon-box bg-amber-500/20 text-amber-400"><i class="fas fa-filter"></i></div>
                 <h2 class="text-xl font-semibold text-white mb-2">Depurador de DBROLES</h2>
                 <p class="text-slate-400 text-sm mb-6">Limpia y valida duplicados y roles visualización vs ejecución.</p>
-                <span class="mt-auto inline-flex items-center text-amber-400 font-medium group">
-                    Abrir herramienta <i class="fas fa-arrow-right ml-2 text-xs transition-transform group-hover:translate-x-1"></i>
-                </span>
+                <span class="mt-auto inline-flex items-center text-amber-400 font-medium">Abrir <i class="fas fa-arrow-right ml-2 text-xs"></i></span>
             </a>
 
             <a href="matrizrolesusuarios.html" class="glass-card card-matriz p-8 rounded-2xl flex flex-col items-center text-center">
-                <div class="icon-box bg-blue-500/20 text-blue-400">
-                    <i class="fas fa-table-cells"></i>
-                </div>
+                <div class="icon-box bg-blue-500/20 text-blue-400"><i class="fas fa-table-cells"></i></div>
                 <h2 class="text-xl font-semibold text-white mb-2">Matriz Roles vs Usuarios</h2>
                 <p class="text-slate-400 text-sm mb-6">Cruce masivo de asignación de roles por usuario y centro.</p>
-                <span class="mt-auto inline-flex items-center text-blue-400 font-medium group">
-                    Abrir herramienta <i class="fas fa-arrow-right ml-2 text-xs transition-transform group-hover:translate-x-1"></i>
-                </span>
+                <span class="mt-auto inline-flex items-center text-blue-400 font-medium">Abrir <i class="fas fa-arrow-right ml-2 text-xs"></i></span>
             </a>
 
             <a href="validadorderoles.html" class="glass-card card-validator p-8 rounded-2xl flex flex-col items-center text-center">
-                <div class="icon-box bg-emerald-500/20 text-emerald-400">
-                    <i class="fas fa-check-double"></i>
-                </div>
+                <div class="icon-box bg-emerald-500/20 text-emerald-400"><i class="fas fa-check-double"></i></div>
                 <h2 class="text-xl font-semibold text-white mb-2">Validador de Roles</h2>
                 <p class="text-slate-400 text-sm mb-6">Valida roles solicitados vs. roles en producción por mandante.</p>
-                <span class="mt-auto inline-flex items-center text-emerald-400 font-medium group">
-                    Abrir herramienta <i class="fas fa-arrow-right ml-2 text-xs transition-transform group-hover:translate-x-1"></i>
-                </span>
+                <span class="mt-auto inline-flex items-center text-emerald-400 font-medium">Abrir <i class="fas fa-arrow-right ml-2 text-xs"></i></span>
             </a>
 
             <a href="depuradordeaccesos.html" class="glass-card p-8 rounded-2xl flex flex-col items-center text-center">
-                <div class="icon-box bg-blue-500/20 text-blue-400">
-                    <i class="fas fa-user-shield"></i>
-                </div>
+                <div class="icon-box bg-blue-500/20 text-blue-400"><i class="fas fa-user-shield"></i></div>
                 <h2 class="text-xl font-semibold text-white mb-2">Depurador de Accesos</h2>
                 <p class="text-slate-400 text-sm mb-6">Analiza y depura perfiles de usuario, roles y autorizaciones.</p>
-                <span class="mt-auto inline-flex items-center text-blue-400 font-medium group">
-                    Abrir herramienta <i class="fas fa-arrow-right ml-2 text-xs transition-transform group-hover:translate-x-1"></i>
-                </span>
+                <span class="mt-auto inline-flex items-center text-blue-400 font-medium">Abrir <i class="fas fa-arrow-right ml-2 text-xs"></i></span>
             </a>
 
             <a href="analisisderolesgrc.html" class="glass-card card-grc p-8 rounded-2xl flex flex-col items-center text-center">
-                <div class="icon-box bg-red-500/20 text-red-400">
-                    <i class="fas fa-file-invoice"></i>
-                </div>
+                <div class="icon-box bg-red-500/20 text-red-400"><i class="fas fa-file-invoice"></i></div>
                 <h2 class="text-xl font-semibold text-white mb-2">Análisis de Riesgos GRC</h2>
                 <p class="text-slate-400 text-sm mb-6">Cruce de GRC con DB para roles Monofuncionales y Multifuncionales.</p>
-                <span class="mt-auto inline-flex items-center text-red-400 font-medium group">
-                    Abrir herramienta <i class="fas fa-arrow-right ml-2 text-xs transition-transform group-hover:translate-x-1"></i>
-                </span>
+                <span class="mt-auto inline-flex items-center text-red-400 font-medium">Abrir <i class="fas fa-arrow-right ml-2 text-xs"></i></span>
             </a>
 
             <a href="exploradorderoles.html" class="glass-card card-explorer p-8 rounded-2xl flex flex-col items-center text-center">
-                <div class="icon-box bg-purple-500/20 text-purple-400">
-                    <i class="fas fa-sitemap"></i>
-                </div>
+                <div class="icon-box bg-purple-500/20 text-purple-400"><i class="fas fa-sitemap"></i></div>
                 <h2 class="text-xl font-semibold text-white mb-2">Explorador de Roles</h2>
                 <p class="text-slate-400 text-sm mb-6">Busca T-Codes dentro de roles y desglosa contenido técnico.</p>
-                <span class="mt-auto inline-flex items-center text-purple-400 font-medium group">
-                    Abrir herramienta <i class="fas fa-arrow-right ml-2 text-xs transition-transform group-hover:translate-x-1"></i>
-                </span>
+                <span class="mt-auto inline-flex items-center text-purple-400 font-medium">Abrir <i class="fas fa-arrow-right ml-2 text-xs"></i></span>
+            </a>
+
+            <a href="limpiadorEspacios.html" class="glass-card card-limpiador p-8 rounded-2xl flex flex-col items-center text-center">
+                <div class="icon-box bg-violet-500/20 text-violet-400"><i class="fas fa-eraser"></i></div>
+                <h2 class="text-xl font-semibold text-white mb-2">Limpiador Espacios</h2>
+                <p class="text-slate-400 text-sm mb-6">Herramienta para optimizar y limpiar espacios en tablas o reportes.</p>
+                <span class="mt-auto inline-flex items-center text-violet-400 font-medium">Abrir <i class="fas fa-arrow-right ml-2 text-xs"></i></span>
+            </a>
+
+            <a href="nubedeideas.html" class="glass-card card-nube p-8 rounded-2xl flex flex-col items-center text-center">
+                <div class="icon-box bg-pink-500/20 text-pink-400"><i class="fas fa-cloud-bolt"></i></div>
+                <h2 class="text-xl font-semibold text-white mb-2">Nube de Ideas</h2>
+                <p class="text-slate-400 text-sm mb-6">Espacio colaborativo para gestión de mejoras y nuevas ideas SAP.</p>
+                <span class="mt-auto inline-flex items-center text-pink-400 font-medium">Abrir <i class="fas fa-arrow-right ml-2 text-xs"></i></span>
             </a>
 
         </div>
