@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Validador de Conflictos SAP - Auditoría Pro</title>
+    <title>Validador de Conflictos SAP - Final</title>
     <style>
         body { background-color: #0a192f; color: #e6f1ff; font-family: 'Segoe UI', sans-serif; padding: 20px; }
         .container { max-width: 1000px; margin: auto; background: #112240; padding: 25px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
@@ -20,7 +20,7 @@
     <h2>Análisis de Conflictos SAP</h2>
     <div class="upload-section">
         <p>1. DBTRANSACCIONES.xlsx: <input type="file" id="dbTrans" accept=".xlsx"></p>
-        <p>2. Archivo de Conflictos (ej. FBV0.xlsx): <input type="file" id="fileConflict" accept=".xlsx"></p>
+        <p>2. Archivo de Conflictos: <input type="file" id="fileConflict" accept=".xlsx"></p>
         <p>3. RLUSUARIOS.xlsx: <input type="file" id="rlUsers" accept=".xlsx"></p>
     </div>
     <button onclick="procesarConflictos()">Ejecutar Análisis</button>
@@ -61,19 +61,23 @@
         
         renderSeccion('Transacciones que entran en conflicto con: ' + nombreArchivo, transList.map(t => ({Transaccion: t})));
         
+        // Mapeo con transacciones incluidas
         const rolesAsociados = dbTrans.filter(r => transList.includes(String(r.TRANSACCION || "").trim().toUpperCase()))
             .map(r => ({ Rol: String(r["ROL COMPUESTO"] || "").trim(), Transaccion: r.TRANSACCION }));
         renderSeccion('Roles Compuestos vinculados', rolesAsociados);
 
-        const listaRoles = [...new Set(rolesAsociados.map(r => r.Rol))];
-        const columnasExcluidas = ['Tipo rol', 'Tipo de asignación', 'Asignación (usuario de referencia)', 'Fecha de inicio', 'Fecha fin'];
-        
-        const reporte = rlUsers.filter(u => listaRoles.includes(String(u.Rol || "").trim()))
-            .map(u => {
+        // Reporte Final con columna Transaccion integrada
+        const reporte = rlUsers.flatMap(u => {
+            const match = rolesAsociados.find(ra => ra.Rol === String(u.Rol || "").trim());
+            if (match) {
                 let nuevoU = {...u};
+                const columnasExcluidas = ['Tipo rol', 'Tipo de asignación', 'Asignación (usuario de referencia)', 'Fecha de inicio', 'Fecha fin'];
                 columnasExcluidas.forEach(col => delete nuevoU[col]);
-                return nuevoU;
-            });
+                nuevoU['Transaccion'] = match.Transaccion; // Agregamos la transacción vinculada
+                return [nuevoU];
+            }
+            return [];
+        });
         
         renderSeccion('Usuarios detectados con riesgo (GRC)', reporte);
     }
@@ -106,7 +110,7 @@
         const ws = XLSX.utils.json_to_sheet(data);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Resultados");
-        XLSX.writeFile(wb, nombre + ".xlsx");
+        XLSX.writeFile(wb, nombre.replace(/ /g, '_') + ".xlsx");
     }
 </script>
 </body>
