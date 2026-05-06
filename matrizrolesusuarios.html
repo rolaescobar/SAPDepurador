@@ -45,16 +45,20 @@
             const rolesData = await leerExcel(fRoles);
             const usersData = await leerExcel(fUsers);
 
-            // Estructura para agrupar por tipo y descripción
             let grupos = {}; 
+
+            // Función para limpiar la descripción y obtener la base
+            const obtenerBase = (desc) => {
+                // Regex mejorada: detecta visuali(z/s)ar o visuali(z/s)ación
+                return (desc || "").replace(/\s*\((visuali[sz]a(r|ción))\)/gi, "").trim().toLowerCase();
+            };
 
             rolesData.forEach(r => {
                 let desc = r.DESCRIPCION || "";
                 let esVisual = /visuali[sz]a/i.test(desc);
-                let nombreBase = desc.replace(/\(visuali[sz]ar\)/i, "").trim().toLowerCase();
+                let nombreBase = obtenerBase(desc);
                 
                 let key = `${nombreBase}_${esVisual ? 'VISUAL' : 'EJECUCION'}`;
-                
                 if (!grupos[key]) grupos[key] = [];
                 grupos[key].push(r.ROL);
             });
@@ -65,7 +69,7 @@
             rolesData.forEach(r => {
                 let desc = r.DESCRIPCION || "";
                 let esVisual = /visuali[sz]a/i.test(desc);
-                let nombreBase = desc.replace(/\(visuali[sz]ar\)/i, "").trim().toLowerCase();
+                let nombreBase = obtenerBase(desc);
                 
                 // 1. Detección Duplicados (Mismo tipo, misma base)
                 let key = `${nombreBase}_${esVisual ? 'VISUAL' : 'EJECUCION'}`;
@@ -80,7 +84,6 @@
                 }
             });
 
-            // ... (El resto de la lógica de usuarios sigue igual)
             let relacionUsuarioRol = {};
             usersData.forEach(u => { relacionUsuarioRol[`${u.Usuario}_${u.Rol}`] = true; });
             let usuariosUnicos = {};
@@ -98,7 +101,6 @@
             renderTable(matrizFinal, listaUsuarios);
         }
 
-        // ... (Funciones leerExcel, renderTable y exportarExcel se mantienen igual)
         function leerExcel(file) {
             return new Promise(resolve => {
                 const reader = new FileReader();
