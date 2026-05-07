@@ -2,173 +2,227 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Matriz de Roles Pro - Auditoría SAP</title>
+    <title>Audit Pro - Matriz de Roles vs Usuarios</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background-color: #0b1320; color: #d1d9e6; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: #0b1320; color: #d1d9e6; }
         .container { padding: 30px; }
-        h2 { color: #89a1c4; border-bottom: 2px solid #1a2a40; padding-bottom: 10px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; background-color: #0f1c2e; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        h2 { color: #89a1c4; border-bottom: 2px solid #1a2a40; padding-bottom: 10px; margin-bottom: 20px; }
+        
+        .upload-card { background: #16263d; padding: 20px; border-radius: 8px; border: 1px solid #2a4a75; margin-bottom: 25px; }
+        .upload-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #a5b4fc; }
+        
+        table { width: 100%; border-collapse: collapse; background-color: #0f1c2e; box-shadow: 0 4px 10px rgba(0,0,0,0.3); font-size: 13px; }
         th, td { border: 1px solid #1a2a40; padding: 10px; text-align: center; white-space: nowrap; }
-        th { background-color: #16263d; color: #ffffff; font-size: 12px; position: sticky; top: 0; }
+        th { background-color: #1e3a5f; color: #ffffff; position: sticky; top: 0; z-index: 10; }
         tr:nth-child(even) { background-color: #122033; }
+        tr:hover { background-color: #1a2a40; }
+
+        /* Estilos de Auditoría */
         .naranja { background-color: #d97706 !important; color: #ffffff !important; }
         .rosa { background-color: #db2777 !important; color: #ffffff !important; }
-        input[type="file"] { background: #16263d; padding: 8px; border-radius: 4px; color: white; border: 1px solid #2a4a75; }
-        .button { padding: 12px 25px; cursor: pointer; background: #2a4a75; color: white; border: none; border-radius: 4px; font-weight: bold; margin-top: 10px; }
-        .button:hover { background: #3d6a9e; }
-        .btn-excel { background: #2a6363; margin-left: 10px; }
+        .azul-lectura { color: #60a5fa; font-style: italic; }
+
+        .button { padding: 12px 25px; cursor: pointer; background: #2a4a75; color: white; border: none; border-radius: 4px; font-weight: bold; transition: 0.3s; }
+        .button:hover { background: #3d6a9e; border-color: #60a5fa; }
+        .btn-excel { background: #065f46; margin-left: 10px; }
+        .btn-excel:hover { background: #059669; }
+
+        input[type="file"] { background: #0b1320; padding: 5px; border-radius: 4px; color: #94a3b8; border: 1px solid #2a4a75; cursor: pointer; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h2>Matriz de Roles vs Usuarios (Columnas de Auditoría al Final)</h2>
-        <div style="background: #16263d; padding: 15px; border-radius: 8px;">
-            <p>1. Cargar DBROLES: <input type="file" id="fileRoles" accept=".xlsx" /></p>
-            <p>2. Cargar RLUSUARIOS: <input type="file" id="fileUsuarios" accept=".xlsx" /></p>
-            <button class="button" onclick="procesarCruce()">Generar Matriz</button>
-            <button class="button btn-excel" onclick="exportarExcel()">Descargar Excel</button>
+
+<div class="container">
+    <h2>Matriz de Roles vs Usuarios - Auditoría de Seguridad SAP</h2>
+    
+    <div class="upload-card">
+        <div class="upload-group">
+            <label>1. Catálogo Maestro (DBROLES.xlsx) - Debe tener columnas: ROL, DESCRIPCION</label>
+            <input type="file" id="fileRoles" accept=".xlsx" />
         </div>
-        <div id="resultado" style="overflow-x: auto; margin-top: 20px;"></div>
+        <div class="upload-group">
+            <label>2. Asignaciones Actuales (RLUSUARIOS.xlsx) - Debe tener columnas: Usuario, Nombre completo, Rol</label>
+            <input type="file" id="fileUsuarios" accept=".xlsx" />
+        </div>
+        <button class="button" onclick="procesarCruce()">GENERAR MATRIZ DE AUDITORÍA</button>
+        <button class="button btn-excel" onclick="exportarExcel()">DESCARGAR REPORTE EXCEL</button>
     </div>
 
-    <script>
-        let matrizFinal = [];
-        let rolesAudit = {};
-        let listaUsuariosHeaders = [];
+    <div id="resultado" style="overflow: auto; max-height: 600px; border-radius: 8px;">
+        </div>
+</div>
 
-        function normalizarTexto(txt) {
-            if (!txt) return "";
-            return txt.toString()
-                .replace(/\s+/g, ' ')
-                .replace(/-\s+/g, '-')
-                .replace(/\s+-/g, '-')
-                .replace(/,\s+/g, ',')
-                .trim()
-                .toLowerCase();
-        }
+<script>
+    let matrizFinal = [];
+    let rolesAudit = {};
+    let listaUsuariosHeaders = [];
 
-        function obtenerBase(desc) {
-            let limpia = normalizarTexto(desc);
-            return limpia.replace(/\s*\(?visuali[sz]a(r|ción)\)?/gi, "").trim();
-        }
+    // Función de normalización "Perfeccionada"
+    function normalizarTexto(txt) {
+        if (!txt) return "";
+        return txt.toString()
+            .replace(/\s+/g, ' ')           // Quita espacios múltiples
+            .replace(/-\s+/g, '-')          // Corrige "C- 111" a "C-111"
+            .replace(/\s+-/g, '-')          // Corrige "C -111" a "C-111"
+            .replace(/,\s+/g, ',')          // Quita espacios en listas de centros
+            .trim()
+            .toLowerCase();
+    }
 
-        async function procesarCruce() {
-            const fRoles = document.getElementById('fileRoles').files[0];
-            const fUsers = document.getElementById('fileUsuarios').files[0];
-            if (!fRoles || !fUsers) return alert("Carga ambos archivos");
+    // Obtiene la base quitando términos de visualización
+    function obtenerBase(desc) {
+        let limpia = normalizarTexto(desc);
+        // Elimina (visualizar), (visualizacion), visualizar, etc.
+        return limpia.replace(/\s*\(?visuali[sz]a(r|ción)\)?/gi, "").trim();
+    }
 
-            const rolesData = await leerExcel(fRoles);
-            const usersData = await leerExcel(fUsers);
+    async function procesarCruce() {
+        const fRoles = document.getElementById('fileRoles').files[0];
+        const fUsers = document.getElementById('fileUsuarios').files[0];
+        
+        if (!fRoles || !fUsers) return alert("Por favor, cargue ambos archivos para continuar.");
 
-            let grupos = {}; 
-            rolesAudit = {};
+        const rolesData = await leerExcel(fRoles);
+        const usersData = await leerExcel(fUsers);
 
-            rolesData.forEach(r => {
-                let desc = r.DESCRIPCION || "";
-                let esVisual = /visuali[sz]a/i.test(desc);
-                let base = obtenerBase(desc);
-                let tipo = esVisual ? 'VISUAL' : 'EJECUCION';
-                if (!grupos[base]) grupos[base] = { VISUAL: [], EJECUCION: [] };
-                grupos[base][tipo].push(r.ROL);
-            });
+        let grupos = {}; 
+        rolesAudit = {};
 
-            rolesData.forEach(r => {
-                let desc = r.DESCRIPCION || "";
-                let base = obtenerBase(desc);
-                let esVisual = /visuali[sz]a/i.test(desc);
-                let obs = "OK", color = "", duplicado = "NO";
-
-                if (grupos[base][esVisual ? 'VISUAL' : 'EJECUCION'].length > 1) {
-                    duplicado = "SI";
-                    color = "rosa";
-                }
-                if (!esVisual && grupos[base].VISUAL.length > 0) {
-                    obs = "Revisar: Existe visual (" + grupos[base].VISUAL.join(", ") + ")";
-                    color = "naranja";
-                }
-                rolesAudit[r.ROL] = { obs, duplicado, color };
-            });
-
-            let relacionUsuarioRol = {};
-            let usuariosUnicos = {};
-            usersData.forEach(u => {
-                let uID = u.Usuario ? u.Usuario.toString().trim() : "N/A";
-                relacionUsuarioRol[`${uID}_${u.Rol}`] = true;
-                usuariosUnicos[uID] = u['Nombre completo'] || "Sin Nombre";
-            });
-
-            listaUsuariosHeaders = Object.keys(usuariosUnicos).map(id => `${id} - ${usuariosUnicos[id]}`);
-
-            matrizFinal = rolesData.map(r => {
-                let fila = { ROL: r.ROL, DESCRIPCION: r.DESCRIPCION };
-                Object.keys(usuariosUnicos).forEach(id => {
-                    fila[`${id} - ${usuariosUnicos[id]}`] = relacionUsuarioRol[`${id}_${r.ROL}`] ? 1 : 0;
-                });
-                return fila;
-            });
-
-            renderTable(matrizFinal, listaUsuariosHeaders);
-        }
-
-        function leerExcel(file) {
-            return new Promise(resolve => {
-                const reader = new FileReader();
-                reader.onload = e => {
-                    const data = new Uint8Array(e.target.result);
-                    const wb = XLSX.read(data, {type: 'array'});
-                    resolve(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]));
-                };
-                reader.readAsArrayBuffer(file);
-            });
-        }
-
-        function renderTable(data, usuarios) {
-            let html = "<table><tr><th>ROL</th><th>DESCRIPCION</th>";
-            usuarios.forEach(u => html += `<th>${u}</th>`);
-            html += "<th>OBSERVACION</th><th>DUPLICADO</th></tr>";
-
-            data.forEach(r => {
-                let audit = rolesAudit[r.ROL];
-                html += `<tr class="${audit.color}">
-                            <td>${r.ROL}</td>
-                            <td style="text-align:left">${r.DESCRIPCION}</td>`;
-                usuarios.forEach(u => html += `<td>${r[u] === 1 ? '1' : '0'}</td>`);
-                html += `<td>${audit.obs}</td><td>${audit.duplicado}</td></tr>`;
-            });
-            html += "</table>";
-            document.getElementById('resultado').innerHTML = html;
-        }
-
-        function exportarExcel() {
-            if (matrizFinal.length === 0) return alert("Genera la matriz primero");
+        // Agrupación por base para detectar pares Visual/Ejecución
+        rolesData.forEach(r => {
+            let desc = r.DESCRIPCION || "";
+            let esVisual = /visuali[sz]a/i.test(desc);
+            let base = obtenerBase(desc);
+            let tipo = esVisual ? 'VISUAL' : 'EJECUCION';
             
-            // Re-ordenamiento manual para asegurar que auditoría vaya al final
-            let exportData = matrizFinal.map(fila => {
-                let audit = rolesAudit[fila.ROL];
-                let filaOrdenada = {};
-                
-                // 1. Columnas Base
-                filaOrdenada["ROL"] = fila.ROL;
-                filaOrdenada["DESCRIPCION"] = fila.DESCRIPCION;
-                
-                // 2. Columnas Dinámicas (Usuarios)
-                listaUsuariosHeaders.forEach(u => {
-                    filaOrdenada[u] = fila[u];
-                });
-                
-                // 3. Columnas de Auditoría (AL FINAL)
-                filaOrdenada["OBSERVACION"] = audit.obs;
-                filaOrdenada["DUPLICADO"] = audit.duplicado;
-                
-                return filaOrdenada;
+            if (!grupos[base]) grupos[base] = { VISUAL: [], EJECUCION: [] };
+            grupos[base][tipo].push(r.ROL);
+        });
+
+        // Generación de diagnóstico de Auditoría
+        rolesData.forEach(r => {
+            let desc = r.DESCRIPCION || "";
+            let base = obtenerBase(desc);
+            let esVisual = /visuali[sz]a/i.test(desc);
+            let obs = ""; 
+            let color = ""; 
+            let duplicado = "NO";
+
+            // Verificar Duplicados
+            let tipo = esVisual ? 'VISUAL' : 'EJECUCION';
+            if (grupos[base][tipo].length > 1) {
+                duplicado = "SI";
+                color = "rosa";
+            }
+
+            // Definir Observación Profesional
+            if (esVisual) {
+                obs = "ROL DE SOLO LECTURA";
+            } else {
+                if (grupos[base].VISUAL.length > 0) {
+                    obs = "REVISAR: Existe visual (" + grupos[base].VISUAL.join(", ") + ")";
+                    color = (color === "rosa") ? "rosa" : "naranja"; // Rosa tiene prioridad visual
+                } else {
+                    obs = "NO TIENE ROL DE VISUALIZACIÓN";
+                }
+            }
+            rolesAudit[r.ROL] = { obs, duplicado, color };
+        });
+
+        // Procesar relación Usuarios <-> Roles
+        let relacionUsuarioRol = {};
+        let usuariosUnicos = {};
+        usersData.forEach(u => {
+            let uID = u.Usuario ? u.Usuario.toString().trim() : "N/A";
+            let uNom = u['Nombre completo'] || "Sin Nombre";
+            relacionUsuarioRol[`${uID}_${u.Rol}`] = true;
+            usuariosUnicos[uID] = uNom;
+        });
+
+        listaUsuariosHeaders = Object.keys(usuariosUnicos).map(id => `${id} - ${usuariosUnicos[id]}`);
+
+        matrizFinal = rolesData.map(r => {
+            let fila = { ROL: r.ROL, DESCRIPCION: r.DESCRIPCION };
+            Object.keys(usuariosUnicos).forEach(id => {
+                let userKey = `${id} - ${usuariosUnicos[id]}`;
+                fila[userKey] = relacionUsuarioRol[`${id}_${r.ROL}`] ? 1 : 0;
+            });
+            return fila;
+        });
+
+        renderTable(matrizFinal, listaUsuariosHeaders);
+    }
+
+    function leerExcel(file) {
+        return new Promise(resolve => {
+            const reader = new FileReader();
+            reader.onload = e => {
+                const data = new Uint8Array(e.target.result);
+                const wb = XLSX.read(data, {type: 'array'});
+                resolve(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]));
+            };
+            reader.readAsArrayBuffer(file);
+        });
+    }
+
+    function renderTable(data, usuarios) {
+        let html = "<table><tr><th>ROL</th><th>DESCRIPCION</th>";
+        usuarios.forEach(u => html += `<th>${u}</th>`);
+        html += "<th>OBSERVACION</th><th>DUPLICADO</th></tr>";
+
+        data.forEach(r => {
+            let audit = rolesAudit[r.ROL];
+            let rowClass = audit.color;
+            let obsClass = (audit.obs === "ROL DE SOLO LECTURA") ? "azul-lectura" : "";
+            
+            html += `<tr class="${rowClass}">
+                        <td style="font-weight:bold">${r.ROL}</td>
+                        <td style="text-align:left">${r.DESCRIPCION}</td>`;
+            
+            usuarios.forEach(u => {
+                let check = r[u] === 1 ? "1" : "0";
+                html += `<td>${check}</td>`;
             });
 
-            const ws = XLSX.utils.json_to_sheet(exportData);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "MatrizAuditada");
-            XLSX.writeFile(wb, "Matriz_Roles_Final.xlsx");
-        }
-    </script>
+            html += `<td class="${obsClass}">${audit.obs}</td>
+                     <td>${audit.duplicado}</td></tr>`;
+        });
+        html += "</table>";
+        document.getElementById('resultado').innerHTML = html;
+    }
+
+    function exportarExcel() {
+        if (matrizFinal.length === 0) return alert("Primero genere la matriz en pantalla.");
+        
+        // Re-estructuración total para enviar Auditoría al final
+        let exportData = matrizFinal.map(fila => {
+            let audit = rolesAudit[fila.ROL];
+            let filaFinal = {};
+            
+            // 1. Identificadores
+            filaFinal["ROL"] = fila.ROL;
+            filaFinal["DESCRIPCION"] = fila.DESCRIPCION;
+            
+            // 2. Usuarios (Columnas dinámicas)
+            listaUsuariosHeaders.forEach(u => {
+                filaFinal[u] = fila[u];
+            });
+            
+            // 3. Auditoría (AL FINAL)
+            filaFinal["OBSERVACION"] = audit.obs;
+            filaFinal["DUPLICADO"] = audit.duplicado;
+            
+            return filaFinal;
+        });
+
+        const ws = XLSX.utils.json_to_sheet(exportData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Matriz de Riesgos");
+        XLSX.writeFile(wb, "Reporte_Auditoria_Roles_SAP.xlsx");
+    }
+</script>
+
 </body>
 </html>
