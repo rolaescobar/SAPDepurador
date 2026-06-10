@@ -8,7 +8,6 @@
     <style>
         .bg-sap-dark { background-color: #0d1b2a; }
         .bg-sap-header { background-color: #1b263b; }
-        .text-sap-accent { color: #415a77; }
     </style>
 </head>
 <body class="bg-gray-900 p-8 text-gray-100">
@@ -82,68 +81,44 @@
             };
         });
 
-       function procesar() {
-    const mandante = document.getElementById('mandante').value;
-    const roles = document.getElementById('rolesArea').value.split('\n').filter(r => r.trim() !== "");
-    const tbody = document.getElementById('tablaBody');
-    tbody.innerHTML = "";
-
-    roles.forEach(rolSolicitado => {
-        // CAMBIO AQUÍ: Usamos .filter para obtener TODOS los registros que coinciden
-        const matches = datosProduccion.filter(r => String(r.Rol).trim() === rolSolicitado.trim());
-
-        if (matches.length > 0) {
-            // Si hay coincidencias, creamos una fila por cada usuario encontrado
-            matches.forEach(match => {
-                const tr = document.createElement('tr');
-                tr.className = "hover:bg-gray-800 transition";
-                tr.innerHTML = `
-                    <td class="p-3">${mandante}</td>
-                    <td class="p-3">${match.Usuario}</td>
-                    <td class="p-3">${match['Nombre completo']}</td>
-                    <td class="p-3 font-mono text-blue-400">${rolSolicitado.trim()}</td>
-                    <td class="p-3">${match['Descripción breve del rol']}</td>
-                    <td class="p-3 font-bold text-emerald-400">APLICADO</td>
-                `;
-                tbody.appendChild(tr);
-            });
-        } else {
-            // Si no hay coincidencias, creamos una fila indicando que no está aplicado
-            const tr = document.createElement('tr');
-            tr.className = "hover:bg-gray-800 transition";
-            tr.innerHTML = `
-                <td class="p-3">${mandante}</td>
-                <td class="p-3">-</td>
-                <td class="p-3">-</td>
-                <td class="p-3 font-mono text-blue-400">${rolSolicitado.trim()}</td>
-                <td class="p-3">-</td>
-                <td class="p-3 font-bold text-red-400">NO APLICADO</td>
-            `;
-            tbody.appendChild(tr);
-        }
-    });
-    document.getElementById('resultadoContainer').classList.remove('hidden');
-}
+        function procesar() {
             const mandante = document.getElementById('mandante').value;
             const roles = document.getElementById('rolesArea').value.split('\n').filter(r => r.trim() !== "");
             const tbody = document.getElementById('tablaBody');
             tbody.innerHTML = "";
 
             roles.forEach(rolSolicitado => {
-                const match = datosProduccion.find(r => String(r.Rol).trim() === rolSolicitado.trim());
-                const tr = document.createElement('tr');
-                tr.className = "hover:bg-gray-800 transition";
-                tr.innerHTML = `
-                    <td class="p-3">${mandante}</td>
-                    <td class="p-3">${match ? match.Usuario : '-'}</td>
-                    <td class="p-3">${match ? match['Nombre completo'] : '-'}</td>
-                    <td class="p-3 font-mono text-blue-400">${rolSolicitado.trim()}</td>
-                    <td class="p-3">${match ? match['Descripción breve del rol'] : '-'}</td>
-                    <td class="p-3 font-bold ${match ? 'text-emerald-400' : 'text-red-400'}">
-                        ${match ? 'APLICADO' : 'NO APLICADO'}
-                    </td>
-                `;
-                tbody.appendChild(tr);
+                // SOLUCIÓN: Usamos .filter para obtener todos los usuarios con este rol
+                const matches = datosProduccion.filter(r => String(r.Rol).trim() === rolSolicitado.trim());
+
+                if (matches.length > 0) {
+                    matches.forEach(match => {
+                        const tr = document.createElement('tr');
+                        tr.className = "hover:bg-gray-800 transition";
+                        tr.innerHTML = `
+                            <td class="p-3">${mandante}</td>
+                            <td class="p-3">${match.Usuario}</td>
+                            <td class="p-3">${match['Nombre completo']}</td>
+                            <td class="p-3 font-mono text-blue-400">${rolSolicitado.trim()}</td>
+                            <td class="p-3">${match['Descripción breve del rol']}</td>
+                            <td class="p-3 font-bold text-emerald-400">APLICADO</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                } else {
+                    // Si el rol no se encuentra, añadimos fila de aviso
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-gray-800 transition";
+                    tr.innerHTML = `
+                        <td class="p-3">${mandante}</td>
+                        <td class="p-3">-</td>
+                        <td class="p-3">-</td>
+                        <td class="p-3 font-mono text-blue-400">${rolSolicitado.trim()}</td>
+                        <td class="p-3">-</td>
+                        <td class="p-3 font-bold text-red-400">NO APLICADO</td>
+                    `;
+                    tbody.appendChild(tr);
+                }
             });
             document.getElementById('resultadoContainer').classList.remove('hidden');
         }
