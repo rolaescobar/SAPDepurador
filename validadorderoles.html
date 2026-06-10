@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Validador de Roles RLS - Dark Mode</title>
+    <title>Validador de Roles RLS - Auditoría</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
@@ -14,7 +14,7 @@
     <div class="max-w-6xl mx-auto bg-sap-dark rounded-xl shadow-2xl border border-gray-700 overflow-hidden">
         <header class="bg-sap-header p-8 border-b border-gray-700">
             <h1 class="text-3xl font-bold text-white">Validador de Roles RLS</h1>
-            <p class="text-gray-400">Control de acceso y auditoría de perfiles - Entorno Seguro</p>
+            <p class="text-gray-400">Control de acceso y auditoría de perfiles - Reporte Completo</p>
         </header>
 
         <div class="p-8 grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -37,7 +37,7 @@
                     <option value="DPP">DPP</option>
                 </select>
 
-                <label class="block text-sm font-bold uppercase tracking-wider text-gray-400 pt-4">Cargar Archivo RLUSUARIO:</label>
+                <label class="block text-sm font-bold uppercase tracking-wider text-gray-400 pt-4">Cargar Excel (RLUSUARIO):</label>
                 <input type="file" id="upload" class="w-full p-2 bg-gray-800 border border-gray-600 rounded cursor-pointer file:bg-blue-600 file:text-white file:border-0 file:px-4 file:py-2 file:rounded hover:file:bg-blue-700">
             </div>
 
@@ -49,7 +49,7 @@
 
         <div class="px-8 pb-8 flex gap-4">
             <button onclick="procesar()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded font-bold transition duration-200 shadow-lg">Validar Roles</button>
-            <button onclick="exportarExcel()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-4 rounded font-bold transition duration-200 shadow-lg">Descargar Excel (.xlsx)</button>
+            <button onclick="exportarExcel()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-4 rounded font-bold transition duration-200 shadow-lg">Descargar Reporte (.xlsx)</button>
         </div>
 
         <div id="resultadoContainer" class="p-8 hidden overflow-x-auto">
@@ -77,7 +77,7 @@
             reader.onload = (e) => {
                 const wb = XLSX.read(e.target.result, {type: 'array'});
                 datosProduccion = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
-                alert("Archivo cargado con " + datosProduccion.length + " registros.");
+                alert("Archivo cargado correctamente con " + datosProduccion.length + " registros.");
             };
         });
 
@@ -88,32 +88,35 @@
             tbody.innerHTML = "";
 
             roles.forEach(rolSolicitado => {
-                // SOLUCIÓN: Usamos .filter para obtener todos los usuarios con este rol
-                const matches = datosProduccion.filter(r => String(r.Rol).trim() === rolSolicitado.trim());
+                const rolBuscado = rolSolicitado.trim();
+                
+                // Usamos filter para capturar todas las apariciones
+                const matches = datosProduccion.filter(r => {
+                    const rolEnExcel = r.Rol ? String(r.Rol).trim() : "";
+                    return rolEnExcel === rolBuscado;
+                });
 
                 if (matches.length > 0) {
                     matches.forEach(match => {
                         const tr = document.createElement('tr');
-                        tr.className = "hover:bg-gray-800 transition";
                         tr.innerHTML = `
                             <td class="p-3">${mandante}</td>
-                            <td class="p-3">${match.Usuario}</td>
-                            <td class="p-3">${match['Nombre completo']}</td>
-                            <td class="p-3 font-mono text-blue-400">${rolSolicitado.trim()}</td>
-                            <td class="p-3">${match['Descripción breve del rol']}</td>
+                            <td class="p-3">${match.Usuario || 'N/A'}</td>
+                            <td class="p-3">${match['Nombre completo'] || '-'}</td>
+                            <td class="p-3 font-mono text-blue-400">${rolBuscado}</td>
+                            <td class="p-3">${match['Descripción breve del rol'] || '-'}</td>
                             <td class="p-3 font-bold text-emerald-400">APLICADO</td>
                         `;
                         tbody.appendChild(tr);
                     });
                 } else {
-                    // Si el rol no se encuentra, añadimos fila de aviso
+                    // Esta parte genera la fila para el NO APLICADO
                     const tr = document.createElement('tr');
-                    tr.className = "hover:bg-gray-800 transition";
                     tr.innerHTML = `
                         <td class="p-3">${mandante}</td>
                         <td class="p-3">-</td>
                         <td class="p-3">-</td>
-                        <td class="p-3 font-mono text-blue-400">${rolSolicitado.trim()}</td>
+                        <td class="p-3 font-mono text-blue-400">${rolBuscado}</td>
                         <td class="p-3">-</td>
                         <td class="p-3 font-bold text-red-400">NO APLICADO</td>
                     `;
