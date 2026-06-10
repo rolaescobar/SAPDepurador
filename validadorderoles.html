@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Validador de Roles RLS - Auditoría Completa</title>
+    <title>Validador de Roles RLS - Auditoría</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
@@ -14,25 +14,46 @@
         </header>
 
         <div class="p-8 grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div>
+            <div class="space-y-4">
+                <label class="block text-sm font-bold uppercase text-gray-400">Mandante:</label>
+                <select id="mandante" class="w-full p-3 bg-gray-900 border border-gray-600 rounded">
+                    <option value="S4P">S4P</option>
+                    <option value="S4D">S4D</option>
+                    <option value="S4Q">S4Q</option>
+                    <option value="SAQ">SAQ</option>
+                    <option value="SAD">SAD</option>
+                    <option value="CNP">CNP</option>
+                    <option value="FOP">FOP</option>
+                    <option value="EWP">EWP</option>
+                    <option value="PTM">PTM</option>
+                    <option value="FOC">FOC</option>
+                    <option value="FOV">FOV</option>
+                    <option value="FOQ">FOQ</option>
+                    <option value="EWC">EWC</option>
+                    <option value="DPP">DPP</option>
+                </select>
+
                 <label class="block text-sm font-bold uppercase text-gray-400">Cargar Archivo (RLUSUARIO):</label>
-                <input type="file" id="upload" class="mt-2 w-full p-2 bg-gray-900 border border-gray-600 rounded">
+                <input type="file" id="upload" class="w-full p-2 bg-gray-900 border border-gray-600 rounded">
             </div>
             <div class="md:col-span-2">
                 <label class="block text-sm font-bold uppercase text-gray-400">Roles a validar (uno por línea):</label>
-                <textarea id="rolesArea" class="mt-2 w-full h-48 p-4 bg-gray-900 border border-gray-600 rounded font-mono text-blue-300"></textarea>
+                <textarea id="rolesArea" class="w-full h-48 p-4 bg-gray-900 border border-gray-600 rounded font-mono text-blue-300"></textarea>
             </div>
         </div>
 
-        <div class="px-8 pb-8">
-            <button onclick="procesar()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded font-bold transition">Validar Auditoría</button>
+        <div class="px-8 pb-8 flex gap-4">
+            <button onclick="procesar()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded font-bold transition">Validar Auditoría</button>
+            <button onclick="exportarExcel()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-4 rounded font-bold transition">Descargar Reporte (.xlsx)</button>
         </div>
 
         <div id="resultadoContainer" class="p-8 hidden overflow-x-auto">
             <table class="w-full text-sm text-left border border-gray-700">
                 <thead class="bg-gray-900 text-gray-300 uppercase text-xs">
                     <tr>
+                        <th class="p-3">Mandante</th>
                         <th class="p-3">Usuario</th>
+                        <th class="p-3">Nombre Completo</th>
                         <th class="p-3">Rol Solicitado</th>
                         <th class="p-3">Estado</th>
                     </tr>
@@ -55,17 +76,25 @@
         });
 
         function procesar() {
+            const mandante = document.getElementById('mandante').value;
             const rolesSolicitados = document.getElementById('rolesArea').value.split('\n').map(r => r.trim()).filter(r => r !== "");
             const tbody = document.getElementById('tablaBody');
             tbody.innerHTML = "";
 
-            // 1. Obtener lista única de usuarios del archivo
-            const usuariosUnicos = [...new Set(datosProduccion.map(item => item.Usuario))];
+            // Crear un mapa único de usuarios y sus nombres
+            const usuariosInfo = {};
+            datosProduccion.forEach(item => {
+                if (!usuariosInfo[item.Usuario]) {
+                    usuariosInfo[item.Usuario] = item['Nombre completo'];
+                }
+            });
 
-            // 2. Por cada usuario, verificar si tiene cada uno de los roles solicitados
+            const usuariosUnicos = Object.keys(usuariosInfo);
+
             usuariosUnicos.forEach(usuario => {
+                const nombre = usuariosInfo[usuario];
                 const rolesDelUsuario = datosProduccion
-                    .filter(item => item.Usuario === usuario)
+                    .filter(item => String(item.Usuario) === usuario)
                     .map(item => String(item.Rol).trim());
 
                 rolesSolicitados.forEach(rolSolicitado => {
@@ -73,7 +102,9 @@
                     
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
+                        <td class="p-3">${mandante}</td>
                         <td class="p-3">${usuario}</td>
+                        <td class="p-3">${nombre}</td>
                         <td class="p-3 font-mono">${rolSolicitado}</td>
                         <td class="p-3 font-bold ${tieneRol ? 'text-emerald-400' : 'text-red-500'}">
                             ${tieneRol ? 'APLICADO' : 'NO APLICADO'}
@@ -83,6 +114,11 @@
                 });
             });
             document.getElementById('resultadoContainer').classList.remove('hidden');
+        }
+
+        function exportarExcel() {
+            const wb = XLSX.utils.table_to_book(document.querySelector('table'));
+            XLSX.writeFile(wb, "Reporte_Auditoria_Roles.xlsx");
         }
     </script>
 </body>
