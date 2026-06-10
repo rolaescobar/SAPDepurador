@@ -82,7 +82,48 @@
             };
         });
 
-        function procesar() {
+       function procesar() {
+    const mandante = document.getElementById('mandante').value;
+    const roles = document.getElementById('rolesArea').value.split('\n').filter(r => r.trim() !== "");
+    const tbody = document.getElementById('tablaBody');
+    tbody.innerHTML = "";
+
+    roles.forEach(rolSolicitado => {
+        // CAMBIO AQUÍ: Usamos .filter para obtener TODOS los registros que coinciden
+        const matches = datosProduccion.filter(r => String(r.Rol).trim() === rolSolicitado.trim());
+
+        if (matches.length > 0) {
+            // Si hay coincidencias, creamos una fila por cada usuario encontrado
+            matches.forEach(match => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-gray-800 transition";
+                tr.innerHTML = `
+                    <td class="p-3">${mandante}</td>
+                    <td class="p-3">${match.Usuario}</td>
+                    <td class="p-3">${match['Nombre completo']}</td>
+                    <td class="p-3 font-mono text-blue-400">${rolSolicitado.trim()}</td>
+                    <td class="p-3">${match['Descripción breve del rol']}</td>
+                    <td class="p-3 font-bold text-emerald-400">APLICADO</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        } else {
+            // Si no hay coincidencias, creamos una fila indicando que no está aplicado
+            const tr = document.createElement('tr');
+            tr.className = "hover:bg-gray-800 transition";
+            tr.innerHTML = `
+                <td class="p-3">${mandante}</td>
+                <td class="p-3">-</td>
+                <td class="p-3">-</td>
+                <td class="p-3 font-mono text-blue-400">${rolSolicitado.trim()}</td>
+                <td class="p-3">-</td>
+                <td class="p-3 font-bold text-red-400">NO APLICADO</td>
+            `;
+            tbody.appendChild(tr);
+        }
+    });
+    document.getElementById('resultadoContainer').classList.remove('hidden');
+}
             const mandante = document.getElementById('mandante').value;
             const roles = document.getElementById('rolesArea').value.split('\n').filter(r => r.trim() !== "");
             const tbody = document.getElementById('tablaBody');
