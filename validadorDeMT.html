@@ -11,6 +11,7 @@
         ::-webkit-scrollbar-track { background: #1f2937; }
         ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+        .dynamic-role-block { transition: all 0.2s ease-in-out; }
     </style>
 </head>
 <body class="bg-[#1f2937] text-white min-h-screen font-sans p-8">
@@ -19,10 +20,10 @@
         <div class="flex justify-between items-end mb-8">
             <div>
                 <h1 class="text-3xl font-bold mb-2">Validador de Matrices</h1>
-                <p class="text-gray-400">Auditoría cruzada: Matriz de Usuarios vs Múltiples Roles</p>
+                <p class="text-gray-400">Auditoría cruzada: Matriz de Usuarios vs Múltiples Roles (Por Solicitud)</p>
             </div>
             <div class="bg-blue-900/30 border border-blue-700/50 px-4 py-2 rounded">
-                <p class="text-sm text-blue-400 font-semibold">ℹ️ Lógica: "X" = Falta el rol | Vacío = Ya tiene el rol asignado</p>
+                <p class="text-sm text-blue-400 font-semibold">ℹ️ Lógica: "X" = Lo solicitó y le FALTA | Vacío = Ya lo tiene o NO lo solicitó</p>
             </div>
         </div>
 
@@ -35,18 +36,30 @@
                     <p id="file-status" class="text-xs text-gray-400 mt-2">Esperando archivo...</p>
                 </div>
 
-                <div>
-                    <label class="block text-sm font-semibold mb-2">2. USUARIOS A VALIDAR (UNO POR LÍNEA):</label>
-                    <textarea id="input-usuarios" rows="8" class="w-full bg-gray-800 border border-gray-600 rounded p-3 text-sm text-gray-200 focus:outline-none focus:border-green-500 font-mono resize-y" placeholder="Ej:&#10;40005082&#10;50000194"></textarea>
+                <div class="flex flex-col">
+                    <label class="block text-sm font-semibold mb-2">2. USUARIOS A VALIDAR (LISTA MAESTRA):</label>
+                    <p class="text-xs text-gray-500 mb-2">Define las filas de la tabla. Pega todos los usuarios del ticket.</p>
+                    <textarea id="input-usuarios" class="w-full flex-grow min-h-[300px] bg-gray-800 border border-gray-600 rounded p-3 text-sm text-gray-200 focus:outline-none focus:border-green-500 font-mono resize-y" placeholder="Ej:&#10;50001095&#10;50026777"></textarea>
                 </div>
 
-                <div>
-                    <label class="block text-sm font-semibold mb-2">3. ROLES A VALIDAR (UNO POR LÍNEA):</label>
-                    <textarea id="input-roles" rows="8" class="w-full bg-gray-800 border border-gray-600 rounded p-3 text-sm text-gray-200 focus:outline-none focus:border-green-500 font-mono resize-y" placeholder="Ej:&#10;ZHCHGT_MMMM_C4_4329_MOVMER2382"></textarea>
+                <div class="flex flex-col">
+                    <div class="flex justify-between items-end mb-2">
+                        <div>
+                            <label class="block text-sm font-semibold">3. ROLES Y SOLICITANTES ESPECÍFICOS:</label>
+                            <p class="text-xs text-gray-500 mt-1">Añade cada rol y quiénes lo solicitaron.</p>
+                        </div>
+                        <button id="btn-add-rol" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold py-1.5 px-3 rounded flex items-center gap-1 transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                            Agregar Rol
+                        </button>
+                    </div>
+                    
+                    <div id="roles-container" class="flex-grow bg-gray-800/50 border border-gray-600 rounded p-3 overflow-y-auto max-h-[300px] space-y-3">
+                        </div>
                 </div>
             </div>
 
-            <div class="flex gap-4">
+            <div class="flex gap-4 border-t border-gray-700 pt-6 mt-2">
                 <button id="btn-generar" class="bg-[#059669] hover:bg-green-600 text-white font-bold py-2 px-6 rounded transition-colors shadow-md">
                     Generar Matriz
                 </button>
@@ -74,7 +87,36 @@
         document.addEventListener('DOMContentLoaded', () => {
             let datosExcel = [];
 
-            // 1. Escuchar la carga del archivo Excel
+            // --- GESTIÓN DE BLOQUES DINÁMICOS DE ROLES ---
+            const containerRoles = document.getElementById('roles-container');
+            
+            function crearBloqueRol() {
+                const block = document.createElement('div');
+                block.className = 'dynamic-role-block bg-gray-900 border border-gray-600 rounded p-3 relative shadow-sm';
+                block.innerHTML = `
+                    <button type="button" class="absolute top-2 right-2 text-gray-500 hover:text-red-500 transition-colors" onclick="this.parentElement.remove()" title="Eliminar este rol">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                    <div class="mb-2 pr-8">
+                        <input type="text" class="input-nombre-rol w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none" placeholder="CÓDIGO DEL ROL (Ej: ZHCHGT_MMMM...)">
+                    </div>
+                    <div>
+                        <textarea rows="2" class="input-usuarios-rol w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-xs text-gray-300 focus:border-blue-500 focus:outline-none font-mono" placeholder="Pegar usuarios que lo solicitan (uno por línea)"></textarea>
+                    </div>
+                `;
+                containerRoles.appendChild(block);
+                // Hacer scroll hacia abajo al agregar uno nuevo
+                containerRoles.scrollTop = containerRoles.scrollHeight;
+            }
+
+            // Iniciar con un bloque vacío
+            crearBloqueRol();
+
+            // Evento para botón agregar rol
+            document.getElementById('btn-add-rol').addEventListener('click', crearBloqueRol);
+
+
+            // --- PROCESAMIENTO EXCEL ---
             document.getElementById('file-rlusuario').addEventListener('change', function(e) {
                 const file = e.target.files[0];
                 if (!file) return;
@@ -104,26 +146,46 @@
                 reader.readAsArrayBuffer(file);
             });
 
-            // 2. Función para Generar Matriz
+
+            // --- GENERACIÓN DE MATRIZ ---
             document.getElementById('btn-generar').addEventListener('click', () => {
                 if (datosExcel.length === 0) {
                     alert("Primero debes cargar el archivo RLUSUARIO.XLSX");
                     return;
                 }
 
+                // 1. Obtener Lista Maestra de Usuarios (Filas)
                 const usuariosText = document.getElementById('input-usuarios').value;
-                const rolesText = document.getElementById('input-roles').value;
+                const listaUsuarios = usuariosText.split('\n').map(u => u.trim().toUpperCase()).filter(u => u);
                 
-                if (!usuariosText.trim() || !rolesText.trim()) {
-                    alert("Por favor ingresa los códigos de usuario y los roles a validar en los cuadros de texto.");
+                if (listaUsuarios.length === 0) {
+                    alert("Por favor ingresa la lista maestra de usuarios a validar en el cuadro de texto izquierdo.");
                     return;
                 }
 
-                // Limpieza extrema: Mayúsculas y sin espacios extra para asegurar cruce exacto
-                const listaUsuarios = usuariosText.split('\n').map(u => u.trim().toUpperCase()).filter(u => u);
-                const listaRoles = rolesText.split('\n').map(r => r.trim().toUpperCase()).filter(r => r);
+                // 2. Procesar los bloques de Roles y sus Solicitantes
+                const rolesRequeridos = {}; // Estructura: { "ROL_1": Set(["USR_A", "USR_B"]), "ROL_2": Set(["USR_A"]) }
+                const bloquesDOM = document.querySelectorAll('.dynamic-role-block');
+                
+                bloquesDOM.forEach(bloque => {
+                    const nombreRol = bloque.querySelector('.input-nombre-rol').value.trim().toUpperCase();
+                    const usuariosSolicitantes = bloque.querySelector('.input-usuarios-rol').value;
+                    
+                    if (nombreRol) {
+                        const listaSolicitantes = usuariosSolicitantes.split('\n').map(u => u.trim().toUpperCase()).filter(u => u);
+                        rolesRequeridos[nombreRol] = new Set(listaSolicitantes);
+                    }
+                });
 
-                const mapeoRoles = {};
+                const listaRolesAValidar = Object.keys(rolesRequeridos);
+
+                if (listaRolesAValidar.length === 0) {
+                    alert("Por favor ingresa al menos un Rol a validar con sus respectivos usuarios solicitantes.");
+                    return;
+                }
+
+                // 3. Mapear datos del Excel
+                const mapeoRolesExcel = {};
                 const mapeoNombres = {};
                 const mapeoDescripciones = {};
 
@@ -133,26 +195,25 @@
                 const colDescripcion = "Descripción breve del rol";
 
                 datosExcel.forEach(fila => {
-                    // Limpieza extrema en los datos del Excel
                     const usr = fila[colUsuario] ? String(fila[colUsuario]).trim().toUpperCase() : null;
                     const rol = fila[colRol] ? String(fila[colRol]).trim().toUpperCase() : null;
                     
                     if (usr && rol) {
-                        if (!mapeoRoles[usr]) mapeoRoles[usr] = new Set();
-                        mapeoRoles[usr].add(rol);
+                        if (!mapeoRolesExcel[usr]) mapeoRolesExcel[usr] = new Set();
+                        mapeoRolesExcel[usr].add(rol);
                         
-                        // Guardar nombre original (sin alterar mayúsculas/minúsculas)
                         if (fila[colNombre]) mapeoNombres[usr] = fila[colNombre];
                         if (fila[colDescripcion]) mapeoDescripciones[rol] = fila[colDescripcion];
                     }
                 });
 
+                // 4. Construir Thead
                 const thead = document.getElementById('matriz-head');
                 let headHTML = `<tr>
-                    <th class="px-4 py-3 bg-gray-900 border-b border-gray-700">Usuario</th>
-                    <th class="px-4 py-3 bg-gray-900 border-b border-gray-700">Nombre Completo</th>`;
+                    <th class="px-4 py-3 bg-gray-900 border-b border-gray-700 sticky left-0 z-10">Usuario</th>
+                    <th class="px-4 py-3 bg-gray-900 border-b border-gray-700 sticky left-[100px] z-10">Nombre Completo</th>`;
                 
-                listaRoles.forEach(rol => {
+                listaRolesAValidar.forEach(rol => {
                     const desc = mapeoDescripciones[rol] || "";
                     headHTML += `
                     <th class="px-4 py-3 text-center border-l border-gray-700 bg-gray-800">
@@ -163,6 +224,7 @@
                 headHTML += `</tr>`;
                 thead.innerHTML = headHTML;
 
+                // 5. Construir Tbody con la nueva Lógica de Excepciones
                 const tbody = document.getElementById('matriz-body');
                 let bodyHTML = "";
 
@@ -171,19 +233,22 @@
                     
                     bodyHTML += `
                     <tr class="border-b border-gray-700 hover:bg-gray-800 transition-colors">
-                        <td class="px-4 py-2 font-mono text-gray-300 bg-gray-900/50">${usr}</td>
-                        <td class="px-4 py-2 text-gray-300 bg-gray-900/50">${nombre}</td>`;
+                        <td class="px-4 py-2 font-mono text-gray-300 bg-gray-900/50 sticky left-0">${usr}</td>
+                        <td class="px-4 py-2 text-gray-300 bg-gray-900/50 sticky left-[100px] min-w-[250px]">${nombre}</td>`;
                     
-                    listaRoles.forEach(rol => {
-                        const tieneRol = mapeoRoles[usr] && mapeoRoles[usr].has(rol);
+                    listaRolesAValidar.forEach(rol => {
+                        const fueSolicitado = rolesRequeridos[rol].has(usr);
+                        const tieneRolExcel = mapeoRolesExcel[usr] && mapeoRolesExcel[usr].has(rol);
                         
-                        // Lógica corregida: 
-                        // Si tiene el rol = Vacío ""
-                        // Si NO tiene el rol = "X"
-                        const marca = tieneRol ? "" : "X"; 
-                        
-                        // Estilo: "X" en rojo para destacar que falta. Vacío sin formato especial.
-                        const colorClase = !tieneRol ? 'text-red-500 font-bold bg-red-900/10' : '';
+                        let marca = "";
+                        let colorClase = "";
+
+                        if (fueSolicitado && !tieneRolExcel) {
+                            // LO PIDIÓ y NO LO TIENE -> Alerta
+                            marca = "X";
+                            colorClase = "text-red-500 font-bold bg-red-900/10";
+                        } 
+                        // Si lo pidió y ya lo tiene, o si NO lo pidió -> Queda en blanco (marca = "")
                         
                         bodyHTML += `<td class="px-4 py-2 text-center border-l border-gray-700 ${colorClase}">${marca}</td>`;
                     });
@@ -194,7 +259,7 @@
                 tbody.innerHTML = bodyHTML;
             });
 
-            // 3. Función para copiar a Excel
+            // --- COPIAR AL PORTAPAPELES ---
             document.getElementById('btn-copiar').addEventListener('click', () => {
                 const tabla = document.getElementById('matriz-resultados');
                 
