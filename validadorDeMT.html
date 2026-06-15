@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Validador de Matrices</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #1f2937; }
+        ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+    </style>
+</head>
+<body class="bg-[#1f2937] text-white min-h-screen font-sans p-8">
+
+    <div class="max-w-7xl mx-auto">
+        <div class="flex justify-between items-end mb-8">
+            <div>
+                <h1 class="text-3xl font-bold mb-2">Validador de Matrices</h1>
+                <p class="text-gray-400">Auditoría cruzada: Matriz de Usuarios vs Múltiples Roles</p>
+            </div>
+            <div class="bg-blue-900/30 border border-blue-700/50 px-4 py-2 rounded">
+                <p class="text-sm text-blue-400 font-semibold">ℹ️ Lógica: "X" = Falta el rol | Vacío = Ya tiene el rol asignado</p>
+            </div>
+        </div>
+
+        <div class="bg-[#111827] p-6 rounded-lg border border-gray-700 mb-8 shadow-lg">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                
+                <div class="col-span-1 md:col-span-2 bg-gray-800 p-4 rounded border border-gray-600">
+                    <label class="block text-sm font-bold mb-2 text-green-400">1. CARGAR ARCHIVO (RLUSUARIO.XLSX):</label>
+                    <input type="file" id="file-rlusuario" class="block w-full text-sm text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-[#059669] file:text-white hover:file:bg-green-600 cursor-pointer" accept=".xlsx, .xls" />
+                    <p id="file-status" class="text-xs text-gray-400 mt-2">Esperando archivo...</p>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold mb-2">2. USUARIOS A VALIDAR (UNO POR LÍNEA):</label>
+                    <textarea id="input-usuarios" rows="8" class="w-full bg-gray-800 border border-gray-600 rounded p-3 text-sm text-gray-200 focus:outline-none focus:border-green-500 font-mono resize-y" placeholder="Ej:&#10;40005082&#10;50000194"></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold mb-2">3. ROLES A VALIDAR (UNO POR LÍNEA):</label>
+                    <textarea id="input-roles" rows="8" class="w-full bg-gray-800 border border-gray-600 rounded p-3 text-sm text-gray-200 focus:outline-none focus:border-green-500 font-mono resize-y" placeholder="Ej:&#10;ZHCHGT_MMMM_C4_4329_MOVMER2382"></textarea>
+                </div>
+            </div>
+
+            <div class="flex gap-4">
+                <button id="btn-generar" class="bg-[#059669] hover:bg-green-600 text-white font-bold py-2 px-6 rounded transition-colors shadow-md">
+                    Generar Matriz
+                </button>
+                <button id="btn-copiar" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-6 rounded transition-colors shadow-md flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+                    Copiar para Excel
+                </button>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto bg-[#111827] border border-gray-700 rounded-lg shadow-lg">
+            <table id="matriz-resultados" class="w-full text-left text-sm whitespace-nowrap">
+                <thead id="matriz-head" class="bg-gray-800 text-xs uppercase text-gray-300 border-b border-gray-700">
+                    <tr>
+                        <th class="px-4 py-4 text-center text-gray-500">La matriz se generará aquí</th>
+                    </tr>
+                </thead>
+                <tbody id="matriz-body" class="text-gray-300">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            let datosExcel = [];
+
+            // 1. Escuchar la carga del archivo Excel
+            document.getElementById('file-rlusuario').addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const statusText = document.getElementById('file-status');
+                statusText.textContent = "Procesando archivo...";
+                statusText.className = "text-xs text-yellow-400 mt-2";
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, {type: 'array'});
+                        const firstSheetName = workbook.SheetNames[0];
+                        const worksheet = workbook.Sheets[firstSheetName];
+                        
+                        datosExcel = XLSX.utils.sheet_to_json(worksheet);
+                        
+                        statusText.textContent = `¡Archivo cargado correctamente! (${datosExcel.length} registros listos)`;
+                        statusText.className = "text-xs text-green-400 mt-2 font-bold";
+                    } catch (error) {
+                        console.error("Error al leer el Excel:", error);
+                        statusText.textContent = "Error al procesar el archivo. Asegúrate de que sea un .xlsx válido.";
+                        statusText.className = "text-xs text-red-500 mt-2";
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            });
+
+            // 2. Función para Generar Matriz
+            document.getElementById('btn-generar').addEventListener('click', () => {
+                if (datosExcel.length === 0) {
+                    alert("Primero debes cargar el archivo RLUSUARIO.XLSX");
+                    return;
+                }
+
+                const usuariosText = document.getElementById('input-usuarios').value;
+                const rolesText = document.getElementById('input-roles').value;
+                
+                if (!usuariosText.trim() || !rolesText.trim()) {
+                    alert("Por favor ingresa los códigos de usuario y los roles a validar en los cuadros de texto.");
+                    return;
+                }
+
+                // Limpieza extrema: Mayúsculas y sin espacios extra para asegurar cruce exacto
+                const listaUsuarios = usuariosText.split('\n').map(u => u.trim().toUpperCase()).filter(u => u);
+                const listaRoles = rolesText.split('\n').map(r => r.trim().toUpperCase()).filter(r => r);
+
+                const mapeoRoles = {};
+                const mapeoNombres = {};
+                const mapeoDescripciones = {};
+
+                const colUsuario = "Usuario"; 
+                const colNombre = "Nombre completo";
+                const colRol = "Rol"; 
+                const colDescripcion = "Descripción breve del rol";
+
+                datosExcel.forEach(fila => {
+                    // Limpieza extrema en los datos del Excel
+                    const usr = fila[colUsuario] ? String(fila[colUsuario]).trim().toUpperCase() : null;
+                    const rol = fila[colRol] ? String(fila[colRol]).trim().toUpperCase() : null;
+                    
+                    if (usr && rol) {
+                        if (!mapeoRoles[usr]) mapeoRoles[usr] = new Set();
+                        mapeoRoles[usr].add(rol);
+                        
+                        // Guardar nombre original (sin alterar mayúsculas/minúsculas)
+                        if (fila[colNombre]) mapeoNombres[usr] = fila[colNombre];
+                        if (fila[colDescripcion]) mapeoDescripciones[rol] = fila[colDescripcion];
+                    }
+                });
+
+                const thead = document.getElementById('matriz-head');
+                let headHTML = `<tr>
+                    <th class="px-4 py-3 bg-gray-900 border-b border-gray-700">Usuario</th>
+                    <th class="px-4 py-3 bg-gray-900 border-b border-gray-700">Nombre Completo</th>`;
+                
+                listaRoles.forEach(rol => {
+                    const desc = mapeoDescripciones[rol] || "";
+                    headHTML += `
+                    <th class="px-4 py-3 text-center border-l border-gray-700 bg-gray-800">
+                        <div class="font-bold text-gray-200">${rol}</div>
+                        <div class="text-[11px] text-gray-400 font-normal truncate max-w-[200px]" title="${desc}">${desc}</div>
+                    </th>`;
+                });
+                headHTML += `</tr>`;
+                thead.innerHTML = headHTML;
+
+                const tbody = document.getElementById('matriz-body');
+                let bodyHTML = "";
+
+                listaUsuarios.forEach(usr => {
+                    const nombre = mapeoNombres[usr] || "NO ENCONTRADO EN EXCEL";
+                    
+                    bodyHTML += `
+                    <tr class="border-b border-gray-700 hover:bg-gray-800 transition-colors">
+                        <td class="px-4 py-2 font-mono text-gray-300 bg-gray-900/50">${usr}</td>
+                        <td class="px-4 py-2 text-gray-300 bg-gray-900/50">${nombre}</td>`;
+                    
+                    listaRoles.forEach(rol => {
+                        const tieneRol = mapeoRoles[usr] && mapeoRoles[usr].has(rol);
+                        
+                        // Lógica corregida: 
+                        // Si tiene el rol = Vacío ""
+                        // Si NO tiene el rol = "X"
+                        const marca = tieneRol ? "" : "X"; 
+                        
+                        // Estilo: "X" en rojo para destacar que falta. Vacío sin formato especial.
+                        const colorClase = !tieneRol ? 'text-red-500 font-bold bg-red-900/10' : '';
+                        
+                        bodyHTML += `<td class="px-4 py-2 text-center border-l border-gray-700 ${colorClase}">${marca}</td>`;
+                    });
+                    
+                    bodyHTML += `</tr>`;
+                });
+                
+                tbody.innerHTML = bodyHTML;
+            });
+
+            // 3. Función para copiar a Excel
+            document.getElementById('btn-copiar').addEventListener('click', () => {
+                const tabla = document.getElementById('matriz-resultados');
+                
+                if (tabla.rows.length <= 1) {
+                    alert("No hay datos en la matriz para copiar. Genera la matriz primero.");
+                    return;
+                }
+
+                const rango = document.createRange();
+                rango.selectNode(tabla);
+                const seleccion = window.getSelection();
+                seleccion.removeAllRanges();
+                seleccion.addRange(rango);
+
+                try {
+                    document.execCommand('copy');
+                    alert("¡Matriz copiada con éxito! \nYa puedes abrir Excel, seleccionar la celda A1 y presionar Ctrl + V.");
+                } catch (err) {
+                    console.error('No se pudo copiar la tabla', err);
+                    alert("Hubo un error al intentar copiar. Puedes seleccionar la tabla manualmente y hacer Ctrl+C.");
+                }
+                
+                seleccion.removeAllRanges();
+            });
+        });
+    </script>
+</body>
+</html>
