@@ -39,22 +39,22 @@
                 <div class="flex flex-col">
                     <label class="block text-sm font-semibold mb-2">2. USUARIOS A VALIDAR (LISTA MAESTRA):</label>
                     <p class="text-xs text-gray-500 mb-2">Define las filas de la tabla. Pega todos los usuarios del ticket.</p>
-                    <textarea id="input-usuarios" class="w-full flex-grow min-h-[300px] bg-gray-800 border border-gray-600 rounded p-3 text-sm text-gray-200 focus:outline-none focus:border-green-500 font-mono resize-y" placeholder="Ej:&#10;50001095&#10;50026777"></textarea>
+                    <textarea id="input-usuarios" class="w-full flex-grow min-h-[350px] bg-gray-800 border border-gray-600 rounded p-3 text-sm text-gray-200 focus:outline-none focus:border-green-500 font-mono resize-y" placeholder="Ej:&#10;50001095&#10;50026777"></textarea>
                 </div>
 
                 <div class="flex flex-col">
                     <div class="flex justify-between items-end mb-2">
                         <div>
-                            <label class="block text-sm font-semibold">3. ROLES Y SOLICITANTES ESPECÍFICOS:</label>
-                            <p class="text-xs text-gray-500 mt-1">Añade cada rol y quiénes lo solicitaron.</p>
+                            <label class="block text-sm font-semibold">3. GRUPOS DE ROLES Y SOLICITANTES:</label>
+                            <p class="text-xs text-gray-500 mt-1">Asigna uno o varios roles a un grupo de usuarios.</p>
                         </div>
                         <button id="btn-add-rol" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold py-1.5 px-3 rounded flex items-center gap-1 transition-colors">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                            Agregar Rol
+                            Agregar Grupo
                         </button>
                     </div>
                     
-                    <div id="roles-container" class="flex-grow bg-gray-800/50 border border-gray-600 rounded p-3 overflow-y-auto max-h-[300px] space-y-3">
+                    <div id="roles-container" class="flex-grow bg-gray-800/50 border border-gray-600 rounded p-3 overflow-y-auto max-h-[350px] space-y-4">
                         </div>
                 </div>
             </div>
@@ -94,25 +94,29 @@
                 const block = document.createElement('div');
                 block.className = 'dynamic-role-block bg-gray-900 border border-gray-600 rounded p-3 relative shadow-sm';
                 block.innerHTML = `
-                    <button type="button" class="absolute top-2 right-2 text-gray-500 hover:text-red-500 transition-colors" onclick="this.parentElement.remove()" title="Eliminar este rol">
+                    <button type="button" class="absolute top-2 right-2 text-gray-500 hover:text-red-500 transition-colors" onclick="this.parentElement.remove()" title="Eliminar este bloque">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
-                    <div class="mb-2 pr-8">
-                        <input type="text" class="input-nombre-rol w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none" placeholder="CÓDIGO DEL ROL (Ej: ZHCHGT_MMMM...)">
-                    </div>
-                    <div>
-                        <textarea rows="2" class="input-usuarios-rol w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-xs text-gray-300 focus:border-blue-500 focus:outline-none font-mono" placeholder="Pegar usuarios que lo solicitan (uno por línea)"></textarea>
+                    
+                    <div class="grid grid-cols-1 gap-2 pr-6">
+                        <div>
+                            <label class="text-[10px] uppercase text-gray-400 font-bold mb-1 block">Roles a asignar:</label>
+                            <textarea rows="2" class="input-roles-block w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-blue-300 focus:border-blue-500 focus:outline-none font-mono" placeholder="Pega los ROLES aquí (uno por línea)"></textarea>
+                        </div>
+                        <div>
+                            <label class="text-[10px] uppercase text-gray-400 font-bold mb-1 block">A los usuarios:</label>
+                            <textarea rows="2" class="input-usuarios-rol w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-gray-300 focus:border-blue-500 focus:outline-none font-mono" placeholder="Pega los USUARIOS aquí (uno por línea)"></textarea>
+                        </div>
                     </div>
                 `;
                 containerRoles.appendChild(block);
-                // Hacer scroll hacia abajo al agregar uno nuevo
                 containerRoles.scrollTop = containerRoles.scrollHeight;
             }
 
             // Iniciar con un bloque vacío
             crearBloqueRol();
 
-            // Evento para botón agregar rol
+            // Evento para botón agregar bloque
             document.getElementById('btn-add-rol').addEventListener('click', crearBloqueRol);
 
 
@@ -168,19 +172,28 @@
                 const bloquesDOM = document.querySelectorAll('.dynamic-role-block');
                 
                 bloquesDOM.forEach(bloque => {
-                    const nombreRol = bloque.querySelector('.input-nombre-rol').value.trim().toUpperCase();
-                    const usuariosSolicitantes = bloque.querySelector('.input-usuarios-rol').value;
+                    const rolesText = bloque.querySelector('.input-roles-block').value;
+                    const usuariosText = bloque.querySelector('.input-usuarios-rol').value;
                     
-                    if (nombreRol) {
-                        const listaSolicitantes = usuariosSolicitantes.split('\n').map(u => u.trim().toUpperCase()).filter(u => u);
-                        rolesRequeridos[nombreRol] = new Set(listaSolicitantes);
+                    const listaRolesBloque = rolesText.split('\n').map(r => r.trim().toUpperCase()).filter(r => r);
+                    const listaSolicitantesBloque = usuariosText.split('\n').map(u => u.trim().toUpperCase()).filter(u => u);
+                    
+                    if (listaRolesBloque.length > 0 && listaSolicitantesBloque.length > 0) {
+                        listaRolesBloque.forEach(rol => {
+                            // Si el rol no existe en nuestro mapeo general, lo inicializamos
+                            if (!rolesRequeridos[rol]) {
+                                rolesRequeridos[rol] = new Set();
+                            }
+                            // Agregamos todos los usuarios de este bloque al Set de este rol
+                            listaSolicitantesBloque.forEach(usr => rolesRequeridos[rol].add(usr));
+                        });
                     }
                 });
 
                 const listaRolesAValidar = Object.keys(rolesRequeridos);
 
                 if (listaRolesAValidar.length === 0) {
-                    alert("Por favor ingresa al menos un Rol a validar con sus respectivos usuarios solicitantes.");
+                    alert("Por favor ingresa al menos un Rol a validar y un usuario solicitante en los grupos de la derecha.");
                     return;
                 }
 
@@ -210,8 +223,8 @@
                 // 4. Construir Thead
                 const thead = document.getElementById('matriz-head');
                 let headHTML = `<tr>
-                    <th class="px-4 py-3 bg-gray-900 border-b border-gray-700 sticky left-0 z-10">Usuario</th>
-                    <th class="px-4 py-3 bg-gray-900 border-b border-gray-700 sticky left-[100px] z-10">Nombre Completo</th>`;
+                    <th class="px-4 py-3 bg-gray-900 border-b border-gray-700 sticky left-0 z-10 shadow-[2px_0_5px_rgba(0,0,0,0.3)]">Usuario</th>
+                    <th class="px-4 py-3 bg-gray-900 border-b border-gray-700 sticky left-[100px] z-10 shadow-[2px_0_5px_rgba(0,0,0,0.3)]">Nombre Completo</th>`;
                 
                 listaRolesAValidar.forEach(rol => {
                     const desc = mapeoDescripciones[rol] || "";
@@ -224,7 +237,7 @@
                 headHTML += `</tr>`;
                 thead.innerHTML = headHTML;
 
-                // 5. Construir Tbody con la nueva Lógica de Excepciones
+                // 5. Construir Tbody
                 const tbody = document.getElementById('matriz-body');
                 let bodyHTML = "";
 
@@ -233,8 +246,8 @@
                     
                     bodyHTML += `
                     <tr class="border-b border-gray-700 hover:bg-gray-800 transition-colors">
-                        <td class="px-4 py-2 font-mono text-gray-300 bg-gray-900/50 sticky left-0">${usr}</td>
-                        <td class="px-4 py-2 text-gray-300 bg-gray-900/50 sticky left-[100px] min-w-[250px]">${nombre}</td>`;
+                        <td class="px-4 py-2 font-mono text-gray-300 bg-gray-900/50 sticky left-0 shadow-[2px_0_5px_rgba(0,0,0,0.1)]">${usr}</td>
+                        <td class="px-4 py-2 text-gray-300 bg-gray-900/50 sticky left-[100px] min-w-[250px] shadow-[2px_0_5px_rgba(0,0,0,0.1)]">${nombre}</td>`;
                     
                     listaRolesAValidar.forEach(rol => {
                         const fueSolicitado = rolesRequeridos[rol].has(usr);
@@ -248,7 +261,6 @@
                             marca = "X";
                             colorClase = "text-red-500 font-bold bg-red-900/10";
                         } 
-                        // Si lo pidió y ya lo tiene, o si NO lo pidió -> Queda en blanco (marca = "")
                         
                         bodyHTML += `<td class="px-4 py-2 text-center border-l border-gray-700 ${colorClase}">${marca}</td>`;
                     });
