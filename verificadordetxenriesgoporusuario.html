@@ -59,12 +59,12 @@
         const colTrans = Object.keys(fileConflict[0]).find(k => k.toLowerCase().includes('transacc'));
         const transList = [...new Set(fileConflict.map(r => String(r[colTrans] || "").trim().toUpperCase()))];
         
-        renderSeccion('Transacciones que entran en conflicto con: ' + nombreArchivo, transList.map(t => ({Transaccion: t})));
+        renderSeccion('Transacciones que entran en conflicto con la transacción solicitada: ' + nombreArchivo, transList.map(t => ({Transaccion: t})));
         
         // Mapeo con transacciones incluidas
         const rolesAsociados = dbTrans.filter(r => transList.includes(String(r.TRANSACCION || "").trim().toUpperCase()))
             .map(r => ({ Rol: String(r["ROL COMPUESTO"] || "").trim(), Transaccion: r.TRANSACCION }));
-        renderSeccion('Roles Compuestos vinculados', rolesAsociados);
+        renderSeccion('Roles Compuestos que tienen las transacciónes que entran en riesgo con lo solicitado', rolesAsociados);
 
         // Reporte Final con columna Transaccion integrada
         const reporte = rlUsers.flatMap(u => {
@@ -79,7 +79,7 @@
             return [];
         });
         
-        renderSeccion('Usuarios detectados con riesgo (GRC)', reporte);
+        renderSeccion('Roles detectados en Usuarios el cual tiene riesgos con la transacción a solicitar (GRC)', reporte);
     }
 
     function renderSeccion(titulo, data) {
