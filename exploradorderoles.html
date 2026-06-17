@@ -6,49 +6,91 @@
     <title>Explorador de Arquitectura SAP - Auditoría Proactiva</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        :root { --sap-blue: #001e62; --accent: #6a1b9a; --success: #1b5e20; --bg: #f4f7f9; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 20px; font-size: 13px; }
-        .container { max-width: 1600px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
-        .header { text-align: center; border-bottom: 3px solid var(--sap-blue); margin-bottom: 25px; padding-bottom: 10px; }
+        :root { 
+            /* Paleta Dark Navy */
+            --bg-body: #050b14; 
+            --bg-container: #0f172a; 
+            --bg-card: #1e293b; 
+            --border-color: #334155;
+            
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            
+            --sap-blue-text: #60a5fa; 
+            --sap-blue-btn: #1d4ed8; 
+            --sap-blue-btn-hover: #2563eb;
+            
+            --accent: #7e22ce; 
+            --accent-hover: #9333ea;
+            
+            --success: #15803d;
+            --success-hover: #16a34a;
+        }
+
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg-body); color: var(--text-main); margin: 0; padding: 20px; font-size: 13px; }
+        .container { max-width: 1600px; margin: auto; background: var(--bg-container); padding: 25px; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.5); border: 1px solid var(--border-color); }
+        
+        .header { text-align: center; border-bottom: 3px solid var(--sap-blue-btn); margin-bottom: 25px; padding-bottom: 10px; }
+        .header h2 { margin: 0; color: var(--sap-blue-text); }
+        .header p { margin: 5px 0; color: var(--text-muted); }
+        
         .section-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
-        .card { border: 1px solid #e0e4e8; padding: 20px; border-radius: 8px; background: #fff; display: flex; flex-direction: column; }
-        h3 { margin-top: 0; color: var(--sap-blue); }
-        textarea { width: 100%; height: 120px; margin: 10px 0; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-family: monospace; box-sizing: border-box; }
+        .card { border: 1px solid var(--border-color); padding: 20px; border-radius: 8px; background: var(--bg-card); display: flex; flex-direction: column; }
+        h3 { margin-top: 0; color: var(--sap-blue-text); }
+        
+        textarea, input[type="file"] { width: 100%; margin: 10px 0; padding: 10px; border: 1px solid var(--border-color); border-radius: 5px; font-family: monospace; box-sizing: border-box; background: #0b1120; color: var(--text-main); }
+        textarea { height: 120px; resize: vertical; }
+        textarea::placeholder { color: #475569; }
         
         .btn-group { display: flex; gap: 10px; margin-bottom: 10px; }
-        button { flex: 1; padding: 12px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; text-transform: uppercase; transition: 0.3s; }
+        button { flex: 1; padding: 12px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; text-transform: uppercase; transition: 0.3s; color: white; }
         
-        .btn-roles { background: var(--sap-blue); color: white; }
-        .btn-tcodes { background: var(--accent); color: white; }
-        .btn-download { background: var(--success); color: white; flex: 0 0 50px; } /* Botón pequeño para icono */
+        .btn-roles { background: var(--sap-blue-btn); }
+        .btn-roles:hover { background: var(--sap-blue-btn-hover); }
         
-        .table-wrap { overflow-x: auto; max-height: 450px; border: 1px solid #eee; margin-top: 10px; border-radius: 5px; flex-grow: 1; }
+        .btn-tcodes { background: var(--accent); }
+        .btn-tcodes:hover { background: var(--accent-hover); }
+        
+        .btn-download { background: var(--success); flex: 0 0 50px; font-size: 16px; display: flex; align-items: center; justify-content: center; padding: 0; }
+        .btn-download:hover { background: var(--success-hover); }
+        
+        .table-wrap { overflow-x: auto; max-height: 450px; border: 1px solid var(--border-color); margin-top: 10px; border-radius: 5px; flex-grow: 1; background: var(--bg-container); }
+        
+        /* Estilos personalizados para el Scrollbar en tema oscuro */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-container); }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+
         table { width: 100%; border-collapse: collapse; font-size: 11px; }
-        thead th { position: sticky; top: 0; background: #f8f9fa; color: #333; padding: 10px; border-bottom: 2px solid #ddd; text-align: left; z-index: 5; }
-        td { padding: 8px; border-bottom: 1px solid #eee; }
-        .badge-role { background: #e8eaf6; color: #1a237e; padding: 2px 5px; border-radius: 3px; font-weight: bold; }
-        .badge-tcode { background: #fff3e0; color: #e65100; padding: 2px 5px; border-radius: 3px; font-weight: bold; }
-        .mono { color: #007ad9; font-weight: bold; }
-        .multi { color: #e65100; font-weight: bold; }
+        thead th { position: sticky; top: 0; background: #0b1120; color: var(--sap-blue-text); padding: 10px; border-bottom: 2px solid var(--sap-blue-btn); text-align: left; z-index: 5; }
+        td { padding: 8px; border-bottom: 1px solid var(--border-color); }
+        tbody tr:hover { background: rgba(255, 255, 255, 0.04); }
+        
+        .badge-role { background: rgba(96, 165, 250, 0.15); color: #93c5fd; padding: 3px 6px; border-radius: 4px; font-weight: bold; border: 1px solid rgba(96, 165, 250, 0.3); display: inline-block; }
+        .badge-tcode { background: rgba(245, 158, 11, 0.15); color: #fcd34d; padding: 3px 6px; border-radius: 4px; font-weight: bold; border: 1px solid rgba(245, 158, 11, 0.3); display: inline-block;}
+        
+        .mono { color: #60a5fa; font-weight: bold; }
+        .multi { color: #fbbf24; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="header">
-        <h2 style="margin:0; color: var(--sap-blue);">Explorador de Arquitectura de Roles SAP</h2>
-        <p style="margin:5px 0; color: #666;">Cruce Maestro: ROL COMPUESTO | TRANSACCION | NOMBRE TRANSACCION</p>
+        <h2>Explorador de Arquitectura de Roles SAP</h2>
+        <p>Cruce Maestro: ROL COMPUESTO | TRANSACCION | NOMBRE TRANSACCION</p>
     </div>
 
-    <div style="margin-bottom: 20px; text-align: center;" class="card">
+    <div style="margin-bottom: 20px; text-align: center; flex-direction: row; justify-content: center; align-items: center; gap: 15px;" class="card">
         <strong>Paso 1:</strong> Cargar Base de Datos Maestra (DBTRANSACCIONES) 
-        <input type="file" id="fMaster" style="margin-left: 20px;">
+        <input type="file" id="fMaster" style="width: auto; margin: 0;">
     </div>
 
     <div class="section-grid">
         <div class="card">
             <h3>🔍 Desglose de Contenido (Rol)</h3>
-            <p>Lista todas las transacciones dentro de estos Roles Compuestos.</p>
+            <p style="color: var(--text-muted); margin-top: 0;">Lista todas las transacciones dentro de estos Roles Compuestos.</p>
             <textarea id="inputRoles" placeholder="Pegar Roles..."></textarea>
             <div class="btn-group">
                 <button class="btn-roles" onclick="analizarRoles()">Analizar Contenido</button>
@@ -71,7 +113,7 @@
 
         <div class="card">
             <h3>🔎 Ubicación de Transacción (T-Code)</h3>
-            <p>¿En qué roles están estas TX y qué tipo de rol es?</p>
+            <p style="color: var(--text-muted); margin-top: 0;">¿En qué roles están estas TX y qué tipo de rol es?</p>
             <textarea id="inputTcodes" placeholder="Pegar T-Codes..."></textarea>
             <div class="btn-group">
                 <button class="btn-tcodes" onclick="buscarTcodes()">Buscar en Roles</button>
@@ -129,7 +171,7 @@ function analizarRoles() {
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td><span class="badge-role">${rc}</span></td>
-                <td class="badge-tcode">${row["TRANSACCION"] || ""}</td>
+                <td><span class="badge-tcode">${row["TRANSACCION"] || ""}</span></td>
                 <td>${row["NOMBRE TRANSACCION"] || ""}</td>
             `;
             tbody.appendChild(tr);
@@ -154,7 +196,7 @@ function buscarTcodes() {
             
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td class="badge-tcode">${tx}</td>
+                <td><span class="badge-tcode">${tx}</span></td>
                 <td>${row["NOMBRE TRANSACCION"] || ""}</td>
                 <td><span class="badge-role">${rc}</span></td>
                 <td><span class="${tipo === 'MULTIFUNCIONAL' ? 'multi' : 'mono'}">${tipo}</span></td>
