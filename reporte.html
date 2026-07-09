@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Estatus - SAP / Proyectos</title>
+    <style>
+        :root {
+            /* Paleta Azul Marino */
+            --bg-navy: #0A192F;       
+            --primary-blue: #112240;  
+            --accent-blue: #0078D4;   
+            --accent-hover: #005A9E;  
+            --text-light: #E6F1FF;    
+            --container-bg: #FFFFFF;  
+            --text-dark: #333333;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-navy);
+            color: var(--text-light);
+            margin: 0;
+            padding: 30px 15px;
+        }
+
+        .container {
+            max-width: 850px;
+            margin: 0 auto;
+            background: var(--container-bg);
+            color: var(--text-dark);
+            padding: 35px;
+            border-radius: 10px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+            border-top: 6px solid var(--accent-blue);
+        }
+
+        h1 {
+            color: var(--bg-navy);
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 30px;
+            font-size: 24px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 15px;
+        }
+
+        /* Agrupación visual para diferenciar ambientes */
+        .section-title {
+            color: var(--accent-blue);
+            font-size: 18px;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            border-bottom: 2px dashed #ccc;
+            padding-bottom: 5px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid var(--primary-blue);
+        }
+
+        /* Borde distintivo para ambiente productivo (opcional) */
+        .form-group.s4p {
+            border-left: 4px solid var(--accent-blue);
+            background: #f0f7ff;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            color: var(--primary-blue);
+            margin-bottom: 10px;
+            font-size: 15px;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 15px;
+            align-items: flex-start;
+        }
+
+        input[type="text"], input[type="number"], textarea {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-family: inherit;
+            font-size: 14px;
+        }
+
+        .input-proyecto {
+            width: 100%;
+            box-sizing: border-box;
+            margin-bottom: 25px;
+            font-size: 16px !important;
+            border-color: var(--accent-blue) !important;
+        }
+
+        .pct-input {
+            width: 80px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        textarea {
+            flex-grow: 1;
+            resize: vertical;
+            height: 50px;
+        }
+
+        .btn {
+            background-color: var(--accent-blue);
+            color: white;
+            border: none;
+            padding: 14px 20px;
+            font-size: 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: background 0.3s;
+            margin-top: 20px;
+        }
+
+        .btn:hover {
+            background-color: var(--accent-hover);
+        }
+
+        .btn-secondary {
+            background-color: var(--primary-blue);
+            margin-top: 15px;
+        }
+
+        .btn-secondary:hover {
+            background-color: #0d1a30;
+        }
+
+        #output-section {
+            display: none;
+            margin-top: 30px;
+            padding-top: 20px;
+        }
+
+        .output-label {
+            font-weight: bold;
+            color: var(--bg-navy);
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        #resultado {
+            background-color: #F3F6F9;
+            padding: 20px;
+            border: 1px solid #cce0ff;
+            border-left: 5px solid var(--accent-blue);
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-family: 'Segoe UI', sans-serif;
+            line-height: 1.6;
+            color: #243B53;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Generador de Estatus: Control de Roles y Accesos</h1>
+
+        <div>
+            <label for="proyecto" style="color: var(--bg-navy);">Nombre del Proyecto / Rollout:</label>
+            <input type="text" id="proyecto" class="input-proyecto" placeholder="Ej. Distribuidora Huehueteca, Sagitario, La Ceiba...">
+        </div>
+
+        <div class="section-title">AMBIENTE SAQ (Calidad)</div>
+
+        <div class="form-group">
+            <label>1. Preparación de matriz de usuarios SAQ:</label>
+            <div class="input-row">
+                <input type="number" id="pct_1" placeholder="%" min="0" max="100" class="pct-input">
+                <textarea id="txt_1" placeholder="Comentarios o detalles..."></textarea>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>2. Crear roles SAQ:</label>
+            <div class="input-row">
+                <input type="number" id="pct_2" placeholder="%" min="0" max="100" class="pct-input">
+                <textarea id="txt_2" placeholder="Comentarios o detalles..."></textarea>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>3. Asignar roles a usuarios SAQ:</label>
+            <div class="input-row">
+                <input type="number" id="pct_3" placeholder="%" min="0" max="100" class="pct-input">
+                <textarea id="txt_3" placeholder="Comentarios o detalles..."></textarea>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>4. Validación de roles por puestos de trabajo SAQ:</label>
+            <div class="input-row">
+                <input type="number" id="pct_4" placeholder="%" min="0" max="100" class="pct-input">
+                <textarea id="txt_4" placeholder="Comentarios o detalles..."></textarea>
+            </div>
+        </div>
+
+        <div class="section-title">AMBIENTE S4P (Productivo)</div>
+
+        <div class="form-group s4p">
+            <label>5. Preparación de matriz de usuarios S4P:</label>
+            <div class="input-row">
+                <input type="number" id="pct_5" placeholder="%" min="0" max="100" class="pct-input">
+                <textarea id="txt_5" placeholder="Comentarios o detalles..."></textarea>
+            </div>
+        </div>
+
+        <div class="form-group s4p">
+            <label>6. Crear roles S4P:</label>
+            <div class="input-row">
+                <input type="number" id="pct_6" placeholder="%" min="0" max="100" class="pct-input">
+                <textarea id="txt_6" placeholder="Comentarios o detalles..."></textarea>
+            </div>
+        </div>
+
+        <div class="form-group s4p">
+            <label>7. Asignar roles a usuarios S4P:</label>
+            <div class="input-row">
+                <input type="number" id="pct_7" placeholder="%" min="0" max="100" class="pct-input">
+                <textarea id="txt_7" placeholder="Comentarios o detalles..."></textarea>
+            </div>
+        </div>
+
+        <div class="form-group s4p">
+            <label>8. Validación de roles por puestos de trabajo S4P:</label>
+            <div class="input-row">
+                <input type="number" id="pct_8" placeholder="%" min="0" max="100" class="pct-input">
+                <textarea id="txt_8" placeholder="Comentarios o detalles..."></textarea>
+            </div>
+        </div>
+
+        <button class="btn" onclick="generarReporte()">Generar Respuesta Estructurada</button>
+
+        <div id="output-section">
+            <span class="output-label">Vista Previa del Mensaje:</span>
+            <div id="resultado"></div>
+            <button class="btn btn-secondary" onclick="copiarTexto()">Copiar al Portapapeles</button>
+        </div>
+    </div>
+
+    <script>
+        function generarReporte() {
+            const proyecto = document.getElementById('proyecto').value.trim() || '[Nombre del Proyecto / Rollout]';
+            
+            const fases = [
+                { id: 1, nombre: "PREPARACIÓN DE MATRIZ DE USUARIOS SAQ" },
+                { id: 2, nombre: "CREAR ROLES SAQ" },
+                { id: 3, nombre: "ASIGNAR ROLES A USUARIOS SAQ" },
+                { id: 4, nombre: "VALIDACIÓN DE ROLES POR PUESTOS DE TRABAJO SAQ" },
+                { id: 5, nombre: "PREPARACIÓN DE MATRIZ DE USUARIOS S4P" },
+                { id: 6, nombre: "CREAR ROLES S4P" },
+                { id: 7, nombre: "ASIGNAR ROLES A USUARIOS S4P" },
+                { id: 8, nombre: "VALIDACIÓN DE ROLES POR PUESTOS DE TRABAJO S4P" }
+            ];
+
+            let reporte = `Hola, te comparto la actualización sobre el proyecto ${proyecto}:\n\n`;
+            let hayDatos = false;
+
+            fases.forEach(fase => {
+                const pct = document.getElementById(`pct_${fase.id}`).value.trim();
+                const txt = document.getElementById(`txt_${fase.id}`).value.trim();
+
+                if (pct || txt) {
+                    reporte += `🔹 ${fase.nombre}`;
+                    if (pct) {
+                        reporte += ` (${pct}%)`;
+                    }
+                    reporte += `:\n`;
+                    
+                    if (txt) {
+                        reporte += `   - ${txt}\n`;
+                    }
+                    reporte += `\n`;
+                    hayDatos = true;
+                }
+            });
+
+            if (!hayDatos) {
+                reporte += "Sin actualizaciones en las fases por el momento.";
+            } else {
+                reporte += `Quedo a la orden por cualquier duda.`;
+            }
+
+            document.getElementById('resultado').innerText = reporte;
+            document.getElementById('output-section').style.display = 'block';
+            
+            document.getElementById('output-section').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function copiarTexto() {
+            const texto = document.getElementById('resultado').innerText;
+            navigator.clipboard.writeText(texto).then(() => {
+                alert('¡Texto copiado al portapapeles!');
+            }).catch(err => {
+                alert('Error al copiar el texto: ', err);
+            });
+        }
+    </script>
+</body>
+</html>
