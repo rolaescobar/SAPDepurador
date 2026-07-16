@@ -55,6 +55,7 @@
                         <th class="p-3">Usuario</th>
                         <th class="p-3">Nombre Completo</th>
                         <th class="p-3">Rol Solicitado</th>
+                        <th class="p-3">Descripción del Rol</th>
                         <th class="p-3">Estado</th>
                     </tr>
                 </thead>
@@ -82,10 +83,18 @@
             tbody.innerHTML = "";
 
             // Crear un mapa único de usuarios y sus nombres
+            // Y un mapa para extraer la descripción breve de cada rol del archivo
             const usuariosInfo = {};
+            const rolesDescripcion = {};
+
             datosProduccion.forEach(item => {
                 if (!usuariosInfo[item.Usuario]) {
                     usuariosInfo[item.Usuario] = item['Nombre completo'];
+                }
+                
+                // Mapeamos el nombre del Rol con su Descripción Breve
+                if (item.Rol && !rolesDescripcion[String(item.Rol).trim()]) {
+                    rolesDescripcion[String(item.Rol).trim()] = item['Descripción breve del rol'] || item['Descripcion breve del rol'] || "";
                 }
             });
 
@@ -99,6 +108,8 @@
 
                 rolesSolicitados.forEach(rolSolicitado => {
                     const tieneRol = rolesDelUsuario.includes(rolSolicitado);
+                    // Obtener la descripción guardada en el mapa, si no existe coloca vacío o 'No encontrado'
+                    const descripcionRol = rolesDescripcion[rolSolicitado] || "";
                     
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
@@ -106,6 +117,7 @@
                         <td class="p-3">${usuario}</td>
                         <td class="p-3">${nombre}</td>
                         <td class="p-3 font-mono">${rolSolicitado}</td>
+                        <td class="p-3 text-gray-300">${descripcionRol}</td>
                         <td class="p-3 font-bold ${tieneRol ? 'text-emerald-400' : 'text-red-500'}">
                             ${tieneRol ? 'APLICADO' : 'NO APLICADO'}
                         </td>
