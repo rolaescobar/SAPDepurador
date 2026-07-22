@@ -15,48 +15,59 @@
 
         <div class="p-8 grid grid-cols-1 md:grid-cols-3 gap-8">
             <div class="space-y-4">
-                <label class="block text-sm font-bold uppercase text-gray-400">Mandante:</label>
-                <select id="mandante" class="w-full p-3 bg-gray-900 border border-gray-600 rounded">
-                    <option value="S4P">S4P</option>
-                    <option value="S4D">S4D</option>
-                    <option value="S4Q">S4Q</option>
-                    <option value="SAQ">SAQ</option>
-                    <option value="SAD">SAD</option>
-                    <option value="CNP">CNP</option>
-                    <option value="FOP">FOP</option>
-                    <option value="EWP">EWP</option>
-                    <option value="PTM">PTM</option>
-                    <option value="FOC">FOC</option>
-                    <option value="FOV">FOV</option>
-                    <option value="FOQ">FOQ</option>
-                    <option value="EWC">EWC</option>
-                    <option value="DPP">DPP</option>
-                </select>
+                <div>
+                    <label class="block text-sm font-bold uppercase text-gray-400 mb-1">Mandante:</label>
+                    <select id="mandante" class="w-full p-3 bg-gray-900 border border-gray-600 rounded text-white focus:outline-none focus:border-emerald-500">
+                        <option value="S4P">S4P</option>
+                        <option value="S4D">S4D</option>
+                        <option value="S4Q">S4Q</option>
+                        <option value="SAQ">SAQ</option>
+                        <option value="SAD">SAD</option>
+                        <option value="CNP">CNP</option>
+                        <option value="FOP">FOP</option>
+                        <option value="EWP">EWP</option>
+                        <option value="PTM">PTM</option>
+                        <option value="FOC">FOC</option>
+                        <option value="FOV">FOV</option>
+                        <option value="FOQ">FOQ</option>
+                        <option value="EWC">EWC</option>
+                        <option value="DPP">DPP</option>
+                    </select>
+                </div>
 
-                <label class="block text-sm font-bold uppercase text-gray-400">Cargar Archivo (RLUSUARIO):</label>
-                <input type="file" id="upload" class="w-full p-2 bg-gray-900 border border-gray-600 rounded">
+                <div>
+                    <label class="block text-sm font-bold uppercase text-gray-400 mb-1">1. Archivo de Roles de Usuario (RLUSUARIO):</label>
+                    <input type="file" id="upload" class="w-full p-2 bg-gray-900 border border-gray-600 rounded text-sm text-gray-300">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-bold uppercase text-emerald-400 mb-1">2. Catálogo de Roles / Descripciones (Opcional/Recomendado):</label>
+                    <input type="file" id="uploadCatalogo" class="w-full p-2 bg-gray-900 border border-emerald-600 rounded text-sm text-gray-300">
+                    <p class="text-xs text-gray-400 mt-1">Carga aquí el archivo con Usuario, Nombre, Rol y Descripción Técnica para completar los "NO APLICADO".</p>
+                </div>
             </div>
+
             <div class="md:col-span-2">
-                <label class="block text-sm font-bold uppercase text-gray-400">Roles solicitados previamente los cuales es necesario validar (uno por línea):</label>
-                <textarea id="rolesArea" class="w-full h-48 p-4 bg-gray-900 border border-gray-600 rounded font-mono text-blue-300"></textarea>
+                <label class="block text-sm font-bold uppercase text-gray-400 mb-1">Roles solicitados a validar (uno por línea):</label>
+                <textarea id="rolesArea" class="w-full h-64 p-4 bg-gray-900 border border-gray-600 rounded font-mono text-blue-300 text-sm focus:outline-none focus:border-emerald-500" placeholder="Ingrese o pegue aquí los roles a consultar..."></textarea>
             </div>
         </div>
 
         <div class="px-8 pb-8 flex gap-4">
-            <button onclick="procesar()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded font-bold transition">Validar Auditoría</button>
-            <button onclick="exportarExcel()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-4 rounded font-bold transition">Descargar Reporte (.xlsx)</button>
+            <button onclick="procesar()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded font-bold transition shadow-lg">Validar Auditoría</button>
+            <button onclick="exportarExcel()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-4 rounded font-bold transition shadow-lg">Descargar Reporte (.xlsx)</button>
         </div>
 
         <div id="resultadoContainer" class="p-8 hidden overflow-x-auto">
             <table class="w-full text-sm text-left border border-gray-700">
                 <thead class="bg-gray-900 text-gray-300 uppercase text-xs">
                     <tr>
-                        <th class="p-3">Mandante</th>
-                        <th class="p-3">Usuario</th>
-                        <th class="p-3">Nombre Completo</th>
-                        <th class="p-3">Rol Solicitado</th>
-                        <th class="p-3">Descripción del Rol</th>
-                        <th class="p-3">Estado</th>
+                        <th class="p-3 border-b border-gray-700">Mandante</th>
+                        <th class="p-3 border-b border-gray-700">Usuario</th>
+                        <th class="p-3 border-b border-gray-700">Nombre Completo</th>
+                        <th class="p-3 border-b border-gray-700">Rol Solicitado</th>
+                        <th class="p-3 border-b border-gray-700">Descripción del Rol</th>
+                        <th class="p-3 border-b border-gray-700">Estado</th>
                     </tr>
                 </thead>
                 <tbody id="tablaBody" class="divide-y divide-gray-700 bg-gray-800"></tbody>
@@ -66,70 +77,140 @@
 
     <script>
         let datosProduccion = [];
+        let datosCatalogo = [];
+
+        // Lectura del primer archivo (RLUSUARIO)
         document.getElementById('upload').addEventListener('change', (e) => {
             const reader = new FileReader();
             reader.onload = (e) => {
                 const wb = XLSX.read(e.target.result, {type: 'array'});
                 datosProduccion = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
-                alert("Archivo cargado con " + datosProduccion.length + " filas.");
+                alert("Archivo RLUSUARIO cargado con éxito (" + datosProduccion.length + " filas).");
             };
             reader.readAsArrayBuffer(e.target.files[0]);
         });
 
+        // Lectura del segundo archivo (Catálogo General de Roles / Descripciones)
+        document.getElementById('uploadCatalogo').addEventListener('change', (e) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const wb = XLSX.read(e.target.result, {type: 'array'});
+                datosCatalogo = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+                alert("Catálogo de Roles cargado con éxito (" + datosCatalogo.length + " filas).");
+            };
+            reader.readAsArrayBuffer(e.target.files[0]);
+        });
+
+        // Función auxiliar para obtener la descripción de cualquier objeto de fila
+        function extraerDescripcion(item) {
+            if (!item) return "";
+            return item['Descripción técnica'] || 
+                   item['Descripcion técnica'] || 
+                   item['Descripción breve del rol'] || 
+                   item['Descripcion breve del rol'] || 
+                   item['DESCRIPCION'] || 
+                   item['Descripcion'] || 
+                   item['Descripción'] || "";
+        }
+
+        // Función auxiliar para obtener el Rol de un objeto
+        function extraerRol(item) {
+            if (!item) return "";
+            const rol = item.Rol || item.ROL || item['Nombre de rol'] || item['Rol de usuario'];
+            return rol ? String(rol).trim() : "";
+        }
+
         function procesar() {
+            if (datosProduccion.length === 0) {
+                alert("Por favor, carga primero el archivo RLUSUARIO.");
+                return;
+            }
+
             const mandante = document.getElementById('mandante').value;
-            const rolesSolicitados = document.getElementById('rolesArea').value.split('\n').map(r => r.trim()).filter(r => r !== "");
+            const rolesSolicitados = document.getElementById('rolesArea').value
+                .split('\n')
+                .map(r => r.trim())
+                .filter(r => r !== "");
+
+            if (rolesSolicitados.length === 0) {
+                alert("Por favor, ingresa al menos un rol a validar.");
+                return;
+            }
+
             const tbody = document.getElementById('tablaBody');
             tbody.innerHTML = "";
 
-            // Crear un mapa único de usuarios y sus nombres
-            // Y un mapa para extraer la descripción breve de cada rol del archivo
             const usuariosInfo = {};
             const rolesDescripcion = {};
 
+            // 1. Extraer nombres y roles desde el archivo RLUSUARIO
             datosProduccion.forEach(item => {
-                if (!usuariosInfo[item.Usuario]) {
-                    usuariosInfo[item.Usuario] = item['Nombre completo'];
+                const usuarioKey = item.Usuario || item.USUARIO;
+                const nombreKey = item['Nombre completo'] || item.Nombre || item.NOMBRE;
+                const rolNombre = extraerRol(item);
+
+                if (usuarioKey && !usuariosInfo[usuarioKey]) {
+                    usuariosInfo[usuarioKey] = nombreKey || usuarioKey;
                 }
                 
-                // Mapeamos el nombre del Rol con su Descripción Breve
-                if (item.Rol && !rolesDescripcion[String(item.Rol).trim()]) {
-                    rolesDescripcion[String(item.Rol).trim()] = item['Descripción breve del rol'] || item['Descripcion breve del rol'] || "";
+                if (rolNombre && !rolesDescripcion[rolNombre]) {
+                    const desc = extraerDescripcion(item);
+                    if (desc) rolesDescripcion[rolNombre] = desc;
+                }
+            });
+
+            // 2. Extraer descripciones faltantes desde el Catálogo de Roles cargado
+            datosCatalogo.forEach(item => {
+                const rolNombre = extraerRol(item);
+                if (rolNombre && !rolesDescripcion[rolNombre]) {
+                    const desc = extraerDescripcion(item);
+                    if (desc) rolesDescripcion[rolNombre] = desc;
                 }
             });
 
             const usuariosUnicos = Object.keys(usuariosInfo);
 
+            if (usuariosUnicos.length === 0) {
+                alert("No se encontraron usuarios en el archivo RLUSUARIO. Verifica la columna 'Usuario'.");
+                return;
+            }
+
+            // 3. Generación de filas para la tabla de auditoría
             usuariosUnicos.forEach(usuario => {
                 const nombre = usuariosInfo[usuario];
                 const rolesDelUsuario = datosProduccion
-                    .filter(item => String(item.Usuario) === usuario)
-                    .map(item => String(item.Rol).trim());
+                    .filter(item => String(item.Usuario || item.USUARIO) === usuario)
+                    .map(item => extraerRol(item));
 
                 rolesSolicitados.forEach(rolSolicitado => {
                     const tieneRol = rolesDelUsuario.includes(rolSolicitado);
-                    // Obtener la descripción guardada en el mapa, si no existe coloca vacío o 'No encontrado'
-                    const descripcionRol = rolesDescripcion[rolSolicitado] || "";
+                    
+                    // Busca la descripción en el diccionario o coloca un guión si no se encontró
+                    const descripcionRol = rolesDescripcion[rolSolicitado] || "No encontrada en catálogo";
                     
                     const tr = document.createElement('tr');
+                    tr.className = "hover:bg-gray-750 transition-colors";
                     tr.innerHTML = `
                         <td class="p-3">${mandante}</td>
-                        <td class="p-3">${usuario}</td>
+                        <td class="p-3 font-mono text-gray-300">${usuario}</td>
                         <td class="p-3">${nombre}</td>
-                        <td class="p-3 font-mono">${rolSolicitado}</td>
+                        <td class="p-3 font-mono text-blue-300">${rolSolicitado}</td>
                         <td class="p-3 text-gray-300">${descripcionRol}</td>
-                        <td class="p-3 font-bold ${tieneRol ? 'text-emerald-400' : 'text-red-500'}">
+                        <td class="p-3 font-bold ${tieneRol ? 'text-emerald-400' : 'text-red-400'}">
                             ${tieneRol ? 'APLICADO' : 'NO APLICADO'}
                         </td>
                     `;
                     tbody.appendChild(tr);
                 });
             });
+
             document.getElementById('resultadoContainer').classList.remove('hidden');
         }
 
         function exportarExcel() {
-            const wb = XLSX.utils.table_to_book(document.querySelector('table'));
+            const table = document.querySelector('table');
+            if (!table) return;
+            const wb = XLSX.utils.table_to_book(table);
             XLSX.writeFile(wb, "Reporte_Auditoria_Roles.xlsx");
         }
     </script>
