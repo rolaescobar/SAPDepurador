@@ -142,6 +142,26 @@
       </div>
     </div>
 
+    <!-- Sección de Estatus de Roles Solicitados (Encontrado / No Encontrado) -->
+    <div id="rolesStatusCard" class="hidden bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-4">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+        <div>
+          <h2 class="text-base font-bold text-navy-950 flex items-center gap-2">
+            <i class="fa-solid fa-clipboard-check text-blue-600"></i> Estatus de Roles Solicitados
+          </h2>
+          <p class="text-xs text-slate-500">Verificación individual de existencia en la base de datos.</p>
+        </div>
+        <div class="flex gap-2 text-xs font-semibold">
+          <span id="badgeFoundCount" class="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full">0 Encontrados</span>
+          <span id="badgeNotFoundCount" class="bg-red-100 text-red-800 px-3 py-1 rounded-full">0 No Encontrados</span>
+        </div>
+      </div>
+
+      <div id="rolesStatusList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-56 overflow-y-auto pr-1">
+        <!-- Tarjetas dinámicas por cada rol -->
+      </div>
+    </div>
+
     <!-- Resultados: DataTable -->
     <div id="resultsCard" class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-4">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
@@ -303,18 +323,66 @@
         return;
       }
 
-      // Convertir lista ingresada a Set para búsquedas rápidas (evitar duplicados y espacios extras)
-      const inputRolesList = rawText
+      // Convertir lista ingresada a arreglo de roles únicos limpiando espacios
+      const rawRolesList = rawText
         .split('\n')
         .map(r => r.trim())
         .filter(r => r.length > 0);
 
-      const rolesSet = new Set(inputRolesList.map(r => r.toUpperCase()));
+      // Usar Map para preservar el nombre original ingresado y asociarle su conteo/resultado
+      const rolesMap = new Map();
+      rawRolesList.forEach(role => {
+        const key = role.toUpperCase();
+        if (!rolesMap.has(key)) {
+          rolesMap.set(key, { originalName: role, count: 0 });
+        }
+      });
 
-      // Filtrar la información del Excel comparando contra la Columna A (Rol)
-      filteredResults = excelRawData.filter(row => 
-        rolesSet.has(row.rol.toUpperCase())
-      );
+      // Crear Set para filtros rápidos
+      const rolesSet = new Set(rolesMap.keys());
+
+      // Filtrar transacciones de la BD Excel
+      filteredResults = [];
+      excelRawData.forEach(row => {
+        const rowRolKey = row.rol.toUpperCase();
+        if (rolesSet.has(rowRolKey)) {
+          filteredResults.push(row);
+          rolesMap.get(rowRolKey).count++;
+        }
+      });
+
+      // Generar Panel de Estatus (Encontrado / No Encontrado)
+      let foundCount = 0;
+      let notFoundCount = 0;
+      let statusHtml = '';
+
+      rolesMap.forEach((info) => {
+        const isFound = info.count > 0;
+        if (isFound) foundCount++; else notFoundCount++;
+
+        statusHtml += `
+          <div class="p-2.5 rounded-lg border text-xs flex items-center justify-between ${
+            isFound 
+              ? 'bg-emerald-50/60 border-emerald-200 text-emerald-950' 
+              : 'bg-red-50/60 border-red-200 text-red-950'
+          }">
+            <span class="font-mono font-semibold truncate pr-2" title="${info.originalName}">${info.originalName}</span>
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+              isFound 
+                ? 'bg-emerald-600 text-white' 
+                : 'bg-red-600 text-white'
+            }">
+              ${isFound ? `Encontrado (${info.count})` : 'No Encontrado'}
+            </span>
+          </div>
+        `;
+      });
+
+      // Inyectar Estatus en UI
+      $('#rolesStatusList').html(statusHtml);
+      $('#badgeFoundCount').text(`${foundCount} Encontrados`);
+      $('#badgeNotFoundCount').text(`${notFoundCount} No Encontrados`);
+      $('#rolesStatusCard').removeClass('hidden');
 
       // Renderizar en DataTable
       dataTableInstance.clear();
@@ -322,7 +390,7 @@
       dataTableInstance.draw();
 
       // Actualizar resumen de estadísticas
-      $('#statRolesCount').text(inputRolesList.length);
+      $('#statRolesCount').text(rolesMap.size);
       $('#statMatchesCount').text(filteredResults.length);
       $('#summaryStats').removeClass('hidden');
 
@@ -331,7 +399,6 @@
         $('#btnExport').prop('disabled', false);
       } else {
         $('#btnExport').prop('disabled', true);
-        alert('No se encontraron coincidencias para los roles ingresados.');
       }
     }
 
