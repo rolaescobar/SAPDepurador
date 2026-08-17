@@ -9,6 +9,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- SheetJS CDN -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- jsPDF & autoTable CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 
     <style>
         :root {
@@ -287,6 +290,17 @@
         .btn-export:hover {
             background: linear-gradient(135deg, #157347, #198754);
             box-shadow: 0 4px 10px rgba(32, 201, 151, 0.3);
+        }
+
+        .btn-export-pdf {
+            background: linear-gradient(135deg, #dc3545, #b02a37);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-export-pdf:hover {
+            background: linear-gradient(135deg, #bb2d3b, #842029);
+            box-shadow: 0 4px 10px rgba(220, 53, 69, 0.3);
         }
 
         /* Form Controls */
@@ -659,7 +673,11 @@
                 <div class="card">
                     <div class="card-header">
                         <div class="card-title"><i class="fa-solid fa-diagram-project"></i> Diagrama de Estructura Organizativa</div>
-                        <span id="treeSummary" class="badge-count">0 elementos</span>
+                        <div class="card-controls">
+                            <span id="treeSummary" class="badge-count">0 elementos</span>
+                            <button class="btn btn-export" onclick="exportTreeToExcel()"><i class="fa-solid fa-file-excel"></i> Exportar XLSX</button>
+                            <button class="btn btn-export-pdf" onclick="exportTreeToPDF()"><i class="fa-solid fa-file-pdf"></i> Exportar PDF</button>
+                        </div>
                     </div>
                     <div class="tree-container" id="treeViewContainer">
                         <div class="placeholder-state">
@@ -1203,6 +1221,143 @@
 
             container.innerHTML = html;
             document.getElementById('treeSummary').innerText = `${totalNodes} nodos visualizados`;
+        }
+
+        // Extract Flat Tree Data for Export
+        function getTreeFlatData() {
+            const socId = document.getElementById('selectSociedad').value;
+            if (!socId) return null;
+
+            const ficoMatch = DB.FICO.find(f => String(f.Sociedad) === socId);
+            const socName = ficoMatch ? (ficoMatch.NombreSociedad || ficoMatch.Descripcion) : socId;
+            const centroId = document.getElementById('selectCentro').value;
+
+            let centros = DB.LOGI.filter(l => {
+                const lSoc = String(l.Sociedad || '').trim();
+                return lSoc === socId || (socName && lSoc.toUpperCase() === socName.toUpperCase());
+            });
+
+            if (centroId) {
+                centros = centros.filter(c => String(c.Centro).trim() === centroId);
+            }
+
+            let flatRows = [];
+
+            centros.forEach(c => {
+                const centroCode = String(c.Centro).trim();
+                const centroDesc = c.descCentro || c.Descripción || 'Centro Logístico';
+                const almacenesMatch = DB.ALMACENES.filter(a => String(a.Centro).trim() === centroCode);
+
+                if (almacenesMatch.length === 0) {
+                    flatRows.push({
+                        'Sociedad': socId,
+                        'Nombre Sociedad': socName,
+                        'Centro': centroCode,
+                        'Descripción Centro': centroDesc,
+                        'Almacén': 'N/A',
+                        'Rol': 'N/A',
+                        'Descripción Rol': 'Sin roles asignados'
+                    });
+                } else {
+                    almacenesMatch.forEach(alm => {
+                        flatRows.push({
+                            'Sociedad': socId,
+                            'Nombre Sociedad': socName,
+                            'Centro': centroCode,
+                            'Descripción Centro': centroDesc,
+                            'Almacén': alm.Almacen || 'N/A',
+                            'Rol': alm.Rol || '',
+                            'Descripción Rol': alm.descRol || ''
+                        });
+                    });
+                }
+            });
+
+            return { socId, socName, rows: flatRows };
+        }
+
+        // Export Tree to Excel
+        function exportTreeToExcel() {
+            const data = getTreeFlatData();
+            if (!data || !data.rows.length) {
+                alert('Seleccione una Sociedad con datos para exportar la Estructura Organizativa.');
+                return;
+            }
+
+            const worksheet = XLSX.utils.json_to_sheet(data.rows);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Estructura Organizativa');
+
+            const filename = `Estructura_Organizativa_${data.socId}_${new Date().toISOString().slice(0,10)}.xlsx`;
+            XLSX.writeFile(workbook, filename);
+        }
+
+        // Export Tree to PDF
+        function exportTreeToPDF() {
+            const data = getTreeFlatData();
+            if (!data || !data.rows.length) {
+                alert('Seleccione una Sociedad con datos para exportar la Estructura Organizativa.');
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+
+            // Document Header / Banner
+            doc.setFillColor(11, 19, 43);
+            doc.rect(0, 0, 297, 24, 'F');
+
+            doc.setFontSize(16);
+            doc.setTextColor(0, 210, 255);
+            doc.setFont('helvetica', 'bold');
+            doc.text(`Estructura Organizativa - Sociedad ${data.socId}`, 14, 12);
+
+            doc.setFontSize(9);
+            doc.setTextColor(240, 244, 248);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`Sociedad: ${data.socName} | Fecha de Generación: ${new Date().toLocaleDateString()}`, 14, 18);
+
+            const tableHeaders = [['Sociedad', 'Nombre Sociedad', 'Centro', 'Descripción Centro', 'Almacén', 'Rol', 'Descripción Rol']];
+            const tableBody = data.rows.map(r => [
+                r['Sociedad'],
+                r['Nombre Sociedad'],
+                r['Centro'],
+                r['Descripción Centro'],
+                r['Almacén'],
+                r['Rol'],
+                r['Descripción Rol']
+            ]);
+
+            doc.autoTable({
+                startY: 28,
+                head: tableHeaders,
+                body: tableBody,
+                theme: 'striped',
+                headStyles: { 
+                    fillColor: [28, 37, 65], 
+                    textColor: [0, 210, 255], 
+                    fontStyle: 'bold',
+                    fontSize: 9 
+                },
+                styles: { 
+                    fontSize: 8, 
+                    cellPadding: 3,
+                    overflow: 'linebreak'
+                },
+                columnStyles: {
+                    0: { cellWidth: 20 },
+                    1: { cellWidth: 35 },
+                    2: { cellWidth: 20 },
+                    3: { cellWidth: 55 },
+                    4: { cellWidth: 22 },
+                    5: { cellWidth: 45 },
+                    6: { cellWidth: 'auto' }
+                },
+                alternateRowStyles: { fillColor: [245, 247, 250] }
+            });
+
+            const filename = `Estructura_Organizativa_${data.socId}_${new Date().toISOString().slice(0,10)}.pdf`;
+            doc.save(filename);
         }
 
         // Render Tables Functions
