@@ -686,6 +686,7 @@
                     <table class="custom-table" id="tableFico">
                         <thead>
                             <tr>
+                                <th>Rol (Columna A)</th>
                                 <th>Descripción</th>
                                 <th>País</th>
                                 <th>Sociedad</th>
@@ -693,7 +694,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr><td colspan="4" class="placeholder-state">Sin datos cargados.</td></tr>
+                            <tr><td colspan="5" class="placeholder-state">Sin datos cargados.</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -714,6 +715,7 @@
                     <table class="custom-table" id="tableLogi">
                         <thead>
                             <tr>
+                                <th>Rol (Columna A)</th>
                                 <th>Descripción Completa (Columna B)</th>
                                 <th>Sociedad (Columna C)</th>
                                 <th>Centro (Columna D)</th>
@@ -721,7 +723,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr><td colspan="4" class="placeholder-state">Sin datos cargados.</td></tr>
+                            <tr><td colspan="5" class="placeholder-state">Sin datos cargados.</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -871,9 +873,9 @@
             if (!obj) return '';
             const keys = Object.keys(obj);
             for (let name of targetNames) {
-                const normTarget = name.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
+                const normTarget = name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
                 for (let key of keys) {
-                    const normKey = key.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
+                    const normKey = key.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
                     if (normKey === normTarget && obj[key] !== undefined && obj[key] !== null) {
                         return String(obj[key]).trim();
                     }
@@ -924,26 +926,28 @@
                     const getSheetObjects = (sheetName) => {
                         const sheet = workbook.Sheets[sheetName];
                         if (!sheet) return [];
-                        // Get raw array of rows first
                         const rawData = XLSX.utils.sheet_to_json(sheet, { defval: "" });
                         return rawData;
                     };
 
-                    // Extract FICO
+                    // Extract FICO (Mapped Rol from Col A)
                     DB.FICO = getSheetObjects('FICO').map(row => ({
+                        Rol: getPropValue(row, ['Rol', 'ROL']),
                         Descripcion: getPropValue(row, ['Descripción', 'Descripcion', 'Descripción ', 'Descripcion ']),
                         Pais: getPropValue(row, ['Pais', 'País']),
                         Sociedad: getPropValue(row, ['Sociedad', 'SOCIEDAD']),
                         NombreSociedad: getPropValue(row, ['Nombre Sociedad', 'NombreSociedad'])
                     }));
 
-                    // Extract LOGI
+                    // Extract LOGI (Mapped Rol from Col A)
                     DB.LOGI = getSheetObjects('LOGI').map(row => {
+                        const rol = getPropValue(row, ['Rol', 'ROL']);
                         const desc = getPropValue(row, ['Descripción', 'Descripcion', 'Descripción ', 'Descripcion ']);
                         const soc = getPropValue(row, ['Sociedad', 'SOCIEDAD']);
                         const centro = getPropValue(row, ['Centro', 'CENTRO']);
                         const descCentro = extractCentroDesc(desc, centro);
                         return {
+                            Rol: rol,
                             Descripción: desc,
                             Sociedad: soc,
                             Centro: centro,
@@ -1206,11 +1210,12 @@
             FilteredDB.FICO = data;
             const tbody = document.querySelector('#tableFico tbody');
             if (!data.length) {
-                tbody.innerHTML = '<tr><td colspan="4" class="placeholder-state">No hay registros en FICO.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5" class="placeholder-state">No hay registros en FICO.</td></tr>';
                 return;
             }
             tbody.innerHTML = data.map(r => `
                 <tr>
+                    <td><span class="code-badge">${r.Rol || ''}</span></td>
                     <td>${r.Descripcion || ''}</td>
                     <td><span class="code-badge">${r.Pais || ''}</span></td>
                     <td><strong style="color:var(--accent-cyan);">${r.Sociedad || ''}</strong></td>
@@ -1223,11 +1228,12 @@
             FilteredDB.LOGI = data;
             const tbody = document.querySelector('#tableLogi tbody');
             if (!data.length) {
-                tbody.innerHTML = '<tr><td colspan="4" class="placeholder-state">No hay registros en LOGI.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5" class="placeholder-state">No hay registros en LOGI.</td></tr>';
                 return;
             }
             tbody.innerHTML = data.map(r => `
                 <tr>
+                    <td><span class="code-badge">${r.Rol || ''}</span></td>
                     <td>${r.Descripción || ''}</td>
                     <td><strong>${r.Sociedad || ''}</strong></td>
                     <td><span class="code-badge">${r.Centro || ''}</span></td>
@@ -1370,6 +1376,7 @@
             let cleanData = [];
             if (sheetName === 'LOGI') {
                 cleanData = dataToExport.map(r => ({
+                    'Rol': r.Rol || '',
                     'Descripción Completa': r.Descripción || '',
                     'Sociedad': r.Sociedad || '',
                     'Centro': r.Centro || '',
@@ -1385,6 +1392,7 @@
                 }));
             } else if (sheetName === 'FICO') {
                 cleanData = dataToExport.map(r => ({
+                    'Rol': r.Rol || '',
                     'Descripción': r.Descripcion || '',
                     'País': r.Pais || '',
                     'Sociedad': r.Sociedad || '',
