@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAP busqueda por objetos</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --bg-base: #0f172a;
+            --bg-card: #1e293b;
+            --bg-hover: #334155;
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --accent: #38bdf8;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --danger: #ef4444;
+            --success: #10b981;
+            --warning: #f59e0b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            padding: 24px;
+            min-height: 100vh;
+        }
+
+        .header {
+            margin-bottom: 24px;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .header h1 {
+            font-size: 1.6rem;
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .badge {
+            background-color: rgba(56, 189, 248, 0.1);
+            color: var(--accent);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+        }
+
+        .grid-layout {
+            display: grid;
+            grid-template-columns: 360px 1fr;
+            gap: 24px;
+        }
+
+        @media (max-width: 992px) {
+            .grid-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .file-upload-area {
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+            padding: 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            background-color: rgba(15, 23, 42, 0.4);
+        }
+
+        .file-upload-area:hover, .file-upload-area.dragover {
+            border-color: var(--accent);
+            background-color: rgba(56, 189, 248, 0.05);
+        }
+
+        .file-upload-area input {
+            display: none;
+        }
+
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+        }
+
+        .btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn-secondary {
+            background-color: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--bg-hover);
+            color: var(--text-main);
+        }
+
+        .form-group {
+            margin-bottom: 14px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 9px 12px;
+            background-color: var(--bg-base);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-main);
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .form-control:focus {
+            border-color: var(--accent);
+        }
+
+        textarea.form-control {
+            resize: vertical;
+            min-height: 110px;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 10px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            color: var(--accent);
+        }
+
+        .stats-bar {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .stat-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px 18px;
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .stat-card .val {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .stat-card .lbl {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-card);
+            max-height: 650px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+            text-align: left;
+        }
+
+        th {
+            background-color: #1e293b;
+            color: var(--accent);
+            padding: 12px 16px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            border-bottom: 2px solid var(--border-color);
+            font-weight: 600;
+        }
+
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-main);
+            vertical-align: top;
+        }
+
+        tr:hover td {
+            background-color: var(--bg-hover);
+        }
+
+        .tag-obj {
+            background-color: rgba(56, 189, 248, 0.15);
+            color: var(--accent);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .tag-role {
+            color: #60a5fa;
+            font-weight: 600;
+            font-family: monospace;
+        }
+
+        .field-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .field-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background-color: rgba(15, 23, 42, 0.5);
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .field-name {
+            color: var(--warning);
+            font-family: monospace;
+            font-weight: 600;
+            min-width: 65px;
+        }
+
+        .field-val {
+            color: var(--text-main);
+            font-family: monospace;
+        }
+
+        .field-match {
+            border: 1px solid var(--success);
+            background-color: rgba(16, 185, 129, 0.1);
+        }
+
+        .match-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .match-full { background-color: rgba(16, 185, 129, 0.2); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.4); }
+        .match-partial { background-color: rgba(245, 158, 11, 0.2); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.4); }
+
+        .spinner-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(15, 23, 42, 0.85);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+
+        .spinner-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid rgba(56, 189, 248, 0.2);
+            border-top: 4px solid var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .spinner-text {
+            margin-top: 12px;
+            color: var(--accent);
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            padding: 8px 16px;
+            cursor: pointer;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div>
+            <h1>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+                SAP Busqueda por Objetos
+            </h1>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 4px;">Evaluador de Roles Agrupado con Coincidencia Multi-Campo Simultánea</p>
+        </div>
+        <span class="badge">v3.0 - Multi-Field Grouped</span>
+    </div>
+
+    <div class="grid-layout">
+        <!-- Panel Izquierdo: Carga e Insumos -->
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+            <div class="card">
+                <div class="card-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    1. Cargar Matriz (.XLSX)
+                </div>
+                <div class="file-upload-area" id="dropZone" onclick="document.getElementById('excelFile').click()">
+                    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color: var(--accent);"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    <p style="margin-top: 8px; font-weight: 500; font-size: 0.9rem;" id="fileNameDisplay">Haz clic o arrastra tu archivo Excel aquí</p>
+                    <span style="font-size: 0.75rem; color: var(--text-muted);">Formatos aceptados: .xlsx, .xls</span>
+                    <input type="file" id="excelFile" accept=".xlsx, .xls" onchange="handleFileSelect(event)">
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="tabs">
+                    <button class="tab-btn active" onclick="switchTab('tab-direct', event)">Multi-Campo (SU53)</button>
+                    <button class="tab-btn" onclick="switchTab('tab-su53', event)">Pegar SU53 Texto</button>
+                </div>
+
+                <div id="tab-direct" class="tab-content active">
+                    <div class="form-group">
+                        <label for="searchObj">Objeto de Autorización (Ej: S_TABU_NAM, C_STUE_WRK)</label>
+                        <input type="text" id="searchObj" class="form-control" placeholder="Ej. S_TABU_NAM" onkeyup="triggerDebouncedSearch()">
+                    </div>
+                    
+                    <hr style="border-color: var(--border-color); margin: 12px 0;">
+                    <p style="font-size: 0.8rem; color: var(--accent); font-weight: 600; margin-bottom: 8px;">Criterios de Campos Múltiples (AND):</p>
+                    
+                    <div class="form-group">
+                        <label>Campo 1 / Valor 1 (Ej: ACTVT = 02)</label>
+                        <div style="display: flex; gap: 8px;">
+                            <input type="text" id="f1_name" class="form-control" placeholder="Campo (ACTVT)" onkeyup="triggerDebouncedSearch()">
+                            <input type="text" id="f1_val" class="form-control" placeholder="Valor (02)" onkeyup="triggerDebouncedSearch()">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Campo 2 / Valor 2 (Ej: TABLE = ZSDT_RP_TOP)</label>
+                        <div style="display: flex; gap: 8px;">
+                            <input type="text" id="f2_name" class="form-control" placeholder="Campo (TABLE)" onkeyup="triggerDebouncedSearch()">
+                            <input type="text" id="f2_val" class="form-control" placeholder="Valor (ZSDT_RP_TOP)" onkeyup="triggerDebouncedSearch()">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Campo 3 / Valor 3 (Opcional - Ej: CSWRK = 1050)</label>
+                        <div style="display: flex; gap: 8px;">
+                            <input type="text" id="f3_name" class="form-control" placeholder="Campo" onkeyup="triggerDebouncedSearch()">
+                            <input type="text" id="f3_val" class="form-control" placeholder="Valor" onkeyup="triggerDebouncedSearch()">
+                        </div>
+                    </div>
+
+                    <label class="checkbox-group">
+                        <input type="checkbox" id="chkAutoOrg" checked onchange="triggerDebouncedSearch()">
+                        <span>Mapeo inteligente de Variables Org ($) y Comodines (*)</span>
+                    </label>
+
+                    <div style="margin-top: 16px; display: flex; gap: 8px;">
+                        <button class="btn" onclick="triggerSearchNow()">Evaluar Roles</button>
+                        <button class="btn btn-secondary" onclick="resetFilters()">Limpiar</button>
+                    </div>
+                </div>
+
+                <div id="tab-su53" class="tab-content">
+                    <div class="form-group">
+                        <label for="su53Text">Estándar de pegado SU53 (Objeto: nombre / campo: valor):</label>
+                        <textarea id="su53Text" class="form-control" placeholder="Objeto: S_TCODE
+TCD: Z03_02500060
+
+-- o también --
+Objeto: S_TABU_NAM
+ACTVT: 02
+TABLE: ZSDT_RP_TOP"></textarea>
+                    </div>
+                    <button class="btn" onclick="parseSU53()">Parsear y Buscar SU53</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel Derecho: Resultados Agrupados -->
+        <div>
+            <div class="stats-bar">
+                <div class="stat-card">
+                    <div class="lbl">Registros Excel</div>
+                    <div class="val" id="statTotalRows">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="lbl">Roles que Cumplen TODO</div>
+                    <div class="val" id="statFullMatches" style="color: var(--success);">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="lbl">Roles Parciales</div>
+                    <div class="val" id="statPartialMatches" style="color: var(--warning);">0</div>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <div class="spinner-overlay" id="loadingSpinner">
+                    <div class="spinner"></div>
+                    <div class="spinner-text" id="spinnerText">Reagrupando campos por rol...</div>
+                </div>
+
+                <table id="resultsTable">
+                    <thead>
+                        <tr>
+                            <th style="width: 30%;">Rol SAP</th>
+                            <th style="width: 15%;">Objeto</th>
+                            <th style="width: 40%;">Campos y Valores en el Rol</th>
+                            <th style="width: 15%;">Cumplimiento</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <tr>
+                            <td colspan="4">
+                                <div class="empty-state" style="text-align: center; padding: 48px 24px; color: var(--text-muted);">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48" style="opacity: 0.5; margin-bottom: 12px;"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                                    <p>Carga una matriz Excel para evaluar los roles de forma agrupada.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let rawData = [];
+        let searchTimeout = null;
+        const orgFields = ['BUKRS', 'WERKS', 'GSBER', 'VKORG', 'VTWEG', 'SPART', 'EKORG', 'PERSG', 'PERSK', 'KOSTL'];
+
+        const dropZone = document.getElementById('dropZone');
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => { e.preventDefault(); dropZone.classList.add('dragover'); }, false);
+        });
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => { e.preventDefault(); dropZone.classList.remove('dragover'); }, false);
+        });
+        dropZone.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            if(dt.files.length) handleFile(dt.files[0]);
+        });
+
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if(file) handleFile(file);
+        }
+
+        function showSpinner(msg = 'Procesando...') {
+            document.getElementById('spinnerText').textContent = msg;
+            document.getElementById('loadingSpinner').classList.add('active');
+        }
+
+        function hideSpinner() {
+            document.getElementById('loadingSpinner').classList.remove('active');
+        }
+
+        function handleFile(file) {
+            document.getElementById('fileNameDisplay').textContent = file.name;
+            showSpinner('Indexando matriz Excel...');
+
+            setTimeout(() => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, {type: 'array'});
+                        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                        const json = XLSX.utils.sheet_to_json(worksheet, {header: 1});
+
+                        if(json.length < 2) {
+                            alert('El archivo no tiene filas suficientes.');
+                            hideSpinner();
+                            return;
+                        }
+
+                        const headers = json[0].map(h => String(h || '').trim().toLowerCase());
+                        const roleIdx = headers.findIndex(h => h.includes('rol'));
+                        const objIdx = headers.findIndex(h => h.includes('objeto') || h.includes('object'));
+                        const fieldIdx = headers.findIndex(h => h.includes('campo') || h.includes('field'));
+                        const val1Idx = headers.findIndex(h => h.includes('valor 1') || h.includes('valor1') || h.includes('val1'));
+                        const val2Idx = headers.findIndex(h => h.includes('valor 2') || h.includes('valor2') || h.includes('val2'));
+
+                        rawData = [];
+                        for(let i = 1; i < json.length; i++) {
+                            const row = json[i];
+                            if(!row || row.length === 0) continue;
+
+                            rawData.push({
+                                role: String(row[roleIdx !== -1 ? roleIdx : 0] || '').trim(),
+                                object: String(row[objIdx !== -1 ? objIdx : 1] || '').trim(),
+                                field: String(row[fieldIdx !== -1 ? fieldIdx : 2] || '').trim(),
+                                val1: String(row[val1Idx !== -1 ? val1Idx : 3] || '').trim(),
+                                val2: String(row[val2Idx !== -1 ? val2Idx : 4] || '').trim()
+                            });
+                        }
+
+                        document.getElementById('statTotalRows').textContent = rawData.length.toLocaleString();
+                        filterDataAsync();
+                    } catch(err) {
+                        alert('Error al leer Excel: ' + err.message);
+                        hideSpinner();
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            }, 50);
+        }
+
+        function triggerDebouncedSearch() {
+            if(searchTimeout) clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => filterDataAsync(), 300);
+        }
+
+        function triggerSearchNow() {
+            if(searchTimeout) clearTimeout(searchTimeout);
+            filterDataAsync();
+        }
+
+        function filterDataAsync() {
+            if(!rawData.length) return;
+            showSpinner('Reagrupando roles y evaluando criterios SU53...');
+
+            setTimeout(() => {
+                const targetObj = document.getElementById('searchObj').value.trim().toUpperCase();
+                const autoOrg = document.getElementById('chkAutoOrg').checked;
+
+                // Criterios requeridos de la SU53
+                const criteria = [];
+                for(let i = 1; i <= 3; i++) {
+                    const fn = document.getElementById(`f${i}_name`).value.trim().toUpperCase();
+                    const fv = document.getElementById(`f${i}_val`).value.trim().toUpperCase();
+                    if(fn || fv) criteria.push({ field: fn, val: fv });
+                }
+
+                // 1. Filtrar primero por el objeto objetivo
+                const rowsForObj = rawData.filter(r => !targetObj || r.object.toUpperCase().includes(targetObj));
+
+                // 2. Agrupar por [Rol + Objeto]
+                const grouped = {};
+                rowsForObj.forEach(r => {
+                    const key = `${r.role}||${r.object}`;
+                    if(!grouped[key]) {
+                        grouped[key] = { role: r.role, object: r.object, fields: [] };
+                    }
+                    grouped[key].fields.push({ field: r.field, val1: r.val1, val2: r.val2 });
+                });
+
+                // 3. Evaluar el grado de cumplimiento de cada rol
+                const results = [];
+                let fullMatchCount = 0;
+                let partialMatchCount = 0;
+
+                Object.values(grouped).forEach(item => {
+                    let matchedCriteriaCount = 0;
+                    const matchedFieldsSet = new Set();
+
+                    criteria.forEach(crit => {
+                        let isCritMatched = false;
+                        item.fields.forEach(f => {
+                            const matchField = !crit.field || f.field.toUpperCase() === crit.field;
+                            let matchVal = false;
+
+                            const v1 = f.val1.toUpperCase();
+                            const v2 = f.val2.toUpperCase();
+
+                            if(!crit.val) {
+                                matchVal = true;
+                            } else {
+                                if(v1.includes(crit.val) || v2.includes(crit.val)) {
+                                    matchVal = true;
+                                } else if(autoOrg) {
+                                    if(v1 === '*' || v2 === '*') matchVal = true;
+                                    else if(v1.startsWith('$') || v2.startsWith('$')) matchVal = true;
+                                }
+                            }
+
+                            if(matchField && matchVal) {
+                                isCritMatched = true;
+                                matchedFieldsSet.add(f.field.toUpperCase());
+                            }
+                        });
+
+                        if(isCritMatched) matchedCriteriaCount++;
+                    });
+
+                    const isFullMatch = criteria.length === 0 || matchedCriteriaCount === criteria.length;
+                    
+                    if(isFullMatch) fullMatchCount++;
+                    else if(matchedCriteriaCount > 0) partialMatchCount++;
+
+                    // Mostrar si es full match, o si hay coincidencias parciales
+                    if(isFullMatch || matchedCriteriaCount > 0 || criteria.length === 0) {
+                        results.push({
+                            role: item.role,
+                            object: item.object,
+                            fields: item.fields,
+                            matchedCriteriaCount,
+                            totalCriteria: criteria.length,
+                            isFullMatch,
+                            matchedFieldsSet
+                        });
+                    }
+                });
+
+                // Ordenar: Primero los Full Matches (cumplen 100% de la SU53)
+                results.sort((a, b) => b.matchedCriteriaCount - a.matchedCriteriaCount);
+
+                document.getElementById('statFullMatches').textContent = fullMatchCount.toLocaleString();
+                document.getElementById('statPartialMatches').textContent = partialMatchCount.toLocaleString();
+
+                renderGroupedTable(results);
+                hideSpinner();
+            }, 30);
+        }
+
+        function renderGroupedTable(results) {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+
+            if(results.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 24px;">
+                            No se encontraron roles que contengan los criterios seleccionados.
+                        </td>
+                    </tr>`;
+                return;
+            }
+
+            const limit = 200;
+            const displayResults = results.slice(0, limit);
+
+            displayResults.forEach(res => {
+                const tr = document.createElement('tr');
+                
+                // Render list of fields within role
+                let fieldsHtml = '<div class="field-list">';
+                res.fields.forEach(f => {
+                    const isMatched = res.matchedFieldsSet.has(f.field.toUpperCase());
+                    const matchClass = isMatched ? 'field-match' : '';
+                    const isOrgVar = f.val1.startsWith('$') || f.val2.startsWith('$');
+                    const valStyle = isOrgVar ? 'color: #fca5a5; font-weight: bold;' : '';
+
+                    fieldsHtml += `
+                        <div class="field-item ${matchClass}">
+                            <span class="field-name">${escapeHtml(f.field)}:</span>
+                            <span class="field-val" style="${valStyle}">${escapeHtml(f.val1)} ${f.val2 ? '- ' + escapeHtml(f.val2) : ''}</span>
+                        </div>
+                    `;
+                });
+                fieldsHtml += '</div>';
+
+                const badgeHtml = res.isFullMatch 
+                    ? `<span class="match-badge match-full">✓ CUMPLE TODO (${res.matchedCriteriaCount}/${res.totalCriteria})</span>`
+                    : `<span class="match-badge match-partial">⚠️ PARCIAL (${res.matchedCriteriaCount}/${res.totalCriteria})</span>`;
+
+                tr.innerHTML = `
+                    <td class="tag-role">${escapeHtml(res.role)}</td>
+                    <td><span class="tag-obj">${escapeHtml(res.object)}</span></td>
+                    <td>${fieldsHtml}</td>
+                    <td>${badgeHtml}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            if(results.length > limit) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td colspan="4" style="text-align: center; color: var(--accent); font-size: 0.85rem; padding: 12px;">
+                        Mostrando ${limit} de ${results.length.toLocaleString()} roles agrupados encontrados.
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            }
+        }
+
+        function switchTab(tabId, event) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+            if(event && event.target) {
+                event.target.classList.add('active');
+            }
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        function parseSU53() {
+            const text = document.getElementById('su53Text').value;
+            if(!text) return;
+
+            // Limpiar los inputs del tab principal
+            document.getElementById('searchObj').value = '';
+            for(let i = 1; i <= 3; i++) {
+                document.getElementById(`f${i}_name`).value = '';
+                document.getElementById(`f${i}_val`).value = '';
+            }
+
+            const lines = text.split('\n');
+            let fieldCount = 0;
+
+            lines.forEach(line => {
+                const trimmed = line.trim();
+                if(!trimmed) return;
+
+                // Caso 1: Formato Estándar con dos puntos (Objeto: S_TCODE / TCD: Z03_02500060)
+                if(trimmed.includes(':')) {
+                    const parts = trimmed.split(':');
+                    const key = parts[0].trim().toUpperCase();
+                    const val = parts.slice(1).join(':').trim();
+
+                    if(key === 'OBJETO' || key === 'OBJECT') {
+                        document.getElementById('searchObj').value = val;
+                    } else if(key.length > 0 && fieldCount < 3) {
+                        fieldCount++;
+                        document.getElementById(`f${fieldCount}_name`).value = key;
+                        document.getElementById(`f${fieldCount}_val`).value = val;
+                    }
+                } 
+                // Caso 2: Formato donde el Objeto está solo en la 1ra línea y los campos vienen con ':' abajo (ej: S_TCODE \n TCD: Z03_...)
+                else {
+                    const objMatch = trimmed.match(/^([A-Z]_[A-Z0-9_]+)$/i);
+                    if(objMatch && !document.getElementById('searchObj').value) {
+                        document.getElementById('searchObj').value = objMatch[1].toUpperCase();
+                    } else {
+                        // Soporte secundario por expresiones regulares tradicionales
+                        const inlineObjMatch = trimmed.match(/([A-Z]_[A-Z0-9_]+)/i);
+                        if(inlineObjMatch && !document.getElementById('searchObj').value) {
+                            document.getElementById('searchObj').value = inlineObjMatch[1].toUpperCase();
+                        }
+
+                        const actvtMatch = trimmed.match(/ACTVT\s*([0-9A-Z]+)/i);
+                        if(actvtMatch && !document.getElementById('f1_name').value) {
+                            fieldCount++;
+                            document.getElementById(`f${fieldCount}_name`).value = 'ACTVT';
+                            document.getElementById(`f${fieldCount}_val`).value = actvtMatch[1];
+                        }
+
+                        const tableMatch = trimmed.match(/TABLE\s*([0-9A-Z_]+)/i);
+                        if(tableMatch && fieldCount < 3) {
+                            fieldCount++;
+                            document.getElementById(`f${fieldCount}_name`).value = 'TABLE';
+                            document.getElementById(`f${fieldCount}_val`).value = tableMatch[1];
+                        }
+                    }
+                }
+            });
+
+            // Cambiar a la pestaña de Multi-Campo y ejecutar la evaluación
+            switchTab('tab-direct');
+            document.querySelectorAll('.tab-btn')[0].classList.add('active');
+            filterDataAsync();
+        }
+
+        function resetFilters() {
+            document.getElementById('searchObj').value = '';
+            for(let i=1; i<=3; i++) {
+                document.getElementById(`f${i}_name`).value = '';
+                document.getElementById(`f${i}_val`).value = '';
+            }
+            document.getElementById('su53Text').value = '';
+            filterDataAsync();
+        }
+
+        function escapeHtml(str) {
+            return String(str || '')
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
