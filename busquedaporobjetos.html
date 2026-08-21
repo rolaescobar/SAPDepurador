@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SAP busqueda por objetos</title>
+    <title>SAP Búsqueda por Objetos y Roles Compuestos</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root {
@@ -65,11 +65,11 @@
 
         .grid-layout {
             display: grid;
-            grid-template-columns: 360px 1fr;
+            grid-template-columns: 380px 1fr;
             gap: 24px;
         }
 
-        @media (max-width: 992px) {
+        @media (max-width: 1024px) {
             .grid-layout {
                 grid-template-columns: 1fr;
             }
@@ -84,9 +84,9 @@
         }
 
         .card-title {
-            font-size: 1.1rem;
+            font-size: 1.05rem;
             font-weight: 600;
-            margin-bottom: 16px;
+            margin-bottom: 12px;
             color: var(--text-main);
             display: flex;
             align-items: center;
@@ -96,7 +96,7 @@
         .file-upload-area {
             border: 2px dashed var(--border-color);
             border-radius: 8px;
-            padding: 24px;
+            padding: 18px;
             text-align: center;
             cursor: pointer;
             transition: all 0.2s;
@@ -106,6 +106,11 @@
         .file-upload-area:hover, .file-upload-area.dragover {
             border-color: var(--accent);
             background-color: rgba(56, 189, 248, 0.05);
+        }
+
+        .file-upload-area.loaded {
+            border-color: var(--success);
+            background-color: rgba(16, 185, 129, 0.05);
         }
 
         .file-upload-area input {
@@ -199,7 +204,7 @@
             border-radius: 8px;
             padding: 12px 18px;
             flex: 1;
-            min-width: 150px;
+            min-width: 140px;
         }
 
         .stat-card .val {
@@ -220,7 +225,7 @@
             border-radius: 8px;
             border: 1px solid var(--border-color);
             background-color: var(--bg-card);
-            max-height: 650px;
+            max-height: 680px;
             overflow-y: auto;
             position: relative;
         }
@@ -228,7 +233,7 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 0.9rem;
+            font-size: 0.88rem;
             text-align: left;
         }
 
@@ -268,6 +273,25 @@
             color: #60a5fa;
             font-weight: 600;
             font-family: monospace;
+        }
+
+        .tag-composite {
+            color: #a7f3d0;
+            font-weight: 600;
+            font-family: monospace;
+            background-color: rgba(16, 185, 129, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            display: inline-block;
+            margin-bottom: 3px;
+        }
+
+        .composite-list {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            max-height: 150px;
+            overflow-y: auto;
         }
 
         .field-list {
@@ -396,29 +420,46 @@
         <div>
             <h1>
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
-                SAP Busqueda por Objetos
+                SAP Búsqueda por Objetos y Roles Compuestos
             </h1>
-            <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 4px;">Evaluador de Roles Agrupado con Coincidencia Multi-Campo Simultánea</p>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 4px;">Evaluador de Roles Agrupados con mapeo de Roles Compuestos</p>
         </div>
-        <span class="badge">v3.0 - Multi-Field Grouped</span>
+        <span class="badge">v3.2 - DBOBJETOS & DBTRANSACCIONES</span>
     </div>
 
     <div class="grid-layout">
         <!-- Panel Izquierdo: Carga e Insumos -->
         <div style="display: flex; flex-direction: column; gap: 20px;">
+            
+            <!-- 1. Carga DBOBJETOS.xlsx -->
             <div class="card">
                 <div class="card-title">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
-                    1. Cargar Matriz (.XLSX)
+                    1. Matriz Objetos / Roles Simples (.XLSX)
                 </div>
-                <div class="file-upload-area" id="dropZone" onclick="document.getElementById('excelFile').click()">
-                    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color: var(--accent);"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                    <p style="margin-top: 8px; font-weight: 500; font-size: 0.9rem;" id="fileNameDisplay">Haz clic o arrastra tu archivo Excel aquí</p>
-                    <span style="font-size: 0.75rem; color: var(--text-muted);">Formatos aceptados: .xlsx, .xls</span>
-                    <input type="file" id="excelFile" accept=".xlsx, .xls" onchange="handleFileSelect(event)">
+                <div class="file-upload-area" id="dropZoneSimple" onclick="document.getElementById('excelFile').click()">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color: var(--accent);"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    <p style="margin-top: 6px; font-weight: 500; font-size: 0.85rem;" id="fileNameDisplay">DBOBJETOS.xlsx</p>
+                    <span style="font-size: 0.7rem; color: var(--text-muted);">Rol, Objeto, Campo, Val1, Val2</span>
+                    <input type="file" id="excelFile" accept=".xlsx, .xls" onchange="handleFileSelect(event, 'simple')">
                 </div>
             </div>
 
+            <!-- 2. Carga DBTRANSACCIONES.xlsx -->
+            <div class="card">
+                <div class="card-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    2. Matriz Roles Compuestos (.XLSX)
+                </div>
+                <div class="file-upload-area" id="dropZoneComposite" onclick="document.getElementById('excelCompositeFile').click()">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color: var(--success);"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    <p style="margin-top: 6px; font-weight: 500; font-size: 0.85rem;" id="compositeFileNameDisplay">DBTRANSACCIONES.xlsx</p>
+                    <span style="font-size: 0.7rem; color: var(--text-muted);">Col A: Rol Compuesto | Col B: Rol Simple</span>
+                    <input type="file" id="excelCompositeFile" accept=".xlsx, .xls" onchange="handleFileSelect(event, 'composite')">
+                </div>
+            </div>
+
+            <!-- 3. Formulario de Búsqueda -->
             <div class="card">
                 <div class="tabs">
                     <button class="tab-btn active" onclick="switchTab('tab-direct', event)">Multi-Campo (SU53)</button>
@@ -489,11 +530,15 @@ TABLE: ZSDT_RP_TOP"></textarea>
         <div>
             <div class="stats-bar">
                 <div class="stat-card">
-                    <div class="lbl">Registros Excel</div>
+                    <div class="lbl">Registros DBOBJETOS</div>
                     <div class="val" id="statTotalRows">0</div>
                 </div>
                 <div class="stat-card">
-                    <div class="lbl">Roles que Cumplen TODO</div>
+                    <div class="lbl">Relaciones DBTRANSACCIONES</div>
+                    <div class="val" id="statTotalComposite" style="color: #a7f3d0;">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="lbl">Roles Que Cumplen TODO</div>
                     <div class="val" id="statFullMatches" style="color: var(--success);">0</div>
                 </div>
                 <div class="stat-card">
@@ -505,24 +550,25 @@ TABLE: ZSDT_RP_TOP"></textarea>
             <div class="table-container">
                 <div class="spinner-overlay" id="loadingSpinner">
                     <div class="spinner"></div>
-                    <div class="spinner-text" id="spinnerText">Reagrupando campos por rol...</div>
+                    <div class="spinner-text" id="spinnerText">Procesando información...</div>
                 </div>
 
                 <table id="resultsTable">
                     <thead>
                         <tr>
-                            <th style="width: 30%;">Rol SAP</th>
-                            <th style="width: 15%;">Objeto</th>
-                            <th style="width: 40%;">Campos y Valores en el Rol</th>
-                            <th style="width: 15%;">Cumplimiento</th>
+                            <th style="width: 25%;">Rol Compuesto</th>
+                            <th style="width: 25%;">Rol Simple SAP</th>
+                            <th style="width: 12%;">Objeto</th>
+                            <th style="width: 26%;">Campos y Valores en el Rol</th>
+                            <th style="width: 12%;">Cumplimiento</th>
                         </tr>
                     </thead>
                     <tbody id="tableBody">
                         <tr>
-                            <td colspan="4">
+                            <td colspan="5">
                                 <div class="empty-state" style="text-align: center; padding: 48px 24px; color: var(--text-muted);">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48" style="opacity: 0.5; margin-bottom: 12px;"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-                                    <p>Carga una matriz Excel para evaluar los roles de forma agrupada.</p>
+                                    <p>Carga los archivos DBOBJETOS.xlsx y DBTRANSACCIONES.xlsx para realizar las evaluaciones.</p>
                                 </div>
                             </td>
                         </tr>
@@ -534,24 +580,31 @@ TABLE: ZSDT_RP_TOP"></textarea>
 
     <script>
         let rawData = [];
+        let compositeMap = new Map(); // Mapa [ROL_SIMPLE -> Set(ROLES_COMPUESTOS)]
+        let compositeCount = 0;
         let searchTimeout = null;
-        const orgFields = ['BUKRS', 'WERKS', 'GSBER', 'VKORG', 'VTWEG', 'SPART', 'EKORG', 'PERSG', 'PERSK', 'KOSTL'];
 
-        const dropZone = document.getElementById('dropZone');
-        ['dragenter', 'dragover'].forEach(eventName => {
-            dropZone.addEventListener(eventName, (e) => { e.preventDefault(); dropZone.classList.add('dragover'); }, false);
-        });
-        ['dragleave', 'drop'].forEach(eventName => {
-            dropZone.addEventListener(eventName, (e) => { e.preventDefault(); dropZone.classList.remove('dragover'); }, false);
-        });
-        dropZone.addEventListener('drop', (e) => {
-            const dt = e.dataTransfer;
-            if(dt.files.length) handleFile(dt.files[0]);
-        });
+        // Configurar Drag & Drop para ambas zonas
+        setupDragAndDrop('dropZoneSimple', (file) => handleFile(file, 'simple'));
+        setupDragAndDrop('dropZoneComposite', (file) => handleFile(file, 'composite'));
 
-        function handleFileSelect(e) {
+        function setupDragAndDrop(zoneId, callback) {
+            const zone = document.getElementById(zoneId);
+            ['dragenter', 'dragover'].forEach(evt => {
+                zone.addEventListener(evt, (e) => { e.preventDefault(); zone.classList.add('dragover'); }, false);
+            });
+            ['dragleave', 'drop'].forEach(evt => {
+                zone.addEventListener(evt, (e) => { e.preventDefault(); zone.classList.remove('dragover'); }, false);
+            });
+            zone.addEventListener('drop', (e) => {
+                const dt = e.dataTransfer;
+                if(dt.files.length) callback(dt.files[0]);
+            });
+        }
+
+        function handleFileSelect(e, type) {
             const file = e.target.files[0];
-            if(file) handleFile(file);
+            if(file) handleFile(file, type);
         }
 
         function showSpinner(msg = 'Procesando...') {
@@ -563,9 +616,16 @@ TABLE: ZSDT_RP_TOP"></textarea>
             document.getElementById('loadingSpinner').classList.remove('active');
         }
 
-        function handleFile(file) {
-            document.getElementById('fileNameDisplay').textContent = file.name;
-            showSpinner('Indexando matriz Excel...');
+        function handleFile(file, type) {
+            if (type === 'simple') {
+                document.getElementById('fileNameDisplay').textContent = file.name;
+                document.getElementById('dropZoneSimple').classList.add('loaded');
+                showSpinner('Indexando DBOBJETOS.xlsx...');
+            } else {
+                document.getElementById('compositeFileNameDisplay').textContent = file.name;
+                document.getElementById('dropZoneComposite').classList.add('loaded');
+                showSpinner('Indexando DBTRANSACCIONES.xlsx...');
+            }
 
             setTimeout(() => {
                 const reader = new FileReader();
@@ -582,28 +642,12 @@ TABLE: ZSDT_RP_TOP"></textarea>
                             return;
                         }
 
-                        const headers = json[0].map(h => String(h || '').trim().toLowerCase());
-                        const roleIdx = headers.findIndex(h => h.includes('rol'));
-                        const objIdx = headers.findIndex(h => h.includes('objeto') || h.includes('object'));
-                        const fieldIdx = headers.findIndex(h => h.includes('campo') || h.includes('field'));
-                        const val1Idx = headers.findIndex(h => h.includes('valor 1') || h.includes('valor1') || h.includes('val1'));
-                        const val2Idx = headers.findIndex(h => h.includes('valor 2') || h.includes('valor2') || h.includes('val2'));
-
-                        rawData = [];
-                        for(let i = 1; i < json.length; i++) {
-                            const row = json[i];
-                            if(!row || row.length === 0) continue;
-
-                            rawData.push({
-                                role: String(row[roleIdx !== -1 ? roleIdx : 0] || '').trim(),
-                                object: String(row[objIdx !== -1 ? objIdx : 1] || '').trim(),
-                                field: String(row[fieldIdx !== -1 ? fieldIdx : 2] || '').trim(),
-                                val1: String(row[val1Idx !== -1 ? val1Idx : 3] || '').trim(),
-                                val2: String(row[val2Idx !== -1 ? val2Idx : 4] || '').trim()
-                            });
+                        if (type === 'simple') {
+                            processSimpleMatrix(json);
+                        } else {
+                            processCompositeMatrix(json);
                         }
 
-                        document.getElementById('statTotalRows').textContent = rawData.length.toLocaleString();
                         filterDataAsync();
                     } catch(err) {
                         alert('Error al leer Excel: ' + err.message);
@@ -612,6 +656,63 @@ TABLE: ZSDT_RP_TOP"></textarea>
                 };
                 reader.readAsArrayBuffer(file);
             }, 50);
+        }
+
+        // Procesa la matriz principal de Roles y Objetos (DBOBJETOS.xlsx)
+        function processSimpleMatrix(json) {
+            const headers = json[0].map(h => String(h || '').trim().toLowerCase());
+            const roleIdx = headers.findIndex(h => h.includes('rol') && !h.includes('compuesto'));
+            const objIdx = headers.findIndex(h => h.includes('objeto') || h.includes('object'));
+            const fieldIdx = headers.findIndex(h => h.includes('campo') || h.includes('field'));
+            const val1Idx = headers.findIndex(h => h.includes('valor 1') || h.includes('valor1') || h.includes('val1'));
+            const val2Idx = headers.findIndex(h => h.includes('valor 2') || h.includes('valor2') || h.includes('val2'));
+
+            rawData = [];
+            for(let i = 1; i < json.length; i++) {
+                const row = json[i];
+                if(!row || row.length === 0) continue;
+
+                rawData.push({
+                    role: String(row[roleIdx !== -1 ? roleIdx : 0] || '').trim(),
+                    object: String(row[objIdx !== -1 ? objIdx : 1] || '').trim(),
+                    field: String(row[fieldIdx !== -1 ? fieldIdx : 2] || '').trim(),
+                    val1: String(row[val1Idx !== -1 ? val1Idx : 3] || '').trim(),
+                    val2: String(row[val2Idx !== -1 ? val2Idx : 4] || '').trim()
+                });
+            }
+            document.getElementById('statTotalRows').textContent = rawData.length.toLocaleString();
+        }
+
+        // Procesa la matriz DBTRANSACCIONES.xlsx (Col A: Rol Compuesto, Col B: Rol Simple)
+        function processCompositeMatrix(json) {
+            compositeMap.clear();
+            compositeCount = 0;
+
+            const headers = json[0].map(h => String(h || '').trim().toLowerCase());
+            let compIdx = headers.findIndex(h => h.includes('compuesto') || h.includes('agr_name'));
+            let simpleIdx = headers.findIndex(h => h.includes('simple') || h.includes('child_agr') || h.includes('sub_agr'));
+
+            // Si no reconoce nombres en los encabezados, asume Col A = Compuesto (0), Col B = Simple (1)
+            if (compIdx === -1) compIdx = 0;
+            if (simpleIdx === -1) simpleIdx = 1;
+
+            for(let i = 1; i < json.length; i++) {
+                const row = json[i];
+                if(!row || row.length === 0) continue;
+
+                const compRole = String(row[compIdx] || '').trim();
+                const simpleRole = String(row[simpleIdx] || '').trim();
+
+                if (compRole && simpleRole) {
+                    compositeCount++;
+                    const simpleKey = simpleRole.toUpperCase();
+                    if (!compositeMap.has(simpleKey)) {
+                        compositeMap.set(simpleKey, new Set());
+                    }
+                    compositeMap.get(simpleKey).add(compRole);
+                }
+            }
+            document.getElementById('statTotalComposite').textContent = compositeCount.toLocaleString();
         }
 
         function triggerDebouncedSearch() {
@@ -625,14 +726,18 @@ TABLE: ZSDT_RP_TOP"></textarea>
         }
 
         function filterDataAsync() {
-            if(!rawData.length) return;
-            showSpinner('Reagrupando roles y evaluando criterios SU53...');
+            if(!rawData.length) {
+                hideSpinner();
+                return;
+            }
+
+            showSpinner('Reagrupando roles y evaluando criterios...');
 
             setTimeout(() => {
                 const targetObj = document.getElementById('searchObj').value.trim().toUpperCase();
                 const autoOrg = document.getElementById('chkAutoOrg').checked;
 
-                // Criterios requeridos de la SU53
+                // Criterios requeridos
                 const criteria = [];
                 for(let i = 1; i <= 3; i++) {
                     const fn = document.getElementById(`f${i}_name`).value.trim().toUpperCase();
@@ -640,10 +745,10 @@ TABLE: ZSDT_RP_TOP"></textarea>
                     if(fn || fv) criteria.push({ field: fn, val: fv });
                 }
 
-                // 1. Filtrar primero por el objeto objetivo
+                // 1. Filtrar por objeto
                 const rowsForObj = rawData.filter(r => !targetObj || r.object.toUpperCase().includes(targetObj));
 
-                // 2. Agrupar por [Rol + Objeto]
+                // 2. Agrupar por [Rol Simple + Objeto]
                 const grouped = {};
                 rowsForObj.forEach(r => {
                     const key = `${r.role}||${r.object}`;
@@ -653,7 +758,7 @@ TABLE: ZSDT_RP_TOP"></textarea>
                     grouped[key].fields.push({ field: r.field, val1: r.val1, val2: r.val2 });
                 });
 
-                // 3. Evaluar el grado de cumplimiento de cada rol
+                // 3. Evaluar el cumplimiento de cada rol simple
                 const results = [];
                 let fullMatchCount = 0;
                 let partialMatchCount = 0;
@@ -696,10 +801,16 @@ TABLE: ZSDT_RP_TOP"></textarea>
                     if(isFullMatch) fullMatchCount++;
                     else if(matchedCriteriaCount > 0) partialMatchCount++;
 
-                    // Mostrar si es full match, o si hay coincidencias parciales
+                    // Mapear con los roles compuestos cargados desde DBTRANSACCIONES.xlsx
+                    const simpleRoleUpper = item.role.toUpperCase();
+                    const composites = compositeMap.has(simpleRoleUpper) 
+                        ? Array.from(compositeMap.get(simpleRoleUpper)) 
+                        : [];
+
                     if(isFullMatch || matchedCriteriaCount > 0 || criteria.length === 0) {
                         results.push({
                             role: item.role,
+                            compositeRoles: composites,
                             object: item.object,
                             fields: item.fields,
                             matchedCriteriaCount,
@@ -710,7 +821,7 @@ TABLE: ZSDT_RP_TOP"></textarea>
                     }
                 });
 
-                // Ordenar: Primero los Full Matches (cumplen 100% de la SU53)
+                // Ordenar: Primero los Full Matches
                 results.sort((a, b) => b.matchedCriteriaCount - a.matchedCriteriaCount);
 
                 document.getElementById('statFullMatches').textContent = fullMatchCount.toLocaleString();
@@ -728,7 +839,7 @@ TABLE: ZSDT_RP_TOP"></textarea>
             if(results.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 24px;">
+                        <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 24px;">
                             No se encontraron roles que contengan los criterios seleccionados.
                         </td>
                     </tr>`;
@@ -740,8 +851,20 @@ TABLE: ZSDT_RP_TOP"></textarea>
 
             displayResults.forEach(res => {
                 const tr = document.createElement('tr');
+
+                // Render para Roles Compuestos
+                let compositeHtml = '';
+                if (res.compositeRoles && res.compositeRoles.length > 0) {
+                    compositeHtml = '<div class="composite-list">';
+                    res.compositeRoles.forEach(cRole => {
+                        compositeHtml += `<span class="tag-composite">${escapeHtml(cRole)}</span>`;
+                    });
+                    compositeHtml += '</div>';
+                } else {
+                    compositeHtml = `<span style="color: var(--text-muted); font-size: 0.8rem; font-style: italic;">${compositeMap.size > 0 ? 'Sin Rol Compuesto' : 'N/A (DBTRANSACCIONES no cargado)'}</span>`;
+                }
                 
-                // Render list of fields within role
+                // Render campos del rol
                 let fieldsHtml = '<div class="field-list">';
                 res.fields.forEach(f => {
                     const isMatched = res.matchedFieldsSet.has(f.field.toUpperCase());
@@ -759,10 +882,11 @@ TABLE: ZSDT_RP_TOP"></textarea>
                 fieldsHtml += '</div>';
 
                 const badgeHtml = res.isFullMatch 
-                    ? `<span class="match-badge match-full">✓ CUMPLE TODO (${res.matchedCriteriaCount}/${res.totalCriteria})</span>`
+                    ? `<span class="match-badge match-full">✓ CUMPLE (${res.matchedCriteriaCount}/${res.totalCriteria})</span>`
                     : `<span class="match-badge match-partial">⚠️ PARCIAL (${res.matchedCriteriaCount}/${res.totalCriteria})</span>`;
 
                 tr.innerHTML = `
+                    <td>${compositeHtml}</td>
                     <td class="tag-role">${escapeHtml(res.role)}</td>
                     <td><span class="tag-obj">${escapeHtml(res.object)}</span></td>
                     <td>${fieldsHtml}</td>
@@ -774,7 +898,7 @@ TABLE: ZSDT_RP_TOP"></textarea>
             if(results.length > limit) {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td colspan="4" style="text-align: center; color: var(--accent); font-size: 0.85rem; padding: 12px;">
+                    <td colspan="5" style="text-align: center; color: var(--accent); font-size: 0.85rem; padding: 12px;">
                         Mostrando ${limit} de ${results.length.toLocaleString()} roles agrupados encontrados.
                     </td>
                 `;
@@ -796,7 +920,6 @@ TABLE: ZSDT_RP_TOP"></textarea>
             const text = document.getElementById('su53Text').value;
             if(!text) return;
 
-            // Limpiar los inputs del tab principal
             document.getElementById('searchObj').value = '';
             for(let i = 1; i <= 3; i++) {
                 document.getElementById(`f${i}_name`).value = '';
@@ -810,7 +933,6 @@ TABLE: ZSDT_RP_TOP"></textarea>
                 const trimmed = line.trim();
                 if(!trimmed) return;
 
-                // Caso 1: Formato Estándar con dos puntos (Objeto: S_TCODE / TCD: Z03_02500060)
                 if(trimmed.includes(':')) {
                     const parts = trimmed.split(':');
                     const key = parts[0].trim().toUpperCase();
@@ -823,14 +945,11 @@ TABLE: ZSDT_RP_TOP"></textarea>
                         document.getElementById(`f${fieldCount}_name`).value = key;
                         document.getElementById(`f${fieldCount}_val`).value = val;
                     }
-                } 
-                // Caso 2: Formato donde el Objeto está solo en la 1ra línea y los campos vienen con ':' abajo (ej: S_TCODE \n TCD: Z03_...)
-                else {
+                } else {
                     const objMatch = trimmed.match(/^([A-Z]_[A-Z0-9_]+)$/i);
                     if(objMatch && !document.getElementById('searchObj').value) {
                         document.getElementById('searchObj').value = objMatch[1].toUpperCase();
                     } else {
-                        // Soporte secundario por expresiones regulares tradicionales
                         const inlineObjMatch = trimmed.match(/([A-Z]_[A-Z0-9_]+)/i);
                         if(inlineObjMatch && !document.getElementById('searchObj').value) {
                             document.getElementById('searchObj').value = inlineObjMatch[1].toUpperCase();
@@ -853,7 +972,6 @@ TABLE: ZSDT_RP_TOP"></textarea>
                 }
             });
 
-            // Cambiar a la pestaña de Multi-Campo y ejecutar la evaluación
             switchTab('tab-direct');
             document.querySelectorAll('.tab-btn')[0].classList.add('active');
             filterDataAsync();
