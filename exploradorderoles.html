@@ -7,71 +7,175 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root { 
-            /* Paleta Dark Navy */
-            --bg-body: #050b14; 
+            --bg-body: #090d16; 
             --bg-container: #0f172a; 
             --bg-card: #1e293b; 
+            --bg-input: #0b1120;
             --border-color: #334155;
             
             --text-main: #f8fafc;
             --text-muted: #94a3b8;
             
             --sap-blue-text: #60a5fa; 
-            --sap-blue-btn: #1d4ed8; 
-            --sap-blue-btn-hover: #2563eb;
+            --sap-blue-btn: #2563eb; 
+            --sap-blue-btn-hover: #1d4ed8;
             
-            --accent: #7e22ce; 
-            --accent-hover: #9333ea;
+            --accent: #9333ea; 
+            --accent-hover: #7e22ce;
             
-            --success: #15803d;
-            --success-hover: #16a34a;
+            --success: #16a34a;
+            --success-hover: #15803d;
         }
 
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg-body); color: var(--text-main); margin: 0; padding: 20px; font-size: 13px; }
-        .container { max-width: 1600px; margin: auto; background: var(--bg-container); padding: 25px; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.5); border: 1px solid var(--border-color); }
+        * { box-sizing: border-box; }
+
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg-body); color: var(--text-main); margin: 0; padding: 20px; font-size: 13px; }
+        .container { max-width: 1600px; margin: auto; background: var(--bg-container); padding: 25px; border-radius: 12px; box-shadow: 0 10px 35px rgba(0,0,0,0.6); border: 1px solid var(--border-color); }
         
-        .header { text-align: center; border-bottom: 3px solid var(--sap-blue-btn); margin-bottom: 25px; padding-bottom: 10px; }
-        .header h2 { margin: 0; color: var(--sap-blue-text); }
-        .header p { margin: 5px 0; color: var(--text-muted); }
+        .header { text-align: center; border-bottom: 2px solid var(--border-color); margin-bottom: 25px; padding-bottom: 15px; }
+        .header h2 { margin: 0; color: var(--sap-blue-text); font-size: 24px; font-weight: 700; letter-spacing: 0.5px; }
+        .header p { margin: 6px 0 0 0; color: var(--text-muted); font-size: 13px; }
         
-        .section-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
-        .card { border: 1px solid var(--border-color); padding: 20px; border-radius: 8px; background: var(--bg-card); display: flex; flex-direction: column; }
-        h3 { margin-top: 0; color: var(--sap-blue-text); }
+        /* Sección Carga de Archivos */
+        .upload-section { 
+            display: flex; 
+            flex-direction: row; 
+            justify-content: center; 
+            align-items: center; 
+            gap: 20px; 
+            flex-wrap: wrap; 
+            padding: 16px; 
+            margin-bottom: 25px; 
+            background: rgba(30, 41, 59, 0.6);
+            border-radius: 10px;
+        }
+        .file-box { 
+            display: flex; 
+            align-items: center; 
+            gap: 12px; 
+            background: var(--bg-input); 
+            padding: 8px 16px; 
+            border-radius: 8px; 
+            border: 1px solid var(--border-color); 
+        }
+        .file-box label { font-weight: 600; color: var(--sap-blue-text); font-size: 12.5px; white-space: nowrap; }
+        .file-box input[type="file"] { width: 230px; margin: 0; padding: 4px; background: transparent; border: none; font-size: 11px; color: var(--text-muted); }
         
-        textarea, input[type="file"] { width: 100%; margin: 10px 0; padding: 10px; border: 1px solid var(--border-color); border-radius: 5px; font-family: monospace; box-sizing: border-box; background: #0b1120; color: var(--text-main); }
-        textarea { height: 120px; resize: vertical; }
+        .status-badge { display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+        .status-loaded { background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); }
+        .status-pending { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+
+        /* Estructura Vertical de Secciones (1 columna en vez de grid horizontal) */
+        .sections-vertical { display: flex; flex-direction: column; gap: 30px; }
+        .card { border: 1px solid var(--border-color); padding: 20px; border-radius: 10px; background: var(--bg-card); display: flex; flex-direction: column; }
+        
+        .card-header { margin-bottom: 12px; }
+        .card-header h3 { margin: 0 0 6px 0; color: var(--sap-blue-text); font-size: 17px; display: flex; align-items: center; gap: 8px; }
+        .card-header p { margin: 0; color: var(--text-muted); font-size: 12.5px; line-height: 1.4; }
+        
+        /* Contenedor Flex para la zona de entrada y botón */
+        .input-action-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .textarea-container {
+            position: relative;
+            width: 100%;
+        }
+
+        textarea { 
+            width: 100%; 
+            height: 75px; 
+            padding: 10px 12px; 
+            border: 1px solid var(--border-color); 
+            border-radius: 6px; 
+            font-family: 'Consolas', 'Courier New', monospace; 
+            font-size: 12px;
+            background: var(--bg-input); 
+            color: var(--text-main); 
+            resize: vertical;
+            line-height: 1.4;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: var(--sap-blue-text);
+            box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.2);
+        }
         textarea::placeholder { color: #475569; }
         
-        .btn-group { display: flex; gap: 10px; margin-bottom: 10px; }
-        button { flex: 1; padding: 12px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; text-transform: uppercase; transition: 0.3s; color: white; }
+        .btn-group { display: flex; gap: 10px; height: 40px; }
+        button { 
+            flex: 1; 
+            border: none; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-weight: 600; 
+            font-size: 12px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase; 
+            transition: all 0.2s ease; 
+            color: white; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
         
         .btn-roles { background: var(--sap-blue-btn); }
-        .btn-roles:hover { background: var(--sap-blue-btn-hover); }
+        .btn-roles:hover { background: var(--sap-blue-btn-hover); transform: translateY(-1px); }
         
         .btn-tcodes { background: var(--accent); }
-        .btn-tcodes:hover { background: var(--accent-hover); }
+        .btn-tcodes:hover { background: var(--accent-hover); transform: translateY(-1px); }
         
-        .btn-download { background: var(--success); flex: 0 0 50px; font-size: 16px; display: flex; align-items: center; justify-content: center; padding: 0; }
-        .btn-download:hover { background: var(--success-hover); }
+        .btn-download { 
+            background: #334155; 
+            flex: 0 0 42px; 
+            font-size: 15px; 
+            color: #cbd5e1;
+            border: 1px solid var(--border-color);
+        }
+        .btn-download:hover { background: var(--success); color: white; border-color: var(--success); }
         
-        .table-wrap { overflow-x: auto; max-height: 450px; border: 1px solid var(--border-color); margin-top: 10px; border-radius: 5px; flex-grow: 1; background: var(--bg-container); }
+        /* Tablas de resultados con mayor altura al estar apiladas */
+        .table-wrap { 
+            overflow-x: auto; 
+            max-height: 520px; 
+            border: 1px solid var(--border-color); 
+            border-radius: 6px; 
+            flex-grow: 1; 
+            background: var(--bg-container); 
+        }
         
-        /* Estilos personalizados para el Scrollbar en tema oscuro */
-        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar { width: 7px; height: 7px; }
         ::-webkit-scrollbar-track { background: var(--bg-container); }
-        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
 
-        table { width: 100%; border-collapse: collapse; font-size: 11px; }
-        thead th { position: sticky; top: 0; background: #0b1120; color: var(--sap-blue-text); padding: 10px; border-bottom: 2px solid var(--sap-blue-btn); text-align: left; z-index: 5; }
-        td { padding: 8px; border-bottom: 1px solid var(--border-color); }
-        tbody tr:hover { background: rgba(255, 255, 255, 0.04); }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        thead th { 
+            position: sticky; 
+            top: 0; 
+            background: #0b1120; 
+            color: var(--sap-blue-text); 
+            padding: 11px 14px; 
+            border-bottom: 2px solid var(--border-color); 
+            text-align: left; 
+            z-index: 5; 
+            font-weight: 600;
+        }
+        td { padding: 9px 14px; border-bottom: 1px solid rgba(51, 65, 85, 0.5); vertical-align: middle; }
+        tbody tr:hover { background: rgba(255, 255, 255, 0.03); }
         
-        .badge-role { background: rgba(96, 165, 250, 0.15); color: #93c5fd; padding: 3px 6px; border-radius: 4px; font-weight: bold; border: 1px solid rgba(96, 165, 250, 0.3); display: inline-block; }
-        .badge-tcode { background: rgba(245, 158, 11, 0.15); color: #fcd34d; padding: 3px 6px; border-radius: 4px; font-weight: bold; border: 1px solid rgba(245, 158, 11, 0.3); display: inline-block;}
+        .badge-role { background: rgba(96, 165, 250, 0.12); color: #93c5fd; padding: 3px 8px; border-radius: 4px; font-weight: 600; border: 1px solid rgba(96, 165, 250, 0.25); display: inline-block; word-break: break-all; }
+        .badge-simple { background: rgba(168, 85, 247, 0.12); color: #c084fc; padding: 3px 8px; border-radius: 4px; font-weight: 600; border: 1px solid rgba(168, 85, 247, 0.25); display: inline-block; word-break: break-all; }
+        .badge-tcode { background: rgba(245, 158, 11, 0.12); color: #fcd34d; padding: 3px 8px; border-radius: 4px; font-weight: 600; border: 1px solid rgba(245, 158, 11, 0.25); display: inline-block;}
         
-        .mono { color: #60a5fa; font-weight: bold; }
-        .multi { color: #fbbf24; font-weight: bold; }
+        .mono { background: rgba(16, 185, 129, 0.15); color: #34d399; padding: 3px 9px; border-radius: 4px; font-weight: 600; border: 1px solid rgba(16, 185, 129, 0.3); display: inline-block; white-space: nowrap; }
+        .multi { background: rgba(245, 158, 11, 0.15); color: #fbbf24; padding: 3px 9px; border-radius: 4px; font-weight: 600; border: 1px solid rgba(245, 158, 11, 0.3); display: inline-block; white-space: nowrap; }
     </style>
 </head>
 <body>
@@ -79,22 +183,44 @@
 <div class="container">
     <div class="header">
         <h2>Explorador de Arquitectura de Roles SAP</h2>
-        <p>Cruce Maestro: ROL COMPUESTO | TRANSACCION | NOMBRE TRANSACCION</p>
+        <p>Cruce Inteligente de Datos: DBC3-S3 (Estructura de Roles) + dbtdroles (Catálogo y Descripciones)</p>
     </div>
 
-    <div style="margin-bottom: 20px; text-align: center; flex-direction: row; justify-content: center; align-items: center; gap: 15px;" class="card">
-        <strong>Paso 1:</strong> Cargar Base de Datos Maestra (DBTRANSACCIONES) 
-        <input type="file" id="fMaster" style="width: auto; margin: 0;">
+    <!-- Carga de Archivos -->
+    <div class="card upload-section">
+        <div class="file-box">
+            <label for="fDbc3">📁 1. DBC3-S3.xlsx:</label>
+            <input type="file" id="fDbc3" accept=".xlsx, .xls">
+            <span id="stDbc3" class="status-badge status-pending">Pendiente</span>
+        </div>
+
+        <div class="file-box">
+            <label for="fDbtd">📁 2. dbtdroles.xlsx:</label>
+            <input type="file" id="fDbtd" accept=".xlsx, .xls">
+            <span id="stDbtd" class="status-badge status-pending">Pendiente</span>
+        </div>
     </div>
 
-    <div class="section-grid">
+    <div class="sections-vertical">
+        <!-- Sección 1: Búsqueda por Rol Compuesto -->
         <div class="card">
-            <h3>🔍 Desglose de Contenido (Rol)</h3>
-            <p style="color: var(--text-muted); margin-top: 0;">Lista todas las transacciones dentro de estos Roles Compuestos.</p>
-            <textarea id="inputRoles" placeholder="Pegar Roles..."></textarea>
-            <div class="btn-group">
-                <button class="btn-roles" onclick="analizarRoles()">Analizar Contenido</button>
-                <button class="btn-download" title="Descargar Excel" onclick="descargarExcel('tblRoles', 'Desglose_Contenido_Roles')">💾</button>
+            <div class="card-header">
+                <h3>🔍 Desglose por Rol Compuesto</h3>
+                <p>Consulta transacciones, roles simples incluidos y clasificación funcional de cada Rol Compuesto.</p>
+            </div>
+
+            <div class="input-action-group">
+                <div class="textarea-container">
+                    <textarea id="inputRoles" placeholder="Ingresa uno o varios Roles Compuestos (uno por línea)...&#10;Ejemplo: ZHCHGT_SDSD_C3_0003_AGRUPACIAR"></textarea>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn-roles" onclick="analizarRoles()">
+                        <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        Analizar Roles
+                    </button>
+                    <button class="btn-download" title="Exportar a Excel" onclick="descargarExcel('tblRoles', 'Desglose_Roles_Compuestos')">📥</button>
+                </div>
             </div>
             
             <div class="table-wrap">
@@ -102,8 +228,11 @@
                     <thead>
                         <tr>
                             <th>Rol Compuesto</th>
+                            <th>Nombre Rol Compuesto</th>
+                            <th>Rol Simple</th>
                             <th>T-Code</th>
-                            <th>Nombre Transacción</th>
+                            <th>Descripción Transacción</th>
+                            <th>Tipo de Rol</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
@@ -111,13 +240,25 @@
             </div>
         </div>
 
+        <!-- Sección 2: Sugerencia de Roles por Transacción -->
         <div class="card">
-            <h3>🔎 Ubicación de Transacción (T-Code)</h3>
-            <p style="color: var(--text-muted); margin-top: 0;">¿En qué roles están estas TX y qué tipo de rol es?</p>
-            <textarea id="inputTcodes" placeholder="Pegar T-Codes..."></textarea>
-            <div class="btn-group">
-                <button class="btn-tcodes" onclick="buscarTcodes()">Buscar en Roles</button>
-                <button class="btn-download" title="Descargar Excel" onclick="descargarExcel('tblTcodes', 'Ubicacion_Tcodes_en_Roles')">💾</button>
+            <div class="card-header">
+                <h3>🔎 Sugerencia de Roles por Transacción (T-Code)</h3>
+                <p>Encuentra qué Roles Compuestos incluyen determinadas transacciones y cuál es su tipo.</p>
+            </div>
+
+            <div class="input-action-group">
+                <div class="textarea-container">
+                    <textarea id="inputTcodes" placeholder="Ingresa uno o varios T-Codes (uno por línea)...&#10;Ejemplo: VL01"></textarea>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn-tcodes" onclick="buscarTcodes()">
+                        <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        Buscar Sugerencias
+                    </button>
+                    <button class="btn-download" title="Exportar a Excel" onclick="descargarExcel('tblTcodes', 'Sugerencia_Roles_por_TCode')">📥</button>
+                </div>
             </div>
 
             <div class="table-wrap">
@@ -125,8 +266,9 @@
                     <thead>
                         <tr>
                             <th>T-Code</th>
-                            <th>Nombre Transacción</th>
-                            <th>Rol Compuesto</th>
+                            <th>Descripción Transacción</th>
+                            <th>Rol Compuesto Sugerido</th>
+                            <th>Nombre Rol Compuesto</th>
                             <th>Tipo de Rol</th>
                         </tr>
                     </thead>
@@ -138,80 +280,167 @@
 </div>
 
 <script>
-let masterDB = [];
-let conteoRoles = {};
+let dbc3Data = [];
+let dbtdMap = {};
+let conteoTcodesPorRolCompuesto = {};
 
-document.getElementById('fMaster').addEventListener('change', async (e) => {
+// Carga Archivo 1: DBC3-S3.xlsx
+document.getElementById('fDbc3').addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if(!file) return;
-    const data = await file.arrayBuffer();
-    const wb = XLSX.read(data);
-    masterDB = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: "" });
-    
-    conteoRoles = {};
-    masterDB.forEach(row => {
-        const rc = String(row["ROL COMPUESTO"] || "").trim();
-        if(rc) conteoRoles[rc] = (conteoRoles[rc] || 0) + 1;
-    });
-    
-    alert("Base maestra cargada correctamente (" + masterDB.length + " registros).");
+    try {
+        const data = await file.arrayBuffer();
+        const wb = XLSX.read(data);
+        dbc3Data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: "" });
+        
+        const txSetPorRol = {};
+        dbc3Data.forEach(row => {
+            const rc = getVal(row, ["Rol compuesto", "Rol Compuesto", "ROL COMPUESTO"]);
+            const tx = getVal(row, ["Nombre ampliado", "Nombre Ampliado", "NOMBRE AMPLIADO", "T-Code", "Transaccion", "TRANSACCION"]);
+            
+            if (rc) {
+                if (!txSetPorRol[rc]) txSetPorRol[rc] = new Set();
+                if (tx) txSetPorRol[rc].add(tx);
+            }
+        });
+
+        conteoTcodesPorRolCompuesto = {};
+        for (const [rc, txSet] of Object.entries(txSetPorRol)) {
+            conteoTcodesPorRolCompuesto[rc] = txSet.size;
+        }
+
+        document.getElementById('stDbc3').innerText = "Cargado (" + dbc3Data.length + " filas)";
+        document.getElementById('stDbc3').className = "status-badge status-loaded";
+    } catch(err) {
+        alert("Error al procesar DBC3-S3.xlsx: " + err.message);
+    }
 });
 
+// Carga Archivo 2: dbtdroles.xlsx
+document.getElementById('fDbtd').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if(!file) return;
+    try {
+        const data = await file.arrayBuffer();
+        const wb = XLSX.read(data);
+        const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: "" });
+        
+        dbtdMap = {};
+        rows.forEach(row => {
+            const rol = getVal(row, ["Rol", "ROL", "Nombre del rol"]);
+            const desc = getVal(row, ["Descripción breve del rol", "Descripcion breve del rol", "DESCRIPCION", "Descripción", "Descripcion"]);
+            if (rol) {
+                dbtdMap[rol.toUpperCase()] = desc;
+            }
+        });
+
+        document.getElementById('stDbtd').innerText = "Cargado (" + Object.keys(dbtdMap).length + " roles)";
+        document.getElementById('stDbtd').className = "status-badge status-loaded";
+    } catch(err) {
+        alert("Error al procesar dbtdroles.xlsx: " + err.message);
+    }
+});
+
+function getVal(row, candidateKeys) {
+    for (const key of candidateKeys) {
+        if (row[key] !== undefined && row[key] !== null) return String(row[key]).trim();
+    }
+    const rowKeys = Object.keys(row);
+    for (const ck of candidateKeys) {
+        const foundKey = rowKeys.find(k => k.trim().toLowerCase() === ck.toLowerCase());
+        if (foundKey && row[foundKey] !== undefined && row[foundKey] !== null) return String(row[foundKey]).trim();
+    }
+    return "";
+}
+
+function obtenerTipoRol(rc) {
+    const count = conteoTcodesPorRolCompuesto[rc] || 0;
+    if (count === 1) return { label: "MONOFUNCIONAL", class: "mono" };
+    if (count > 1) return { label: "MULTIFUNCIONAL", class: "multi" };
+    return { label: "SIN TX", class: "mono" };
+}
+
 function analizarRoles() {
-    if(masterDB.length === 0) return alert("Cargue la DBTRANSACCIONES.");
-    const roles = document.getElementById('inputRoles').value.toUpperCase().split('\n').map(x=>x.trim()).filter(x=>x);
-    if(roles.length === 0) return alert("Pegue al menos un nombre de rol.");
+    if (dbc3Data.length === 0) return alert("Por favor cargue primero el archivo DBC3-S3.xlsx.");
     
+    const inputStr = document.getElementById('inputRoles').value.trim();
+    if (!inputStr) return alert("Ingrese al menos un Rol Compuesto.");
+
+    const searchRoles = inputStr.toUpperCase().split('\n').map(x => x.trim()).filter(x => x);
     const tbody = document.querySelector('#tblRoles tbody');
     tbody.innerHTML = "";
 
-    masterDB.forEach(row => {
-        const rc = String(row["ROL COMPUESTO"] || "").trim().toUpperCase();
-        if(roles.includes(rc)) {
+    let encontrados = 0;
+
+    dbc3Data.forEach(row => {
+        const rc = getVal(row, ["Rol compuesto", "Rol Compuesto", "ROL COMPUESTO"]);
+        const rcUpper = rc.toUpperCase();
+
+        if (searchRoles.includes(rcUpper)) {
+            encontrados++;
+            const simpleRole = getVal(row, ["Rol", "ROL", "Rol Simple"]);
+            const tcode = getVal(row, ["Nombre ampliado", "Nombre Ampliado", "NOMBRE AMPLIADO", "T-Code", "Transaccion"]);
+            const descTx = getVal(row, ["Descripción", "Descripcion", "DESCRIPCION", "Nombre transacción"]);
+            const descRolCompuesto = dbtdMap[rcUpper] || "Sin descripción en dbtdroles";
+            const tipoInfo = obtenerTipoRol(rc);
+
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td><span class="badge-role">${rc}</span></td>
-                <td><span class="badge-tcode">${row["TRANSACCION"] || ""}</span></td>
-                <td>${row["NOMBRE TRANSACCION"] || ""}</td>
+                <td>${descRolCompuesto}</td>
+                <td><span class="badge-simple">${simpleRole}</span></td>
+                <td><span class="badge-tcode">${tcode}</span></td>
+                <td>${descTx}</td>
+                <td><span class="${tipoInfo.class}">${tipoInfo.label}</span></td>
             `;
             tbody.appendChild(tr);
         }
     });
+
+    if (encontrados === 0) alert("No se encontraron coincidencias para los Roles Compuestos ingresados.");
 }
 
 function buscarTcodes() {
-    if(masterDB.length === 0) return alert("Cargue la DBTRANSACCIONES.");
-    const txs = document.getElementById('inputTcodes').value.toUpperCase().split('\n').map(x=>x.trim()).filter(x=>x);
-    if(txs.length === 0) return alert("Pegue al menos un T-Code.");
+    if (dbc3Data.length === 0) return alert("Por favor cargue primero el archivo DBC3-S3.xlsx.");
+    
+    const inputStr = document.getElementById('inputTcodes').value.trim();
+    if (!inputStr) return alert("Ingrese al menos un T-Code.");
 
+    const searchTcodes = inputStr.toUpperCase().split('\n').map(x => x.trim()).filter(x => x);
     const tbody = document.querySelector('#tblTcodes tbody');
     tbody.innerHTML = "";
 
-    masterDB.forEach(row => {
-        const tx = String(row["TRANSACCION"] || "").trim().toUpperCase();
-        if(txs.includes(tx)) {
-            const rc = String(row["ROL COMPUESTO"] || "").trim();
-            const count = conteoRoles[rc] || 0;
-            const tipo = count > 1 ? "MULTIFUNCIONAL" : (count === 1 ? "MONOFUNCIONAL" : "N/A");
-            
+    let encontrados = 0;
+
+    dbc3Data.forEach(row => {
+        const tcode = getVal(row, ["Nombre ampliado", "Nombre Ampliado", "NOMBRE AMPLIADO", "T-Code", "Transaccion"]);
+        const tcodeUpper = tcode.toUpperCase();
+
+        if (searchTcodes.includes(tcodeUpper)) {
+            encontrados++;
+            const rc = getVal(row, ["Rol compuesto", "Rol Compuesto", "ROL COMPUESTO"]);
+            const descTx = getVal(row, ["Descripción", "Descripcion", "DESCRIPCION", "Nombre transacción"]);
+            const descRolCompuesto = dbtdMap[rc.toUpperCase()] || "Sin descripción en dbtdroles";
+            const tipoInfo = obtenerTipoRol(rc);
+
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td><span class="badge-tcode">${tx}</span></td>
-                <td>${row["NOMBRE TRANSACCION"] || ""}</td>
+                <td><span class="badge-tcode">${tcode}</span></td>
+                <td>${descTx}</td>
                 <td><span class="badge-role">${rc}</span></td>
-                <td><span class="${tipo === 'MULTIFUNCIONAL' ? 'multi' : 'mono'}">${tipo}</span></td>
+                <td>${descRolCompuesto}</td>
+                <td><span class="${tipoInfo.class}">${tipoInfo.label}</span></td>
             `;
             tbody.appendChild(tr);
         }
     });
+
+    if (encontrados === 0) alert("No se encontraron coincidencias para los T-Codes ingresados.");
 }
 
 function descargarExcel(tablaId, nombreArchivo) {
     const table = document.getElementById(tablaId);
-    if (table.rows.length <= 1) {
-        alert("No hay datos en la tabla para exportar.");
-        return;
-    }
+    if (table.rows.length <= 1) return alert("No hay datos en la tabla para exportar.");
     const wb = XLSX.utils.table_to_book(table, { sheet: "Resultados" });
     XLSX.writeFile(wb, nombreArchivo + ".xlsx");
 }
