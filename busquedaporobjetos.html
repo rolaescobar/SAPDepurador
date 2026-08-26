@@ -19,6 +19,7 @@
             --danger: #ef4444;
             --success: #10b981;
             --warning: #f59e0b;
+            --purple: #c084fc;
         }
 
         * {
@@ -96,7 +97,7 @@
         .file-upload-area {
             border: 2px dashed var(--border-color);
             border-radius: 8px;
-            padding: 18px;
+            padding: 14px;
             text-align: center;
             cursor: pointer;
             transition: all 0.2s;
@@ -204,7 +205,7 @@
             border-radius: 8px;
             padding: 12px 18px;
             flex: 1;
-            min-width: 140px;
+            min-width: 130px;
         }
 
         .stat-card .val {
@@ -273,24 +274,47 @@
             color: #60a5fa;
             font-weight: 600;
             font-family: monospace;
+            font-size: 0.88rem;
+        }
+
+        .role-desc-text {
+            color: #94a3b8;
+            font-size: 0.8rem;
+            margin-top: 3px;
+            font-style: italic;
+        }
+
+        .composite-box {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            margin-bottom: 6px;
+            background-color: rgba(16, 185, 129, 0.05);
+            border-left: 3px solid #10b981;
+            padding: 6px 10px;
+            border-radius: 0 4px 4px 0;
         }
 
         .tag-composite {
             color: #a7f3d0;
             font-weight: 600;
             font-family: monospace;
-            background-color: rgba(16, 185, 129, 0.1);
-            padding: 2px 6px;
-            border-radius: 4px;
-            display: inline-block;
-            margin-bottom: 3px;
+            font-size: 0.88rem;
+        }
+
+        .composite-desc {
+            color: #cbd5e1;
+            font-size: 0.8rem;
+            font-style: italic;
+            word-break: break-word;
+            margin-top: 2px;
         }
 
         .composite-list {
             display: flex;
             flex-direction: column;
-            gap: 4px;
-            max-height: 150px;
+            gap: 6px;
+            max-height: 200px;
             overflow-y: auto;
         }
 
@@ -422,14 +446,14 @@
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
                 SAP Búsqueda por Objetos y Roles Compuestos
             </h1>
-            <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 4px;">Evaluador de Roles Agrupados con mapeo de Roles Compuestos</p>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 4px;">Evaluador de Roles Agrupados con mapeo de Roles Compuestos y Transacciones</p>
         </div>
-        <span class="badge">v3.2 - DBOBJETOS & DBTRANSACCIONES</span>
+        <span class="badge">v3.6 - DBOBJETOS, DBC3-S3 & DBTDROLES</span>
     </div>
 
     <div class="grid-layout">
         <!-- Panel Izquierdo: Carga e Insumos -->
-        <div style="display: flex; flex-direction: column; gap: 20px;">
+        <div style="display: flex; flex-direction: column; gap: 16px;">
             
             <!-- 1. Carga DBOBJETOS.xlsx -->
             <div class="card">
@@ -438,28 +462,42 @@
                     1. Matriz Objetos / Roles Simples (.XLSX)
                 </div>
                 <div class="file-upload-area" id="dropZoneSimple" onclick="document.getElementById('excelFile').click()">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color: var(--accent);"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                    <p style="margin-top: 6px; font-weight: 500; font-size: 0.85rem;" id="fileNameDisplay">DBOBJETOS.xlsx</p>
-                    <span style="font-size: 0.7rem; color: var(--text-muted);">Rol, Objeto, Campo, Val1, Val2</span>
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color: var(--accent);"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    <p style="margin-top: 4px; font-weight: 500; font-size: 0.85rem;" id="fileNameDisplay">DBOBJETOS.xlsx</p>
+                    <span style="font-size: 0.7rem; color: var(--text-muted);">Roles, Objeto, Campo, Valor 1, Valor 2</span>
                     <input type="file" id="excelFile" accept=".xlsx, .xls" onchange="handleFileSelect(event, 'simple')">
                 </div>
             </div>
 
-            <!-- 2. Carga DBTRANSACCIONES.xlsx -->
+            <!-- 2. Carga DBC3-S3.XLSX -->
             <div class="card">
                 <div class="card-title">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                    2. Matriz Roles Compuestos (.XLSX)
+                    2. Relación Compuesto - Simple - Tcode (.XLSX)
                 </div>
                 <div class="file-upload-area" id="dropZoneComposite" onclick="document.getElementById('excelCompositeFile').click()">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color: var(--success);"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                    <p style="margin-top: 6px; font-weight: 500; font-size: 0.85rem;" id="compositeFileNameDisplay">DBTRANSACCIONES.xlsx</p>
-                    <span style="font-size: 0.7rem; color: var(--text-muted);">Col A: Rol Compuesto | Col B: Rol Simple</span>
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color: var(--success);"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    <p style="margin-top: 4px; font-weight: 500; font-size: 0.85rem;" id="compositeFileNameDisplay">DBC3-S3.XLSX</p>
+                    <span style="font-size: 0.7rem; color: var(--text-muted);">Rol compuesto | Rol | Nombre ampliado | Descripción</span>
                     <input type="file" id="excelCompositeFile" accept=".xlsx, .xls" onchange="handleFileSelect(event, 'composite')">
                 </div>
             </div>
 
-            <!-- 3. Formulario de Búsqueda -->
+            <!-- 3. Carga DBTDROLES.XLSX (Descripciones de Roles Compuestos) -->
+            <div class="card">
+                <div class="card-title" style="color: var(--purple);">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                    3. Catálogo Descripciones Roles (.XLSX)
+                </div>
+                <div class="file-upload-area" id="dropZoneDesc" onclick="document.getElementById('excelDescFile').click()">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color: var(--purple);"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    <p style="margin-top: 4px; font-weight: 500; font-size: 0.85rem;" id="descFileNameDisplay">DBTDROLES.XLSX</p>
+                    <span style="font-size: 0.7rem; color: var(--text-muted);">Rol | Descripción breve del rol</span>
+                    <input type="file" id="excelDescFile" accept=".xlsx, .xls" onchange="handleFileSelect(event, 'desc')">
+                </div>
+            </div>
+
+            <!-- 4. Formulario de Búsqueda -->
             <div class="card">
                 <div class="tabs">
                     <button class="tab-btn active" onclick="switchTab('tab-direct', event)">Multi-Campo (SU53)</button>
@@ -534,15 +572,19 @@ TABLE: ZSDT_RP_TOP"></textarea>
                     <div class="val" id="statTotalRows">0</div>
                 </div>
                 <div class="stat-card">
-                    <div class="lbl">Relaciones DBTRANSACCIONES</div>
+                    <div class="lbl">Relaciones DBC3-S3</div>
                     <div class="val" id="statTotalComposite" style="color: #a7f3d0;">0</div>
                 </div>
                 <div class="stat-card">
-                    <div class="lbl">Roles Que Cumplen TODO</div>
+                    <div class="lbl">Catálogo DBTDROLES</div>
+                    <div class="val" id="statTotalDesc" style="color: var(--purple);">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="lbl">Cumplen TODO</div>
                     <div class="val" id="statFullMatches" style="color: var(--success);">0</div>
                 </div>
                 <div class="stat-card">
-                    <div class="lbl">Roles Parciales</div>
+                    <div class="lbl">Parciales</div>
                     <div class="val" id="statPartialMatches" style="color: var(--warning);">0</div>
                 </div>
             </div>
@@ -556,11 +598,11 @@ TABLE: ZSDT_RP_TOP"></textarea>
                 <table id="resultsTable">
                     <thead>
                         <tr>
-                            <th style="width: 25%;">Rol Compuesto</th>
-                            <th style="width: 25%;">Rol Simple SAP</th>
+                            <th style="width: 32%;">ROL, DESCRIPCIÓN (Compuestos)</th>
+                            <th style="width: 26%;">ROL SAP</th>
                             <th style="width: 12%;">Objeto</th>
-                            <th style="width: 26%;">Campos y Valores en el Rol</th>
-                            <th style="width: 12%;">Cumplimiento</th>
+                            <th style="width: 20%;">Campos y Valores en el Rol</th>
+                            <th style="width: 10%;">Cumplimiento</th>
                         </tr>
                     </thead>
                     <tbody id="tableBody">
@@ -568,7 +610,7 @@ TABLE: ZSDT_RP_TOP"></textarea>
                             <td colspan="5">
                                 <div class="empty-state" style="text-align: center; padding: 48px 24px; color: var(--text-muted);">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48" style="opacity: 0.5; margin-bottom: 12px;"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-                                    <p>Carga los archivos DBOBJETOS.xlsx y DBTRANSACCIONES.xlsx para realizar las evaluaciones.</p>
+                                    <p>Carga los archivos DBOBJETOS.xlsx, DBC3-S3.XLSX y DBTDROLES.XLSX para realizar las evaluaciones.</p>
                                 </div>
                             </td>
                         </tr>
@@ -581,12 +623,14 @@ TABLE: ZSDT_RP_TOP"></textarea>
     <script>
         let rawData = [];
         let compositeMap = new Map(); // Mapa [ROL_SIMPLE -> Set(ROLES_COMPUESTOS)]
+        let roleDescMap = new Map();  // Mapa [ROL_COMPUESTO_O_SIMPLE -> DESCRIPCION]
         let compositeCount = 0;
         let searchTimeout = null;
 
-        // Configurar Drag & Drop para ambas zonas
+        // Configurar Drag & Drop para las tres zonas
         setupDragAndDrop('dropZoneSimple', (file) => handleFile(file, 'simple'));
         setupDragAndDrop('dropZoneComposite', (file) => handleFile(file, 'composite'));
+        setupDragAndDrop('dropZoneDesc', (file) => handleFile(file, 'desc'));
 
         function setupDragAndDrop(zoneId, callback) {
             const zone = document.getElementById(zoneId);
@@ -621,10 +665,14 @@ TABLE: ZSDT_RP_TOP"></textarea>
                 document.getElementById('fileNameDisplay').textContent = file.name;
                 document.getElementById('dropZoneSimple').classList.add('loaded');
                 showSpinner('Indexando DBOBJETOS.xlsx...');
-            } else {
+            } else if (type === 'composite') {
                 document.getElementById('compositeFileNameDisplay').textContent = file.name;
                 document.getElementById('dropZoneComposite').classList.add('loaded');
-                showSpinner('Indexando DBTRANSACCIONES.xlsx...');
+                showSpinner('Indexando DBC3-S3.XLSX...');
+            } else if (type === 'desc') {
+                document.getElementById('descFileNameDisplay').textContent = file.name;
+                document.getElementById('dropZoneDesc').classList.add('loaded');
+                showSpinner('Indexando DBTDROLES.XLSX...');
             }
 
             setTimeout(() => {
@@ -644,8 +692,10 @@ TABLE: ZSDT_RP_TOP"></textarea>
 
                         if (type === 'simple') {
                             processSimpleMatrix(json);
-                        } else {
+                        } else if (type === 'composite') {
                             processCompositeMatrix(json);
+                        } else if (type === 'desc') {
+                            processDescMatrix(json);
                         }
 
                         filterDataAsync();
@@ -661,11 +711,17 @@ TABLE: ZSDT_RP_TOP"></textarea>
         // Procesa la matriz principal de Roles y Objetos (DBOBJETOS.xlsx)
         function processSimpleMatrix(json) {
             const headers = json[0].map(h => String(h || '').trim().toLowerCase());
-            const roleIdx = headers.findIndex(h => h.includes('rol') && !h.includes('compuesto'));
-            const objIdx = headers.findIndex(h => h.includes('objeto') || h.includes('object'));
-            const fieldIdx = headers.findIndex(h => h.includes('campo') || h.includes('field'));
-            const val1Idx = headers.findIndex(h => h.includes('valor 1') || h.includes('valor1') || h.includes('val1'));
-            const val2Idx = headers.findIndex(h => h.includes('valor 2') || h.includes('valor2') || h.includes('val2'));
+            let roleIdx = headers.findIndex(h => h === 'roles' || h === 'rol');
+            let objIdx = headers.findIndex(h => h === 'objeto' || h === 'object');
+            let fieldIdx = headers.findIndex(h => h === 'campo' || h === 'field');
+            let val1Idx = headers.findIndex(h => h.includes('valor 1') || h === 'valor1' || h === 'val1');
+            let val2Idx = headers.findIndex(h => h.includes('valor 2') || h === 'valor2' || h === 'val2');
+
+            if (roleIdx === -1) roleIdx = 0;
+            if (objIdx === -1) objIdx = 1;
+            if (fieldIdx === -1) fieldIdx = 2;
+            if (val1Idx === -1) val1Idx = 3;
+            if (val2Idx === -1) val2Idx = 4;
 
             rawData = [];
             for(let i = 1; i < json.length; i++) {
@@ -673,26 +729,25 @@ TABLE: ZSDT_RP_TOP"></textarea>
                 if(!row || row.length === 0) continue;
 
                 rawData.push({
-                    role: String(row[roleIdx !== -1 ? roleIdx : 0] || '').trim(),
-                    object: String(row[objIdx !== -1 ? objIdx : 1] || '').trim(),
-                    field: String(row[fieldIdx !== -1 ? fieldIdx : 2] || '').trim(),
-                    val1: String(row[val1Idx !== -1 ? val1Idx : 3] || '').trim(),
-                    val2: String(row[val2Idx !== -1 ? val2Idx : 4] || '').trim()
+                    role: String(row[roleIdx] || '').trim(),
+                    object: String(row[objIdx] || '').trim(),
+                    field: String(row[fieldIdx] || '').trim(),
+                    val1: String(row[val1Idx] || '').trim(),
+                    val2: String(row[val2Idx] || '').trim()
                 });
             }
             document.getElementById('statTotalRows').textContent = rawData.length.toLocaleString();
         }
 
-        // Procesa la matriz DBTRANSACCIONES.xlsx (Col A: Rol Compuesto, Col B: Rol Simple)
+        // Procesa DBC3-S3.XLSX (Col A: Rol compuesto, Col B: Rol [Simple], Col C: Nombre ampliado, Col D: Descripción)
         function processCompositeMatrix(json) {
             compositeMap.clear();
             compositeCount = 0;
 
             const headers = json[0].map(h => String(h || '').trim().toLowerCase());
             let compIdx = headers.findIndex(h => h.includes('compuesto') || h.includes('agr_name'));
-            let simpleIdx = headers.findIndex(h => h.includes('simple') || h.includes('child_agr') || h.includes('sub_agr'));
+            let simpleIdx = headers.findIndex(h => (h === 'rol' || h.includes('simple')) && !h.includes('compuesto'));
 
-            // Si no reconoce nombres en los encabezados, asume Col A = Compuesto (0), Col B = Simple (1)
             if (compIdx === -1) compIdx = 0;
             if (simpleIdx === -1) simpleIdx = 1;
 
@@ -713,6 +768,31 @@ TABLE: ZSDT_RP_TOP"></textarea>
                 }
             }
             document.getElementById('statTotalComposite').textContent = compositeCount.toLocaleString();
+        }
+
+        // Procesa DBTDROLES.XLSX (Col A: Rol, Col B: Descripción breve del rol)
+        function processDescMatrix(json) {
+            roleDescMap.clear();
+
+            const headers = json[0].map(h => String(h || '').trim().toLowerCase());
+            let compIdx = headers.findIndex(h => h === 'rol' || h.includes('compuesto'));
+            let descIdx = headers.findIndex(h => h.includes('descripcion') || h.includes('descripción') || h.includes('breve'));
+
+            if (compIdx === -1) compIdx = 0;
+            if (descIdx === -1) descIdx = 1;
+
+            for(let i = 1; i < json.length; i++) {
+                const row = json[i];
+                if(!row || row.length === 0) continue;
+
+                const roleName = String(row[compIdx] || '').trim();
+                const roleDesc = String(row[descIdx] || '').trim();
+
+                if (roleName) {
+                    roleDescMap.set(roleName.toUpperCase(), roleDesc);
+                }
+            }
+            document.getElementById('statTotalDesc').textContent = roleDescMap.size.toLocaleString();
         }
 
         function triggerDebouncedSearch() {
@@ -801,7 +881,7 @@ TABLE: ZSDT_RP_TOP"></textarea>
                     if(isFullMatch) fullMatchCount++;
                     else if(matchedCriteriaCount > 0) partialMatchCount++;
 
-                    // Mapear con los roles compuestos cargados desde DBTRANSACCIONES.xlsx
+                    // Mapear con los roles compuestos cargados desde DBC3-S3.XLSX
                     const simpleRoleUpper = item.role.toUpperCase();
                     const composites = compositeMap.has(simpleRoleUpper) 
                         ? Array.from(compositeMap.get(simpleRoleUpper)) 
@@ -852,18 +932,32 @@ TABLE: ZSDT_RP_TOP"></textarea>
             displayResults.forEach(res => {
                 const tr = document.createElement('tr');
 
-                // Render para Roles Compuestos
+                // Render para ROL COMPUESTO Y DESCRIPCIÓN
                 let compositeHtml = '';
                 if (res.compositeRoles && res.compositeRoles.length > 0) {
                     compositeHtml = '<div class="composite-list">';
                     res.compositeRoles.forEach(cRole => {
-                        compositeHtml += `<span class="tag-composite">${escapeHtml(cRole)}</span>`;
+                        const desc = roleDescMap.get(cRole.toUpperCase()) || 'Sin descripción en DBTDROLES';
+                        compositeHtml += `
+                            <div class="composite-box">
+                                <span class="tag-composite">${escapeHtml(cRole)}</span>
+                                <span class="composite-desc">${escapeHtml(desc)}</span>
+                            </div>
+                        `;
                     });
                     compositeHtml += '</div>';
                 } else {
-                    compositeHtml = `<span style="color: var(--text-muted); font-size: 0.8rem; font-style: italic;">${compositeMap.size > 0 ? 'Sin Rol Compuesto' : 'N/A (DBTRANSACCIONES no cargado)'}</span>`;
+                    compositeHtml = `<span style="color: var(--text-muted); font-size: 0.8rem; font-style: italic;">${compositeMap.size > 0 ? 'Sin Rol Compuesto asociado' : 'N/A (DBC3-S3 no cargado)'}</span>`;
                 }
                 
+                // Render para ROL SAP + DESCRIPCIÓN (Si existe en DBTDROLES)
+                const simpleRoleUpper = res.role.toUpperCase();
+                const simpleDesc = roleDescMap.get(simpleRoleUpper);
+                let simpleRoleHtml = `
+                    <div class="tag-role">${escapeHtml(res.role)}</div>
+                    ${simpleDesc ? `<div class="role-desc-text">${escapeHtml(simpleDesc)}</div>` : ''}
+                `;
+
                 // Render campos del rol
                 let fieldsHtml = '<div class="field-list">';
                 res.fields.forEach(f => {
@@ -887,7 +981,7 @@ TABLE: ZSDT_RP_TOP"></textarea>
 
                 tr.innerHTML = `
                     <td>${compositeHtml}</td>
-                    <td class="tag-role">${escapeHtml(res.role)}</td>
+                    <td>${simpleRoleHtml}</td>
                     <td><span class="tag-obj">${escapeHtml(res.object)}</span></td>
                     <td>${fieldsHtml}</td>
                     <td>${badgeHtml}</td>
