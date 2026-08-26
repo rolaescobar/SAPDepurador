@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Explorador de Arquitectura SAP - Auditoría Proactiva</title>
+    <title>Explorador de Arquitectura SAP - Auditoria Proactiva</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root { 
@@ -36,7 +36,6 @@
         .header h2 { margin: 0; color: var(--sap-blue-text); font-size: 24px; font-weight: 700; letter-spacing: 0.5px; }
         .header p { margin: 6px 0 0 0; color: var(--text-muted); font-size: 13px; }
         
-        /* Sección Carga de Archivos */
         .upload-section { 
             display: flex; 
             flex-direction: row; 
@@ -65,7 +64,6 @@
         .status-loaded { background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); }
         .status-pending { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
 
-        /* Estructura Vertical de Secciones (1 columna en vez de grid horizontal) */
         .sections-vertical { display: flex; flex-direction: column; gap: 30px; }
         .card { border: 1px solid var(--border-color); padding: 20px; border-radius: 10px; background: var(--bg-card); display: flex; flex-direction: column; }
         
@@ -73,7 +71,6 @@
         .card-header h3 { margin: 0 0 6px 0; color: var(--sap-blue-text); font-size: 17px; display: flex; align-items: center; gap: 8px; }
         .card-header p { margin: 0; color: var(--text-muted); font-size: 12.5px; line-height: 1.4; }
         
-        /* Contenedor Flex para la zona de entrada y botón */
         .input-action-group {
             display: flex;
             flex-direction: column;
@@ -140,7 +137,6 @@
         }
         .btn-download:hover { background: var(--success); color: white; border-color: var(--success); }
         
-        /* Tablas de resultados con mayor altura al estar apiladas */
         .table-wrap { 
             overflow-x: auto; 
             max-height: 520px; 
@@ -172,7 +168,7 @@
         
         .badge-role { background: rgba(96, 165, 250, 0.12); color: #93c5fd; padding: 3px 8px; border-radius: 4px; font-weight: 600; border: 1px solid rgba(96, 165, 250, 0.25); display: inline-block; word-break: break-all; }
         .badge-simple { background: rgba(168, 85, 247, 0.12); color: #c084fc; padding: 3px 8px; border-radius: 4px; font-weight: 600; border: 1px solid rgba(168, 85, 247, 0.25); display: inline-block; word-break: break-all; }
-        .badge-tcode { background: rgba(245, 158, 11, 0.12); color: #fcd34d; padding: 3px 8px; border-radius: 4px; font-weight: 600; border: 1px solid rgba(245, 158, 11, 0.25); display: inline-block;}
+        .badge-tcode { background: rgba(245, 158, 11, 0.12); color: #fcd34d; padding: 3px 8px; border-radius: 4px; font-weight: 600; border: 1px solid rgba(245, 158, 11, 0.3); display: inline-block;}
         
         .mono { background: rgba(16, 185, 129, 0.15); color: #34d399; padding: 3px 9px; border-radius: 4px; font-weight: 600; border: 1px solid rgba(16, 185, 129, 0.3); display: inline-block; white-space: nowrap; }
         .multi { background: rgba(245, 158, 11, 0.15); color: #fbbf24; padding: 3px 9px; border-radius: 4px; font-weight: 600; border: 1px solid rgba(245, 158, 11, 0.3); display: inline-block; white-space: nowrap; }
@@ -183,7 +179,7 @@
 <div class="container">
     <div class="header">
         <h2>Explorador de Arquitectura de Roles SAP</h2>
-        <p>Cruce Inteligente de Datos: DBC3-S3 (Estructura de Roles) + dbtdroles (Catálogo y Descripciones)</p>
+        <p>Cruce Inteligente de Datos: DBC3-S3 (Estructura de Roles) + dbtdroles (Catalogo de Nombres de Roles)</p>
     </div>
 
     <!-- Carga de Archivos -->
@@ -206,12 +202,12 @@
         <div class="card">
             <div class="card-header">
                 <h3>🔍 Desglose por Rol Compuesto</h3>
-                <p>Consulta transacciones, roles simples incluidos y clasificación funcional de cada Rol Compuesto.</p>
+                <p>Consulta transacciones, roles simples incluidos y clasificacion funcional de cada Rol Compuesto.</p>
             </div>
 
             <div class="input-action-group">
                 <div class="textarea-container">
-                    <textarea id="inputRoles" placeholder="Ingresa uno o varios Roles Compuestos (uno por línea)...&#10;Ejemplo: ZHCHGT_SDSD_C3_0003_AGRUPACIAR"></textarea>
+                    <textarea id="inputRoles" placeholder="Ingresa uno o varios Roles Compuestos (uno por linea)...&#10;Ejemplo: ZHCHGT_SDSD_C3_0003_AGRUPACIAR"></textarea>
                 </div>
 
                 <div class="btn-group">
@@ -231,7 +227,7 @@
                             <th>Nombre Rol Compuesto</th>
                             <th>Rol Simple</th>
                             <th>T-Code</th>
-                            <th>Descripción Transacción</th>
+                            <th>Descripcion Transaccion</th>
                             <th>Tipo de Rol</th>
                         </tr>
                     </thead>
@@ -244,12 +240,12 @@
         <div class="card">
             <div class="card-header">
                 <h3>🔎 Sugerencia de Roles por Transacción (T-Code)</h3>
-                <p>Encuentra qué Roles Compuestos incluyen determinadas transacciones y cuál es su tipo.</p>
+                <p>Encuentra que Roles Compuestos incluyen determinadas transacciones, ordenados de menor a mayor cantidad de T-Codes.</p>
             </div>
 
             <div class="input-action-group">
                 <div class="textarea-container">
-                    <textarea id="inputTcodes" placeholder="Ingresa uno o varios T-Codes (uno por línea)...&#10;Ejemplo: VL01"></textarea>
+                    <textarea id="inputTcodes" placeholder="Ingresa uno o varios T-Codes (uno por linea)...&#10;Ejemplo: VL01"></textarea>
                 </div>
 
                 <div class="btn-group">
@@ -266,7 +262,7 @@
                     <thead>
                         <tr>
                             <th>T-Code</th>
-                            <th>Descripción Transacción</th>
+                            <th>Descripcion Transaccion</th>
                             <th>Rol Compuesto Sugerido</th>
                             <th>Nombre Rol Compuesto</th>
                             <th>Tipo de Rol</th>
@@ -284,29 +280,44 @@ let dbc3Data = [];
 let dbtdMap = {};
 let conteoTcodesPorRolCompuesto = {};
 
-// Carga Archivo 1: DBC3-S3.xlsx
+function cleanKey(str) {
+    if (!str) return "";
+    return String(str).trim().toUpperCase().replace(/\s+/g, "");
+}
+
+// Carga Archivo 1: DBC3-S3.xlsx por indice de columna (Col A, B, C, D)
 document.getElementById('fDbc3').addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if(!file) return;
     try {
         const data = await file.arrayBuffer();
         const wb = XLSX.read(data);
-        dbc3Data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: "" });
+        const rawRows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, defval: "" });
         
+        dbc3Data = [];
         const txSetPorRol = {};
-        dbc3Data.forEach(row => {
-            const rc = getVal(row, ["Rol compuesto", "Rol Compuesto", "ROL COMPUESTO"]);
-            const tx = getVal(row, ["Nombre ampliado", "Nombre Ampliado", "NOMBRE AMPLIADO", "T-Code", "Transaccion", "TRANSACCION"]);
-            
+
+        for (let i = 1; i < rawRows.length; i++) {
+            const row = rawRows[i];
+            if (!row || row.length === 0) continue;
+
+            const rc = String(row[0] || "").trim();      // Col A: Rol compuesto
+            const simple = String(row[1] || "").trim();  // Col B: Rol simple
+            const tcode = String(row[2] || "").trim();   // Col C: Nombre ampliado (T-Code)
+            const descTx = String(row[3] || "").trim();  // Col D: Descripcion de la transaccion
+
             if (rc) {
-                if (!txSetPorRol[rc]) txSetPorRol[rc] = new Set();
-                if (tx) txSetPorRol[rc].add(tx);
+                dbc3Data.push({ rc, simple, tcode, descTx });
+
+                const rcKey = cleanKey(rc);
+                if (!txSetPorRol[rcKey]) txSetPorRol[rcKey] = new Set();
+                if (tcode) txSetPorRol[rcKey].add(cleanKey(tcode));
             }
-        });
+        }
 
         conteoTcodesPorRolCompuesto = {};
-        for (const [rc, txSet] of Object.entries(txSetPorRol)) {
-            conteoTcodesPorRolCompuesto[rc] = txSet.size;
+        for (const [rcKey, txSet] of Object.entries(txSetPorRol)) {
+            conteoTcodesPorRolCompuesto[rcKey] = txSet.size;
         }
 
         document.getElementById('stDbc3').innerText = "Cargado (" + dbc3Data.length + " filas)";
@@ -316,23 +327,27 @@ document.getElementById('fDbc3').addEventListener('change', async (e) => {
     }
 });
 
-// Carga Archivo 2: dbtdroles.xlsx
+// Carga Archivo 2: dbtdroles.xlsx por indice de columna (Col A, B)
 document.getElementById('fDbtd').addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if(!file) return;
     try {
         const data = await file.arrayBuffer();
         const wb = XLSX.read(data);
-        const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: "" });
+        const rawRows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, defval: "" });
         
         dbtdMap = {};
-        rows.forEach(row => {
-            const rol = getVal(row, ["Rol", "ROL", "Nombre del rol"]);
-            const desc = getVal(row, ["Descripción breve del rol", "Descripcion breve del rol", "DESCRIPCION", "Descripción", "Descripcion"]);
+        for (let i = 1; i < rawRows.length; i++) {
+            const row = rawRows[i];
+            if (!row || row.length === 0) continue;
+
+            const rol = String(row[0] || "").trim();   // Col A: Rol
+            const desc = String(row[1] || "").trim();  // Col B: Descripcion breve del rol
+
             if (rol) {
-                dbtdMap[rol.toUpperCase()] = desc;
+                dbtdMap[cleanKey(rol)] = desc;
             }
-        });
+        }
 
         document.getElementById('stDbtd').innerText = "Cargado (" + Object.keys(dbtdMap).length + " roles)";
         document.getElementById('stDbtd').className = "status-badge status-loaded";
@@ -341,23 +356,12 @@ document.getElementById('fDbtd').addEventListener('change', async (e) => {
     }
 });
 
-function getVal(row, candidateKeys) {
-    for (const key of candidateKeys) {
-        if (row[key] !== undefined && row[key] !== null) return String(row[key]).trim();
-    }
-    const rowKeys = Object.keys(row);
-    for (const ck of candidateKeys) {
-        const foundKey = rowKeys.find(k => k.trim().toLowerCase() === ck.toLowerCase());
-        if (foundKey && row[foundKey] !== undefined && row[foundKey] !== null) return String(row[foundKey]).trim();
-    }
-    return "";
-}
-
 function obtenerTipoRol(rc) {
-    const count = conteoTcodesPorRolCompuesto[rc] || 0;
-    if (count === 1) return { label: "MONOFUNCIONAL", class: "mono" };
-    if (count > 1) return { label: "MULTIFUNCIONAL", class: "multi" };
-    return { label: "SIN TX", class: "mono" };
+    const rcKey = cleanKey(rc);
+    const count = conteoTcodesPorRolCompuesto[rcKey] || 0;
+    if (count === 1) return { label: "MONOFUNCIONAL (1 TX)", class: "mono", count: count };
+    if (count > 1) return { label: "MULTIFUNCIONAL (" + count + " TXs)", class: "multi", count: count };
+    return { label: "SIN TX (0 TX)", class: "mono", count: 0 };
 }
 
 function analizarRoles() {
@@ -366,38 +370,49 @@ function analizarRoles() {
     const inputStr = document.getElementById('inputRoles').value.trim();
     if (!inputStr) return alert("Ingrese al menos un Rol Compuesto.");
 
-    const searchRoles = inputStr.toUpperCase().split('\n').map(x => x.trim()).filter(x => x);
+    const searchRoles = inputStr.split(/\r?\n/).map(x => cleanKey(x)).filter(x => x);
     const tbody = document.querySelector('#tblRoles tbody');
     tbody.innerHTML = "";
 
-    let encontrados = 0;
+    let resultados = [];
 
-    dbc3Data.forEach(row => {
-        const rc = getVal(row, ["Rol compuesto", "Rol Compuesto", "ROL COMPUESTO"]);
-        const rcUpper = rc.toUpperCase();
+    dbc3Data.forEach(item => {
+        const rcKey = cleanKey(item.rc);
 
-        if (searchRoles.includes(rcUpper)) {
-            encontrados++;
-            const simpleRole = getVal(row, ["Rol", "ROL", "Rol Simple"]);
-            const tcode = getVal(row, ["Nombre ampliado", "Nombre Ampliado", "NOMBRE AMPLIADO", "T-Code", "Transaccion"]);
-            const descTx = getVal(row, ["Descripción", "Descripcion", "DESCRIPCION", "Nombre transacción"]);
-            const descRolCompuesto = dbtdMap[rcUpper] || "Sin descripción en dbtdroles";
-            const tipoInfo = obtenerTipoRol(rc);
+        if (searchRoles.includes(rcKey)) {
+            const descRolCompuesto = dbtdMap[rcKey] || "Sin descripción en dbtdroles";
+            const tipoInfo = obtenerTipoRol(item.rc);
 
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td><span class="badge-role">${rc}</span></td>
-                <td>${descRolCompuesto}</td>
-                <td><span class="badge-simple">${simpleRole}</span></td>
-                <td><span class="badge-tcode">${tcode}</span></td>
-                <td>${descTx}</td>
-                <td><span class="${tipoInfo.class}">${tipoInfo.label}</span></td>
-            `;
-            tbody.appendChild(tr);
+            resultados.push({
+                rc: item.rc,
+                descRolCompuesto,
+                simpleRole: item.simple,
+                tcode: item.tcode,
+                descTx: item.descTx,
+                tipoInfo
+            });
         }
     });
 
-    if (encontrados === 0) alert("No se encontraron coincidencias para los Roles Compuestos ingresados.");
+    if (resultados.length === 0) {
+        alert("No se encontraron coincidencias para los Roles Compuestos ingresados.");
+        return;
+    }
+
+    resultados.sort((a, b) => a.tipoInfo.count - b.tipoInfo.count);
+
+    resultados.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><span class="badge-role">${item.rc}</span></td>
+            <td>${item.descRolCompuesto}</td>
+            <td><span class="badge-simple">${item.simpleRole}</span></td>
+            <td><span class="badge-tcode">${item.tcode}</span></td>
+            <td>${item.descTx}</td>
+            <td><span class="${item.tipoInfo.class}">${item.tipoInfo.label}</span></td>
+        `;
+        tbody.appendChild(tr);
+    });
 }
 
 function buscarTcodes() {
@@ -406,36 +421,48 @@ function buscarTcodes() {
     const inputStr = document.getElementById('inputTcodes').value.trim();
     if (!inputStr) return alert("Ingrese al menos un T-Code.");
 
-    const searchTcodes = inputStr.toUpperCase().split('\n').map(x => x.trim()).filter(x => x);
+    const searchTcodes = inputStr.split(/\r?\n/).map(x => cleanKey(x)).filter(x => x);
     const tbody = document.querySelector('#tblTcodes tbody');
     tbody.innerHTML = "";
 
-    let encontrados = 0;
+    let resultados = [];
 
-    dbc3Data.forEach(row => {
-        const tcode = getVal(row, ["Nombre ampliado", "Nombre Ampliado", "NOMBRE AMPLIADO", "T-Code", "Transaccion"]);
-        const tcodeUpper = tcode.toUpperCase();
+    dbc3Data.forEach(item => {
+        const tcodeKey = cleanKey(item.tcode);
 
-        if (searchTcodes.includes(tcodeUpper)) {
-            encontrados++;
-            const rc = getVal(row, ["Rol compuesto", "Rol Compuesto", "ROL COMPUESTO"]);
-            const descTx = getVal(row, ["Descripción", "Descripcion", "DESCRIPCION", "Nombre transacción"]);
-            const descRolCompuesto = dbtdMap[rc.toUpperCase()] || "Sin descripción en dbtdroles";
-            const tipoInfo = obtenerTipoRol(rc);
+        if (searchTcodes.includes(tcodeKey)) {
+            const rcKey = cleanKey(item.rc);
+            const descRolCompuesto = dbtdMap[rcKey] || "Sin descripción en dbtdroles";
+            const tipoInfo = obtenerTipoRol(item.rc);
 
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td><span class="badge-tcode">${tcode}</span></td>
-                <td>${descTx}</td>
-                <td><span class="badge-role">${rc}</span></td>
-                <td>${descRolCompuesto}</td>
-                <td><span class="${tipoInfo.class}">${tipoInfo.label}</span></td>
-            `;
-            tbody.appendChild(tr);
+            resultados.push({
+                tcode: item.tcode,
+                descTx: item.descTx,
+                rc: item.rc,
+                descRolCompuesto,
+                tipoInfo
+            });
         }
     });
 
-    if (encontrados === 0) alert("No se encontraron coincidencias para los T-Codes ingresados.");
+    if (resultados.length === 0) {
+        alert("No se encontraron coincidencias para los T-Codes ingresados.");
+        return;
+    }
+
+    resultados.sort((a, b) => a.tipoInfo.count - b.tipoInfo.count);
+
+    resultados.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><span class="badge-tcode">${item.tcode}</span></td>
+            <td>${item.descTx}</td>
+            <td><span class="badge-role">${item.rc}</span></td>
+            <td>${item.descRolCompuesto}</td>
+            <td><span class="${item.tipoInfo.class}">${item.tipoInfo.label}</span></td>
+        `;
+        tbody.appendChild(tr);
+    });
 }
 
 function descargarExcel(tablaId, nombreArchivo) {
