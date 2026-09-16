@@ -2,22 +2,34 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Validador de Roles RLS - Auditoría</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Validador de Roles SAP - Código IT</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
 </head>
-<body class="bg-gray-900 p-8 text-gray-100">
-    <div class="max-w-6xl mx-auto bg-gray-800 rounded-xl shadow-2xl border border-gray-700 overflow-hidden">
-        <header class="bg-gray-700 p-8 border-b border-gray-600">
-            <h1 class="text-3xl font-bold text-white">Validador de Roles RLS</h1>
-            <p class="text-gray-400">Auditoría cruzada: Roles vs Usuarios</p>
-        </header>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col">
 
-        <div class="p-8 grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div class="space-y-4">
+    <!-- Header / Navbar -->
+    <header class="bg-slate-800 border-b border-slate-700 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-blue-600 p-2.5 rounded-xl shadow-lg shadow-blue-500/30 text-white">
+                    <i class="fa-solid fa-shield-halved text-xl"></i>
+                </div>
                 <div>
-                    <label class="block text-sm font-bold uppercase text-gray-400 mb-1">Mandante:</label>
-                    <select id="mandante" class="w-full p-3 bg-gray-900 border border-gray-600 rounded text-white focus:outline-none focus:border-emerald-500">
+                    <h1 class="text-xl font-bold tracking-tight text-white">Validador de Roles SAP vs Solicitados</h1>
+                    <p class="text-xs text-slate-400">Control de Accesos & GRC | Código IT</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="flex items-center gap-2 bg-slate-900 px-3 py-2 rounded-lg border border-slate-700">
+                    <label for="mandanteSelect" class="text-xs font-medium text-slate-300">Mandante:</label>
+                    <select id="mandanteSelect" class="bg-slate-800 text-blue-400 font-bold text-sm px-2 py-1 rounded border border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <option value="S4P">S4P</option>
                         <option value="S4D">S4D</option>
                         <option value="S4Q">S4Q</option>
@@ -34,184 +46,509 @@
                         <option value="DPP">DPP</option>
                     </select>
                 </div>
+            </div>
+        </div>
+    </header>
 
-                <div>
-                    <label class="block text-sm font-bold uppercase text-gray-400 mb-1">Archivo de Roles de Usuario (RLUSUARIO) SAP:</label>
-                    <input type="file" id="upload" class="w-full p-2 bg-gray-900 border border-gray-600 rounded text-sm text-gray-300">
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 py-8 flex-grow w-full space-y-6">
+
+        <!-- Card de Carga de Archivos Base -->
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl">
+            <h2 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                <i class="fa-solid fa-file-excel text-emerald-400"></i> Cargar Archivos Base (Requerido para habilitar las validaciones)
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Solicitados -->
+                <div class="border-2 border-dashed border-slate-600 hover:border-blue-500 transition rounded-xl p-5 bg-slate-900/50 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="font-semibold text-sm text-slate-200">1. Roles Solicitados (Masivo)</span>
+                            <span class="text-xs bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded font-mono">ROLES_SOLICITADOS_S4.XLSX</span>
+                        </div>
+                        <p class="text-xs text-slate-400 mb-4">Columnas: A (Usuario), B (Nombre), C (Rol), D (Descripción).</p>
+                    </div>
+                    <div>
+                        <input type="file" id="fileSolicitados" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleFileSelect('solicitados', event)">
+                        <label for="fileSolicitados" class="cursor-pointer inline-flex items-center justify-center w-full bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium py-2.5 px-4 rounded-lg transition gap-2 border border-slate-600">
+                            <i class="fa-solid fa-upload"></i> <span id="labelSol">Seleccionar archivo...</span>
+                        </label>
+                    </div>
                 </div>
 
-                <div>
-                    <label class="block text-sm font-bold uppercase text-emerald-400 mb-1">2. Catálogo de Roles / Descripciones (Opcional/Recomendado):</label>
-                    <input type="file" id="uploadCatalogo" class="w-full p-2 bg-gray-900 border border-emerald-600 rounded text-sm text-gray-300">
-                    <p class="text-xs text-gray-400 mt-1">Carga aquí el archivo DBROLES.xlsx , ROL y DESCRIPCION  para completar los "NO APLICADO".</p>
+                <!-- RLUsuarios (Actuales en SAP) -->
+                <div class="border-2 border-dashed border-slate-600 hover:border-blue-500 transition rounded-xl p-5 bg-slate-900/50 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="font-semibold text-sm text-slate-200">2. Roles Actuales SAP</span>
+                            <span class="text-xs bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded font-mono">RLUSUARIOS.XLSX</span>
+                        </div>
+                        <p class="text-xs text-slate-400 mb-4">Columnas clave: A (Usuario), C (Rol), I (Descripción breve).</p>
+                    </div>
+                    <div>
+                        <input type="file" id="fileActuales" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleFileSelect('actuales', event)">
+                        <label for="fileActuales" class="cursor-pointer inline-flex items-center justify-center w-full bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium py-2.5 px-4 rounded-lg transition gap-2 border border-slate-600">
+                            <i class="fa-solid fa-upload"></i> <span id="labelAct">Seleccionar archivo...</span>
+                        </label>
+                    </div>
                 </div>
             </div>
 
-            <div class="md:col-span-2">
-                <label class="block text-sm font-bold uppercase text-gray-400 mb-1">Roles solicitados a validar (uno por línea):</label>
-                <textarea id="rolesArea" class="w-full h-64 p-4 bg-gray-900 border border-gray-600 rounded font-mono text-blue-300 text-sm focus:outline-none focus:border-emerald-500" placeholder="Ingrese o pegue aquí los roles a consultar..."></textarea>
+            <div class="mt-6 flex justify-end">
+                <button onclick="procesarArchivos()" class="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-6 py-3 rounded-xl shadow-lg shadow-blue-600/30 transition flex items-center gap-2">
+                    <i class="fa-solid fa-cloud-arrow-down"></i> Procesar y Cargar Datos en el Sistema
+                </button>
             </div>
         </div>
 
-        <div class="px-8 pb-8 flex gap-4">
-            <button onclick="procesar()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded font-bold transition shadow-lg">Validar Auditoría</button>
-            <button onclick="exportarExcel()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-4 rounded font-bold transition shadow-lg">Descargar Reporte (.xlsx)</button>
+        <!-- Pestañas de Navegación -->
+        <div id="toolsSection" class="hidden space-y-6">
+            <div class="flex border-b border-slate-700 gap-6">
+                <button onclick="cambiarTab('masivo')" id="tabBtnMasivo" class="pb-3 font-semibold text-sm border-b-2 border-blue-500 text-blue-400 flex items-center gap-2 transition">
+                    <i class="fa-solid fa-table-cells"></i> Validación Masiva (Archivo Completo)
+                </button>
+                <button onclick="cambiarTab('individual')" id="tabBtnIndividual" class="pb-3 font-semibold text-sm border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 transition">
+                    <i class="fa-solid fa-user-pen"></i> Validación por Usuario (Textarea)
+                </button>
+            </div>
+
+            <!-- SECCIÓN 1: VALIDACIÓN MASIVA -->
+            <div id="tabMasivo" class="space-y-6">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="bg-slate-800 border border-slate-700 rounded-xl p-4 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs text-slate-400 font-medium">Total Solicitados</p>
+                            <h3 id="statTotal" class="text-2xl font-bold text-white mt-1">0</h3>
+                        </div>
+                        <div class="bg-blue-500/20 text-blue-400 p-3 rounded-lg"><i class="fa-solid fa-users text-lg"></i></div>
+                    </div>
+                    <div class="bg-slate-800 border border-slate-700 rounded-xl p-4 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs text-slate-400 font-medium">Ya los tiene (Asignados)</p>
+                            <h3 id="statTiene" class="text-2xl font-bold text-emerald-400 mt-1">0</h3>
+                        </div>
+                        <div class="bg-emerald-500/20 text-emerald-400 p-3 rounded-lg"><i class="fa-solid fa-circle-check text-lg"></i></div>
+                    </div>
+                    <div class="bg-slate-800 border border-slate-700 rounded-xl p-4 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs text-slate-400 font-medium">No los tiene (Por Solicitar)</p>
+                            <h3 id="statNoTiene" class="text-2xl font-bold text-amber-400 mt-1">0</h3>
+                        </div>
+                        <div class="bg-amber-500/20 text-amber-400 p-3 rounded-lg"><i class="fa-solid fa-triangle-exclamation text-lg"></i></div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-800 border border-slate-700 rounded-2xl shadow-xl overflow-hidden">
+                    <div class="p-4 border-b border-slate-700 flex flex-col sm:flex-row justify-between items-center gap-4">
+                        <div class="flex items-center gap-3 w-full sm:w-auto">
+                            <h3 class="font-semibold text-white">Resultados Masivos (<span id="mandanteBadge" class="text-blue-400 font-mono">S4P</span>)</h3>
+                            <input type="text" id="searchInput" placeholder="Filtrar por usuario, rol o nombre..." onkeyup="filtrarTabla()" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-64">
+                        </div>
+                        <button onclick="exportarExcelMasivo()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-4 py-2 rounded-lg transition flex items-center gap-2 shadow-md shadow-emerald-600/20">
+                            <i class="fa-solid fa-file-excel"></i> Descargar Resultado en Excel
+                        </button>
+                    </div>
+
+                    <div class="overflow-x-auto max-h-[500px]">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead class="bg-slate-900 text-slate-300 sticky top-0 uppercase font-semibold tracking-wider border-b border-slate-700">
+                                <tr>
+                                    <th class="p-3">Usuario</th>
+                                    <th class="p-3">Nombre</th>
+                                    <th class="p-3">Rol</th>
+                                    <th class="p-3">Descripción</th>
+                                    <th class="p-3 text-center">Estado / Validación</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaResultadosBody" class="divide-y divide-slate-700/50 text-slate-300">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECCIÓN 2: VALIDACIÓN POR USUARIO CON TEXTAREA -->
+            <div id="tabIndividual" class="hidden space-y-6">
+                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl space-y-5">
+                    <div>
+                        <h3 class="text-lg font-semibold text-white mb-1">Validación Rápida por Usuario</h3>
+                        <p class="text-xs text-slate-400">Ingrese el código de usuario y pegue la lista de roles solicitados en el área de texto para validar contra el reporte SAP.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-300 mb-1">Código de Usuario:</label>
+                            <input type="text" id="inputUsuarioInd" list="listaUsuariosDatalist" placeholder="Ej. 50017482" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono">
+                            <datalist id="listaUsuariosDatalist"></datalist>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-300 mb-1">Nombre Registrado (Referencia):</label>
+                            <input type="text" id="inputNombreInd" placeholder="Nombre completo automático..." class="w-full bg-slate-900/50 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-400" readonly>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-200 mb-2 uppercase tracking-wide">ROLES SOLICITADOS A VALIDAR (UNO POR LÍNEA):</label>
+                        <textarea id="textareaRolesInd" rows="6" placeholder="ZHCHGT_COOM_C3_0006_ADMORDCOAR&#10;ZHCHGT_DSDS_C3_0006_DESPACHDAR&#10;OTRO_ROL_A_VALIDAR" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-xs font-mono text-white focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-inner"></textarea>
+                    </div>
+
+                    <div class="flex justify-end">
+                        <button onclick="validarIndividual()" class="bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2.5 px-6 rounded-xl shadow-lg transition flex items-center gap-2">
+                            <i class="fa-solid fa-magnifying-glass-chart"></i> Validar Roles Ingresados
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Resultados Individuales -->
+                <div id="resultadoIndividualContainer" class="hidden bg-slate-800 border border-slate-700 rounded-2xl shadow-xl overflow-hidden space-y-4 p-6">
+                    <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+                        <h4 class="font-semibold text-white text-sm">Resultado para el Usuario: <span id="lblUserTarget" class="text-blue-400 font-mono"></span></h4>
+                        <button onclick="exportarExcelIndividual()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-4 py-2 rounded-lg transition flex items-center gap-2">
+                            <i class="fa-solid fa-file-excel"></i> Descargar Resultado en Excel
+                        </button>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead class="bg-slate-900 text-slate-300 uppercase font-semibold border-b border-slate-700">
+                                <tr>
+                                    <th class="p-3">Rol Solicitado</th>
+                                    <th class="p-3">Descripción en SAP (RLUSUARIOS)</th>
+                                    <th class="p-3 text-center">Estado / Validación</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaIndividualBody" class="divide-y divide-slate-700/50 text-slate-300">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <div id="resultadoContainer" class="p-8 hidden overflow-x-auto">
-            <table class="w-full text-sm text-left border border-gray-700">
-                <thead class="bg-gray-900 text-gray-300 uppercase text-xs">
-                    <tr>
-                        <th class="p-3 border-b border-gray-700">Mandante</th>
-                        <th class="p-3 border-b border-gray-700">Usuario</th>
-                        <th class="p-3 border-b border-gray-700">Nombre Completo</th>
-                        <th class="p-3 border-b border-gray-700">Rol Solicitado</th>
-                        <th class="p-3 border-b border-gray-700">Descripción del Rol</th>
-                        <th class="p-3 border-b border-gray-700">Estado</th>
-                    </tr>
-                </thead>
-                <tbody id="tablaBody" class="divide-y divide-gray-700 bg-gray-800"></tbody>
-            </table>
-        </div>
-    </div>
+    </main>
+
+    <footer class="bg-slate-800 border-t border-slate-700 text-center py-4 text-xs text-slate-400">
+        Código IT &bull; Validador de Roles SAP &bull; GRC & Access Management
+    </footer>
 
     <script>
-        let datosProduccion = [];
-        let datosCatalogo = [];
+        let datosSolicitados = [];
+        let mapaRolesActuales = new Map();
+        let mapaNombresUsuarios = new Map();
+        let resultadosGlobales = [];
+        let resultadosIndividualesGlobal = [];
 
-        // Lectura del primer archivo (RLUSUARIO)
-        document.getElementById('upload').addEventListener('change', (e) => {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const wb = XLSX.read(e.target.result, {type: 'array'});
-                datosProduccion = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
-                alert("Archivo RLUSUARIO cargado con éxito (" + datosProduccion.length + " filas).");
-            };
-            reader.readAsArrayBuffer(e.target.files[0]);
-        });
+        let fileSolData = null;
+        let fileActData = null;
 
-        // Lectura del segundo archivo (Catálogo General de Roles / Descripciones)
-        document.getElementById('uploadCatalogo').addEventListener('change', (e) => {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const wb = XLSX.read(e.target.result, {type: 'array'});
-                datosCatalogo = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
-                alert("Catálogo de Roles cargado con éxito (" + datosCatalogo.length + " filas).");
-            };
-            reader.readAsArrayBuffer(e.target.files[0]);
-        });
+        function handleFileSelect(tipo, event) {
+            const file = event.target.files[0];
+            if (!file) return;
 
-        // Función auxiliar para obtener la descripción de cualquier objeto de fila
-        function extraerDescripcion(item) {
-            if (!item) return "";
-            return item['Descripción técnica'] || 
-                   item['Descripcion técnica'] || 
-                   item['Descripción breve del rol'] || 
-                   item['Descripcion breve del rol'] || 
-                   item['DESCRIPCION'] || 
-                   item['Descripcion'] || 
-                   item['Descripción'] || "";
+            if (tipo === 'solicitados') {
+                document.getElementById('labelSol').innerText = file.name;
+                fileSolData = file;
+            } else {
+                document.getElementById('labelAct').innerText = file.name;
+                fileActData = file;
+            }
         }
 
-        // Función auxiliar para obtener el Rol de un objeto
-        function extraerRol(item) {
-            if (!item) return "";
-            const rol = item.Rol || item.ROL || item['Nombre de rol'] || item['Rol de usuario'];
-            return rol ? String(rol).trim() : "";
+        async function leerExcel(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        const firstSheetName = workbook.SheetNames[0];
+                        const worksheet = workbook.Sheets[firstSheetName];
+                        const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                        resolve(json);
+                    } catch (err) {
+                        reject(err);
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            });
         }
 
-        function procesar() {
-            if (datosProduccion.length === 0) {
-                alert("Por favor, carga primero el archivo RLUSUARIO.");
+        async function procesarArchivos() {
+            if (!fileSolData || !fileActData) {
+                alert("Por favor selecciona ambos archivos: Roles Solicitados y RLUSUARIOS.");
                 return;
             }
 
-            const mandante = document.getElementById('mandante').value;
-            const rolesSolicitados = document.getElementById('rolesArea').value
-                .split('\n')
-                .map(r => r.trim())
-                .filter(r => r !== "");
+            try {
+                const solRaw = await leerExcel(fileSolData);
+                const actRaw = await leerExcel(fileActData);
 
-            if (rolesSolicitados.length === 0) {
-                alert("Por favor, ingresa al menos un rol a validar.");
-                return;
-            }
-
-            const tbody = document.getElementById('tablaBody');
-            tbody.innerHTML = "";
-
-            const usuariosInfo = {};
-            const rolesDescripcion = {};
-
-            // 1. Extraer nombres y roles desde el archivo RLUSUARIO
-            datosProduccion.forEach(item => {
-                const usuarioKey = item.Usuario || item.USUARIO;
-                const nombreKey = item['Nombre completo'] || item.Nombre || item.NOMBRE;
-                const rolNombre = extraerRol(item);
-
-                if (usuarioKey && !usuariosInfo[usuarioKey]) {
-                    usuariosInfo[usuarioKey] = nombreKey || usuarioKey;
+                mapaRolesActuales.clear();
+                let startRowAct = 0;
+                if (actRaw.length > 0 && String(actRaw[0][0]).toUpperCase().includes('USUARIO')) {
+                    startRowAct = 1;
                 }
-                
-                if (rolNombre && !rolesDescripcion[rolNombre]) {
-                    const desc = extraerDescripcion(item);
-                    if (desc) rolesDescripcion[rolNombre] = desc;
+
+                for (let i = startRowAct; i < actRaw.length; i++) {
+                    const row = actRaw[i];
+                    if (!row || row.length === 0) continue;
+                    const usuario = String(row[0] || '').trim().toUpperCase();
+                    const rol = String(row[2] || '').trim().toUpperCase();
+                    const descBreve = String(row[8] || '').trim();
+
+                    if (usuario && rol) {
+                        mapaRolesActuales.set(usuario + "|" + rol, descBreve);
+                    }
                 }
-            });
 
-            // 2. Extraer descripciones faltantes desde el Catálogo de Roles cargado
-            datosCatalogo.forEach(item => {
-                const rolNombre = extraerRol(item);
-                if (rolNombre && !rolesDescripcion[rolNombre]) {
-                    const desc = extraerDescripcion(item);
-                    if (desc) rolesDescripcion[rolNombre] = desc;
+                let solRows = [];
+                let startRowSol = 0;
+                if (solRaw.length > 0 && String(solRaw[0][0]).toUpperCase().includes('USUAR')) {
+                    startRowSol = 1;
                 }
-            });
 
-            const usuariosUnicos = Object.keys(usuariosInfo);
+                mapaNombresUsuarios.clear();
+                for (let i = startRowSol; i < solRaw.length; i++) {
+                    const row = solRaw[i];
+                    if (!row || row.length === 0) continue;
+                    const usuario = String(row[0] || '').trim().toUpperCase();
+                    const nombre = String(row[1] || '').trim();
+                    const rol = String(row[2] || '').trim().toUpperCase();
+                    const descripcion = String(row[3] || '').trim();
 
-            if (usuariosUnicos.length === 0) {
-                alert("No se encontraron usuarios en el archivo RLUSUARIO. Verifica la columna 'Usuario'.");
-                return;
-            }
+                    if (usuario && rol) {
+                        solRows.push({ usuario, nombre, rol, descripcion });
+                        if (nombre && !mapaNombresUsuarios.has(usuario)) {
+                            mapaNombresUsuarios.set(usuario, nombre);
+                        }
+                    }
+                }
 
-            // 3. Generación de filas para la tabla de auditoría
-            usuariosUnicos.forEach(usuario => {
-                const nombre = usuariosInfo[usuario];
-                const rolesDelUsuario = datosProduccion
-                    .filter(item => String(item.Usuario || item.USUARIO) === usuario)
-                    .map(item => extraerRol(item));
+                datosSolicitados = solRows;
 
-                rolesSolicitados.forEach(rolSolicitado => {
-                    const tieneRol = rolesDelUsuario.includes(rolSolicitado);
-                    
-                    // Busca la descripción en el diccionario o coloca un guión si no se encontró
-                    const descripcionRol = rolesDescripcion[rolSolicitado] || "No encontrada en catálogo";
-                    
-                    const tr = document.createElement('tr');
-                    tr.className = "hover:bg-gray-750 transition-colors";
-                    tr.innerHTML = `
-                        <td class="p-3">${mandante}</td>
-                        <td class="p-3 font-mono text-gray-300">${usuario}</td>
-                        <td class="p-3">${nombre}</td>
-                        <td class="p-3 font-mono text-blue-300">${rolSolicitado}</td>
-                        <td class="p-3 text-gray-300">${descripcionRol}</td>
-                        <td class="p-3 font-bold ${tieneRol ? 'text-emerald-400' : 'text-red-400'}">
-                            ${tieneRol ? 'APLICADO' : 'NO APLICADO'}
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
+                resultadosGlobales = datosSolicitados.map(item => {
+                    const key = item.usuario + "|" + item.rol;
+                    const tieneRol = mapaRolesActuales.has(key);
+                    return {
+                        usuario: item.usuario,
+                        nombre: item.nombre,
+                        rol: item.rol,
+                        descripcion: item.descripcion,
+                        estado: tieneRol ? 'Ya lo tiene' : 'No lo tiene'
+                    };
                 });
-            });
 
-            document.getElementById('resultadoContainer').classList.remove('hidden');
+                llenarDatalistUsuarios();
+                renderizarResultadosMasivos();
+                document.getElementById('toolsSection').classList.remove('hidden');
+                alert("¡Archivos procesados con éxito!");
+
+            } catch (error) {
+                console.error(error);
+                alert("Ocurrió un error al procesar los archivos. Verifique la estructura de columnas.");
+            }
         }
 
-        function exportarExcel() {
-            const table = document.querySelector('table');
-            if (!table) return;
-            const wb = XLSX.utils.table_to_book(table);
-            XLSX.writeFile(wb, "Reporte_Auditoria_Roles.xlsx");
+        function llenarDatalistUsuarios() {
+            const datalist = document.getElementById('listaUsuariosDatalist');
+            datalist.innerHTML = '';
+            
+            const usuariosUnicos = Array.from(mapaNombresUsuarios.keys()).sort();
+            
+            usuariosUnicos.forEach(user => {
+                const nombre = mapaNombresUsuarios.get(user);
+                const option = document.createElement('option');
+                option.value = user;
+                option.textContent = nombre + " (" + user + ")";
+                datalist.appendChild(option);
+            });
+
+            const inputUser = document.getElementById('inputUsuarioInd');
+            inputUser.oninput = function() {
+                const val = this.value.trim().toUpperCase();
+                const nombreInput = document.getElementById('inputNombreInd');
+                if (mapaNombresUsuarios.has(val)) {
+                    nombreInput.value = mapaNombresUsuarios.get(val);
+                } else {
+                    nombreInput.value = "Usuario personalizado / No en archivo masivo";
+                }
+            };
+        }
+
+        function cambiarTab(tab) {
+            const btnMasivo = document.getElementById('tabBtnMasivo');
+            const btnInd = document.getElementById('tabBtnIndividual');
+            const secMasivo = document.getElementById('tabMasivo');
+            const secInd = document.getElementById('tabIndividual');
+
+            if (tab === 'masivo') {
+                btnMasivo.className = "pb-3 font-semibold text-sm border-b-2 border-blue-500 text-blue-400 flex items-center gap-2 transition";
+                btnInd.className = "pb-3 font-semibold text-sm border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 transition";
+                secMasivo.classList.remove('hidden');
+                secInd.classList.add('hidden');
+            } else {
+                btnInd.className = "pb-3 font-semibold text-sm border-b-2 border-blue-500 text-blue-400 flex items-center gap-2 transition";
+                btnMasivo.className = "pb-3 font-semibold text-sm border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 transition";
+                secInd.classList.remove('hidden');
+                secMasivo.classList.add('hidden');
+            }
+        }
+
+        function renderizarResultadosMasivos() {
+            const mandante = document.getElementById('mandanteSelect').value;
+            document.getElementById('mandanteBadge').innerText = mandante;
+
+            const total = resultadosGlobales.length;
+            const tiene = resultadosGlobales.filter(r => r.estado === 'Ya lo tiene').length;
+            const noTiene = total - tiene;
+
+            document.getElementById('statTotal').innerText = total;
+            document.getElementById('statTiene').innerText = tiene;
+            document.getElementById('statNoTiene').innerText = noTiene;
+
+            const tbody = document.getElementById('tablaResultadosBody');
+            tbody.innerHTML = '';
+
+            resultadosGlobales.forEach(r => {
+                const badgeClass = r.estado === 'Ya lo tiene' 
+                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' 
+                    : 'bg-amber-500/20 text-amber-400 border border-amber-500/30';
+                
+                const icon = r.estado === 'Ya lo tiene' ? '<i class="fa-solid fa-check"></i>' : '<i class="fa-solid fa-triangle-exclamation"></i>';
+
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-700/40 transition';
+                tr.innerHTML = `
+                    <td class="p-3 font-mono font-medium text-blue-400">` + r.usuario + `</td>
+                    <td class="p-3">` + r.nombre + `</td>
+                    <td class="p-3 font-mono font-semibold text-slate-200">` + r.rol + `</td>
+                    <td class="p-3 text-slate-400">` + r.descripcion + `</td>
+                    <td class="p-3 text-center">
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ` + badgeClass + `">
+                            ` + icon + ` ` + r.estado + `
+                        </span>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function filtrarTabla() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const filas = document.getElementById('tablaResultadosBody').getElementsByTagName('tr');
+
+            for (let i = 0; i < filas.length; i++) {
+                const texto = filas[i].innerText.toLowerCase();
+                if (texto.includes(query)) {
+                    filas[i].style.display = "";
+                } else {
+                    filas[i].style.display = "none";
+                }
+            }
+        }
+
+        function validarIndividual() {
+            const usuario = document.getElementById('inputUsuarioInd').value.trim().toUpperCase();
+            const rolesTexto = document.getElementById('textareaRolesInd').value.trim();
+
+            if (!usuario) {
+                alert("Por favor ingrese el código de usuario.");
+                return;
+            }
+
+            if (!rolesTexto) {
+                alert("Por favor ingrese o pegue los roles en el área de texto.");
+                return;
+            }
+
+            // Corrección limpia del split para múltiples saltos de línea o comas
+            const rolesList = rolesTexto.split(/\r?\n|,/).map(function(r) { return r.trim().toUpperCase(); }).filter(function(r) { return r.length > 0; });
+            const nombre = mapaNombresUsuarios.get(usuario) || document.getElementById('inputNombreInd').value || "Usuario Personalizado";
+
+            document.getElementById('lblUserTarget').innerText = usuario + " (" + nombre + ")";
+
+            resultadosIndividualesGlobal = rolesList.map(function(rol) {
+                const key = usuario + "|" + rol;
+                const tiene = mapaRolesActuales.has(key);
+                const descSAP = mapaRolesActuales.get(key) || (tiene ? "Asignado en SAP" : "No asignado / No encontrado en RLUSUARIOS");
+                return {
+                    usuario: usuario,
+                    nombre: nombre,
+                    rol: rol,
+                    descripcionSAP: descSAP,
+                    estado: tiene ? 'Ya lo tiene' : 'No lo tiene'
+                };
+            });
+
+            const tbody = document.getElementById('tablaIndividualBody');
+            tbody.innerHTML = '';
+
+            resultadosIndividualesGlobal.forEach(function(r) {
+                const badgeClass = r.estado === 'Ya lo tiene' 
+                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' 
+                    : 'bg-amber-500/20 text-amber-400 border border-amber-500/30';
+                
+                const icon = r.estado === 'Ya lo tiene' ? '<i class="fa-solid fa-check"></i>' : '<i class="fa-solid fa-triangle-exclamation"></i>';
+
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-700/40 transition';
+                tr.innerHTML = `
+                    <td class="p-3 font-mono font-semibold text-slate-200">` + r.rol + `</td>
+                    <td class="p-3 text-slate-400">` + r.descripcionSAP + `</td>
+                    <td class="p-3 text-center">
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ` + badgeClass + `">
+                            ` + icon + ` ` + r.estado + `
+                        </span>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('resultadoIndividualContainer').classList.remove('hidden');
+        }
+
+        function exportarExcelMasivo() {
+            if (resultadosGlobales.length === 0) {
+                alert("No hay datos para exportar.");
+                return;
+            }
+            const mandante = document.getElementById('mandanteSelect').value;
+            const datosExportar = resultadosGlobales.map(r => ({
+                "Usuario": r.usuario,
+                "Nombre": r.nombre,
+                "Rol": r.rol,
+                "Descripción": r.descripcion,
+                "Estado / Validación": r.estado,
+                "Mandante": mandante
+            }));
+
+            const worksheet = XLSX.utils.json_to_sheet(datosExportar);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Validacion_Masiva");
+            XLSX.writeFile(workbook, "Validacion_Roles_Masivo_" + mandante + "_" + new Date().toISOString().slice(0,10) + ".xlsx");
+        }
+
+        function exportarExcelIndividual() {
+            if (resultadosIndividualesGlobal.length === 0) {
+                alert("No hay datos individuales para exportar.");
+                return;
+            }
+            const mandante = document.getElementById('mandanteSelect').value;
+            const usuarioTarget = document.getElementById('inputUsuarioInd').value.trim().toUpperCase();
+
+            const datosExportar = resultadosIndividualesGlobal.map(r => ({
+                "Usuario": r.usuario,
+                "Nombre": r.nombre,
+                "Rol Solicitado": r.rol,
+                "Descripción SAP": r.descripcionSAP,
+                "Estado / Validación": r.estado,
+                "Mandante": mandante
+            }));
+
+            const worksheet = XLSX.utils.json_to_sheet(datosExportar);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Usuario_" + usuarioTarget);
+            XLSX.writeFile(workbook, "Validacion_Individual_" + usuarioTarget + "_" + mandante + "_" + new Date().toISOString().slice(0,10) + ".xlsx");
         }
     </script>
 </body>
