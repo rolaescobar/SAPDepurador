@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="es">
+ <head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width,initial-scale=1" name="viewport"/>
+  <title>
+   Validador de Usuarios SAP
+  </title>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js">
+  </script>
+  <style>
+   :root {
+    font-family:Segoe UI,Arial,sans-serif;
+    color:#172b4d;
+    background:#f2f6fb
+}
+
+* {
+    box-sizing:border-box
+}
+
+body {
+    margin:0
+}
+
+.wrap {
+    max-width:1240px;
+    margin:auto;
+    padding:28px
+}
+
+header {
+    background:#132b50;
+    color:white;
+    padding:22px 28px
+}
+
+header h1 {
+    margin:0;
+    font-size:23px
+}
+
+header p {
+    margin:6px 0 0;
+    color:#d3e3f8
+}
+
+.panel {
+    background:white;
+    border:1px solid #dce5f0;
+    border-radius:12px;
+    padding:20px;
+    margin:18px 0;
+    box-shadow:0 2px 7px #18304a0a
+}
+
+.grid {
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:18px
+}
+
+label {
+    font-weight:650;
+    display:block;
+    margin-bottom:8px
+}
+
+input[type=file],input[type=search],select {
+    width:100%;
+    padding:12px;
+    border:1px solid #bdcde0;
+    border-radius:8px;
+    background:white
+}
+
+small {
+    color:#60748b
+}
+
+button {
+    border:0;
+    border-radius:8px;
+    padding:11px 16px;
+    cursor:pointer;
+    font-weight:650;
+    background:#126ca5;
+    color:white
+}
+
+button.secondary {
+    background:#e7eff8;
+    color:#173a60
+}
+
+button:disabled {
+    opacity:.5;
+    cursor:not-allowed
+}
+
+.actions {
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-top:16px
+}
+
+.metrics {
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:12px
+}
+
+.metric {
+    background:#eef5fb;
+    padding:14px;
+    border-radius:9px
+}
+
+.metric b {
+    display:block;
+    font-size:26px;
+    margin-top:4px
+}
+
+.controls {
+    display:grid;
+    grid-template-columns:2fr 1fr;
+    gap:12px;
+    margin-bottom:14px
+}
+
+.scroll {
+    overflow:auto;
+    max-height:60vh;
+    border:1px solid #e2e8f0;
+    border-radius:8px
+}
+
+table {
+    border-collapse:collapse;
+    width:100%;
+    font-size:13px
+}
+
+th,td {
+    text-align:left;
+    padding:11px 12px;
+    border-bottom:1px solid #e8edf4;
+    vertical-align:top
+}
+
+th {
+    background:#e9f1fa;
+    position:sticky;
+    top:0;
+    z-index:1
+}
+
+tr:hover td {
+    background:#f7fbff
+}
+
+.ok {
+    color:#147448;
+    font-weight:bold
+}
+
+.no {
+    color:#a44136;
+    font-weight:bold
+}
+
+.tag {
+    display:inline-block;
+    background:#e8f0fa;
+    border-radius:5px;
+    padding:4px 7px;
+    margin:2px 3px 2px 0
+}
+
+.muted {
+    color:#63788d
+}
+
+#status {
+    white-space:pre-wrap;
+    margin-top:10px
+}
+
+#status.error {
+    color:#aa3232
+}
+
+.hidden {
+    display:none
+}
+
+@media(max-width:700px) {
+    .grid,.metrics,.controls {
+    grid-template-columns:1fr
+}
+
+.wrap {
+    padding:12px
+}
+
+
+}
+  </style>
+ </head>
+ <body>
+  <header>
+   <div class="wrap" style="padding:0">
+    <h1>
+     Validador de Usuarios SAP
+    </h1>
+    <p>
+     Comparación masiva de usuarios contra matrices de Excel
+    </p>
+   </div>
+  </header>
+  <main class="wrap">
+   <section class="panel">
+    <div class="grid">
+     <div>
+      <label for="base">
+       1. LISTADO_USUARIOS_NUEVOS
+      </label>
+      <input accept=".xlsx,.xls,.xlsm,.xlsb" id="base" type="file"/>
+      <small>
+       Columna A: código de usuario · Columna B: nombre
+      </small>
+     </div>
+     <div>
+      <label for="files">
+       2. Matrices para comparar (sin límite fijo)
+      </label>
+      <input accept=".xlsx,.xls,.xlsm,.xlsb" id="files" multiple="" type="file"/>
+      <small>
+       Selecciona todos los archivos juntos. Puedes agregar más después.
+      </small>
+      <div class="muted" id="fileList" style="margin-top:8px">
+       Sin archivos seleccionados
+      </div>
+     </div>
+    </div>
+    <div class="actions">
+     <button id="run">
+      Validar usuarios
+     </button>
+     <button class="secondary" id="clear">
+      Limpiar todo
+     </button>
+    </div>
+    <div id="status" role="status">
+    </div>
+   </section>
+   <section class="panel hidden" id="results">
+    <div class="metrics">
+     <div class="metric">
+      Usuarios
+      <b id="total">
+       0
+      </b>
+     </div>
+     <div class="metric">
+      Encontrados
+      <b id="found">
+       0
+      </b>
+     </div>
+     <div class="metric">
+      No encontrados
+      <b id="missing">
+       0
+      </b>
+     </div>
+     <div class="metric">
+      Matrices cargadas
+      <b id="matrixCount">
+       0
+      </b>
+     </div>
+    </div>
+    <div class="actions" style="margin:18px 0">
+     <button id="export">
+      Descargar resultados (.xlsx)
+     </button>
+     <button class="secondary" id="exportAll">
+      Descargar todos (.xlsx)
+     </button>
+     <button class="secondary" id="exportMissing">
+      Descargar no encontrados (.xlsx)
+     </button>
+    </div>
+    <div class="controls">
+     <input aria-label="Buscar por código o nombre" id="search" placeholder="Buscar por código o nombre..." type="search"/>
+     <select aria-label="Filtrar resultados" id="filter">
+      <option value="all">
+       Todos
+      </option>
+      <option value="found">
+       Encontrados
+      </option>
+      <option value="missing">
+       No encontrados
+      </option>
+      <option value="multi">
+       En varias matrices
+      </option>
+     </select>
+    </div>
+    <div class="muted" id="shown" style="margin-bottom:8px">
+    </div>
+    <div class="scroll">
+     <table>
+      <thead>
+       <tr>
+        <th>
+         Código
+        </th>
+        <th>
+         Nombre del usuario
+        </th>
+        <th>
+         Estado
+        </th>
+        <th>
+         Coincidencias
+        </th>
+        <th>
+         Módulo
+        </th>
+        <th>
+         Archivo(s) / hoja(s) / fila(s)
+        </th>
+       </tr>
+      </thead>
+      <tbody id="tbody">
+      </tbody>
+     </table>
+    </div>
+   </section>
+   <p class="muted">
+    Los datos se procesan localmente en este navegador. Para abrir archivos Excel se necesita conexión a internet la primera vez, por la biblioteca XLSX.
+   </p>
+  </main>
+  <script>
+   // Referencias y datos de la aplicación
+const $ = (id) => document.getElementById(id);
+let matrices = [];
+let results = [];
+
+const normalize = (value) => String(value ?? '')
+    .trim()
+    .replace(/\.0+$/, '')
+    .replace(/\s+/g, '');
+
+function moduleName(file) {
+    const match = String(file).match(/^V_(.+?)\.(?:xlsx|xlsm|xlsb|xls)$/i);
+    return match ? match[1].toUpperCase() : 'SIN IDENTIFICAR';
+}
+
+function escapeHTML(value) {
+    return String(value ?? '').replace(/[&<>"']/g, (character) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;',
+        '"': '&quot;', "'": '&#39;'
+    })[character]);
+}
+
+// Permite agregar matrices en varias selecciones, evitando duplicados.
+$('files').addEventListener('change', (event) => {
+    for (const file of event.target.files) {
+        const exists = matrices.some((item) =>
+            item.name === file.name &&
+            item.size === file.size &&
+            item.lastModified === file.lastModified
+        );
+        if (!exists) matrices.push(file);
+    }
+
+    event.target.value = '';
+    $('fileList').textContent = matrices.length
+        ? matrices.map((file) => file.name).join(' · ')
+        : 'Sin archivos seleccionados';
+});
+
+$('clear').onclick = () => {
+    matrices = [];
+    results = [];
+    $('base').value = '';
+    $('files').value = '';
+    $('fileList').textContent = 'Sin archivos seleccionados';
+    $('status').textContent = '';
+    $('results').classList.add('hidden');
+};
+
+async function readBook(file) {
+    const buffer = await file.arrayBuffer();
+    return XLSX.read(buffer, { type: 'array', cellDates: false });
+}
+
+// Busca códigos en la columna A de todas las hojas del libro.
+function records(book) {
+    const entries = [];
+
+    for (const sheetName of book.SheetNames) {
+        const sheet = book.Sheets[sheetName];
+        const rows = XLSX.utils.sheet_to_json(sheet, {
+            header: 1,
+            defval: '',
+            raw: false
+        });
+
+        rows.forEach((row, index) => {
+            const code = normalize(row[0]);
+            if (!code || /^(usuario|usuarios|c[oó]digo|codigo|user|id)$/i.test(code)) {
+                return;
+            }
+
+            entries.push({
+                code,
+                name: String(row[1] ?? '').trim(),
+                sheet: sheetName,
+                row: index + 1
+            });
+        });
+    }
+
+    return entries;
+}
+
+// Cruza los usuarios nuevos contra todas las matrices seleccionadas.
+$('run').onclick = async () => {
+    if (!$('base').files[0]) {
+        $('status').textContent = 'Selecciona primero LISTADO_USUARIOS_NUEVOS.';
+        return;
+    }
+    if (!matrices.length) {
+        $('status').textContent = 'Agrega al menos una matriz Excel.';
+        return;
+    }
+    if (!window.XLSX) {
+        $('status').textContent = 'No se pudo cargar la biblioteca XLSX. Comprueba tu conexión a internet.';
+        return;
+    }
+
+    $('run').disabled = true;
+    $('status').className = '';
+
+    try {
+        $('status').textContent = 'Leyendo listado base...';
+        const base = records(await readBook($('base').files[0]));
+        if (!base.length) throw Error('No se encontraron códigos en el archivo base.');
+
+        const matchesByCode = new Map();
+        const errors = [];
+
+        for (let index = 0; index < matrices.length; index++) {
+            const file = matrices[index];
+            $('status').textContent = `Procesando ${index + 1} de ${matrices.length}: ${file.name}`;
+            await new Promise((resolve) => setTimeout(resolve, 0));
+
+            try {
+                const entries = records(await readBook(file));
+                for (const entry of entries) {
+                    if (!matchesByCode.has(entry.code)) {
+                        matchesByCode.set(entry.code, []);
+                    }
+                    matchesByCode.get(entry.code).push({
+                        file: file.name,
+                        sheet: entry.sheet,
+                        row: entry.row
+                    });
+                }
+            } catch (error) {
+                errors.push(`${file.name}: ${error.message}`);
+            }
+        }
+
+        results = base.map((entry) => ({
+            ...entry,
+            hits: matchesByCode.get(entry.code) || []
+        }));
+
+        $('results').classList.remove('hidden');
+        $('total').textContent = results.length;
+        $('found').textContent = results.filter((entry) => entry.hits.length).length;
+        $('missing').textContent = results.filter((entry) => !entry.hits.length).length;
+        $('matrixCount').textContent = matrices.length - errors.length;
+        $('status').textContent = `Validación finalizada. ${base.length} registros revisados.` +
+            (errors.length ? ` Archivos con error: ${errors.join(' | ')}` : '');
+        if (errors.length) $('status').className = 'error';
+        render();
+    } catch (error) {
+        $('status').textContent = `Error: ${error.message}`;
+        $('status').className = 'error';
+    } finally {
+        $('run').disabled = false;
+    }
+};
+
+// Búsqueda por código/nombre y filtros de estado.
+function filtered() {
+    const query = normalize($('search').value).toUpperCase();
+    const filter = $('filter').value;
+
+    return results.filter((entry) => {
+        const matchesSearch = !query ||
+            entry.code.toUpperCase().includes(query) ||
+            entry.name.toUpperCase().includes(query);
+        const matchesFilter = filter === 'all' ||
+            (filter === 'found' && entry.hits.length) ||
+            (filter === 'missing' && !entry.hits.length) ||
+            (filter === 'multi' && new Set(entry.hits.map((hit) => hit.file)).size > 1);
+        return matchesSearch && matchesFilter;
+    });
+}
+
+function render() {
+    const rows = filtered();
+    $('shown').textContent = `Mostrando ${rows.length} de ${results.length} registros`;
+
+    $('tbody').innerHTML = rows.map((entry) => {
+        const groups = new Map();
+        for (const hit of entry.hits) {
+            const key = `${hit.file}|${hit.sheet}`;
+            if (!groups.has(key)) groups.set(key, []);
+            groups.get(key).push(hit.row);
+        }
+
+        const details = [...groups].map(([key, rowNumbers]) => {
+            const [file, sheet] = key.split('|');
+            return `<span class="tag">${escapeHTML(file)} · ${escapeHTML(sheet)} · fila(s): ${rowNumbers.join(', ')}</span>`;
+        }).join('');
+
+        const modules = [...new Set(entry.hits.map((hit) => moduleName(hit.file)))];
+        const moduleTags = modules.map((name) =>
+            `<span class="tag">${escapeHTML(name)}</span>`
+        ).join('') || '<span class="muted">—</span>';
+
+        return `
+            <tr>
+                <td>${escapeHTML(entry.code)}</td>
+                <td>${escapeHTML(entry.name)}</td>
+                <td class="${entry.hits.length ? 'ok' : 'no'}">
+                    ${entry.hits.length ? 'ENCONTRADO' : 'NO ENCONTRADO'}
+                </td>
+                <td>${entry.hits.length}</td>
+                <td>${moduleTags}</td>
+                <td>${details || '<span class="muted">Ninguna matriz</span>'}</td>
+            </tr>
+        `;
+    }).join('') || '<tr><td colspan="6">Sin resultados</td></tr>';
+}
+
+$('search').oninput = render;
+$('filter').onchange = render;
+
+// Exporta un resumen y una segunda hoja con coincidencias detalladas.
+function exportData(data, filename) {
+    const summary = data.map((entry) => ({
+        USUARIO: entry.code,
+        NOMBRE: entry.name,
+        ESTADO: entry.hits.length ? 'ENCONTRADO' : 'NO ENCONTRADO',
+        COINCIDENCIAS: entry.hits.length,
+        MODULOS: [...new Set(entry.hits.map((hit) => moduleName(hit.file)))].join(' | '),
+        ARCHIVOS: [...new Set(entry.hits.map((hit) => hit.file))].join(' | '),
+        DETALLE: entry.hits.map((hit) =>
+            `${hit.file} / ${hit.sheet} / fila ${hit.row}`
+        ).join(' | ')
+    }));
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(
+        workbook,
+        XLSX.utils.json_to_sheet(summary),
+        'Validacion'
+    );
+
+    const detail = data.flatMap((entry) => entry.hits.map((hit) => ({
+        USUARIO: entry.code,
+        NOMBRE: entry.name,
+        ARCHIVO: hit.file,
+        MODULO: moduleName(hit.file),
+        HOJA: hit.sheet,
+        FILA: hit.row
+    })));
+
+    if (detail.length) {
+        XLSX.utils.book_append_sheet(
+            workbook,
+            XLSX.utils.json_to_sheet(detail),
+            'Coincidencias'
+        );
+    }
+
+    XLSX.writeFile(workbook, filename);
+}
+
+$('export').onclick = () => exportData(
+    filtered(), 'VALIDACION_USUARIOS_SAP_FILTRADOS.xlsx'
+);
+$('exportAll').onclick = () => exportData(
+    results, 'VALIDACION_USUARIOS_SAP_COMPLETA.xlsx'
+);
+$('exportMissing').onclick = () => exportData(
+    results.filter((entry) => !entry.hits.length), 'USUARIOS_NO_ENCONTRADOS.xlsx'
+);
+  </script>
+ </body>
+</html>
