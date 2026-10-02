@@ -6,39 +6,77 @@
   <title>Validación de usuarios - Sagitario y Huehueteca</title>
   <link rel="stylesheet" href="https://cdn.datatables.net/2.1.8/css/dataTables.dataTables.min.css">
   <style>
-    body {font-family:Arial,sans-serif;max-width:1200px;margin:35px auto;padding:0 18px;color:#243447;background:#f5f7fa}
-    h1 {font-size:24px} .panel {background:white;padding:22px;border-radius:10px;box-shadow:0 2px 9px #0001;margin-bottom:20px}
-    .archivos {display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px}
-    label {font-weight:bold;display:block;margin-bottom:10px} input[type=file] {max-width:100%}
-    button,select {padding:10px 15px;border:1px solid #ccd4dd;border-radius:6px}
-    button {background:#1763a6;color:white;cursor:pointer;border:0;margin:14px 8px 0 0}
-    button:disabled {opacity:.45;cursor:not-allowed} .resumen {display:flex;gap:15px;flex-wrap:wrap;margin-bottom:18px}
-    .dato {background:#eef3f8;padding:14px 20px;border-radius:8px;min-width:120px}
-    .dato strong {display:block;font-size:25px;margin-top:5px}
-    .ok {color:#137a41;font-weight:bold} .no {color:#b43535;font-weight:bold}
-    #mensaje {margin-top:12px;white-space:pre-line} table {width:100%!important}
-    .tabla-contenedor {overflow-x:auto}
+
+    :root{color-scheme:dark;--bg:#0b132c;--nav:#101a35;--panel:#1c2745;--panel2:#14213f;--line:#344466;--cyan:#00c9fa;--text:#f4f7ff;--muted:#9aafd8;--green:#35d7a0;--red:#ff8295}
+    *{box-sizing:border-box}
+    body{font-family:Inter,Segoe UI,Arial,sans-serif;margin:0;padding:0;max-width:none;background:var(--bg);color:var(--text);line-height:1.5}
+    .topbar{background:linear-gradient(110deg,#101a34,#1b2647);border-bottom:1px solid var(--line);padding:19px max(24px,calc((100vw - 1250px)/2))}
+    .topbar h1{font-size:clamp(21px,2.5vw,29px);margin:0;font-weight:750;letter-spacing:-.5px}
+    .topbar p{margin:2px 0 0;color:var(--cyan);font-size:13px;font-weight:600}
+    main{max-width:1250px;margin:30px auto;padding:0 22px}
+    .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:24px;margin-bottom:22px;box-shadow:0 10px 28px #03091b30}
+    .panel h2{font-size:17px;margin:0 0 22px;padding-bottom:15px;border-bottom:1px solid var(--line)}
+    .panel h2::before{content:"◆";color:var(--cyan);margin-right:10px}
+    .archivos{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:20px}
+    .filebox{background:var(--panel2);border:1px dashed #51648e;border-radius:10px;padding:18px;transition:.2s}
+    .filebox:focus-within,.filebox:hover{border-color:var(--cyan)}
+    label{font-weight:650;display:block;margin-bottom:10px;color:#e6edff}
+    input[type=file]{max-width:100%;width:100%;font:inherit;font-size:13px;color:var(--muted)}
+    input[type=file]::file-selector-button{background:#24395f;border:1px solid #4d6692;border-radius:6px;color:white;padding:9px 12px;margin-right:12px;cursor:pointer}
+    .actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:20px}
+    button,select{font:inherit;border-radius:8px;padding:10px 16px}
+    button{background:var(--cyan);color:#07172d;border:1px solid var(--cyan);font-weight:750;cursor:pointer;transition:.2s}
+    button:hover:not(:disabled){filter:brightness(1.12);transform:translateY(-1px)}
+    button.secondary{background:#263b62;color:#e8f2ff;border-color:#47618d}
+    button:disabled{opacity:.45;cursor:not-allowed}
+    button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}
+    #mensaje{margin-top:15px;white-space:pre-line;color:var(--muted);font-size:14px}
+    #mensaje.error{color:var(--red)}
+    .resumen{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px;margin-bottom:22px}
+    .dato{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:17px 19px;color:var(--muted);font-size:13px}
+    .dato strong{display:block;font-size:29px;color:white;margin-top:4px;line-height:1.3}
+    .dato:nth-child(2) strong{color:var(--green)}
+    .dato:nth-child(3) strong{color:var(--red)}
+    .ok,.no{display:inline-block;border-radius:20px;padding:4px 10px;font-size:11px;font-weight:800;letter-spacing:.3px}
+    .ok{background:#123d3b;color:#70f0be}.no{background:#4c283e;color:#ffadbc}
+    .toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:17px}
+    .toolbar label{margin:0}.toolbar select{background:var(--panel2);color:var(--text);border:1px solid #52658b;min-width:200px}
+    .tabla-contenedor{overflow-x:auto}
+    table{width:100%!important}
+    table.dataTable{border-collapse:separate!important;border-spacing:0!important}
+    table.dataTable thead th{background:#14213f!important;color:#b8d0f8!important;border-bottom:2px solid var(--cyan)!important;padding:13px!important;white-space:nowrap}
+    table.dataTable tbody tr{background:var(--panel)!important;color:var(--text)!important}
+    table.dataTable tbody tr:hover{background:#26375c!important}
+    table.dataTable tbody td{border-bottom:1px solid #354461!important;padding:12px!important}
+    .dt-container,.dt-container .dt-info,.dt-container .dt-length,.dt-container .dt-search{color:var(--muted)!important}
+    .dt-container input,.dt-container select{background:var(--panel2)!important;color:white!important;border:1px solid #53658a!important;border-radius:7px!important;padding:7px!important}
+    .dt-container .dt-paging .dt-paging-button{color:#e5edff!important;border-radius:6px!important}
+    .dt-container .dt-paging .dt-paging-button.current{background:#164a6b!important;color:white!important;border:1px solid var(--cyan)!important}
+    @media(max-width:640px){main{margin:18px auto;padding:0 12px}.panel{padding:16px}.resumen{gap:8px}.dato{padding:12px 9px;font-size:11px}.dato strong{font-size:23px}}
   </style>
 </head>
 <body>
-  <h1>Validación de usuarios - Sagitario / Huehueteca</h1>
+  <header class="topbar"><h1>🛡 SAP Access &amp; Structure Manager</h1><p>Validación de usuarios · RollOut III Sagitario / Huehueteca</p></header>
+  <main>
   <section class="panel">
+    <h2>Carga y comparación de archivos</h2>
     <div class="archivos">
-      <div><label for="archivoDB">1. Base de datos: DB_SAGITARIO_HUEHUETECA.xlsx</label><input id="archivoDB" type="file" accept=".xlsx,.xls"></div>
-      <div><label for="archivoUsuarios">2. Listado: LISTADO_USUARIOS_NUEVOS.xlsx</label><input id="archivoUsuarios" type="file" accept=".xlsx,.xls"></div>
+      <div class="filebox"><label for="archivoDB">1. Base de datos: DB_SAGITARIO_HUEHUETECA.xlsx</label><input id="archivoDB" type="file" accept=".xlsx,.xls"></div>
+      <div class="filebox"><label for="archivoUsuarios">2. Listado: LISTADO_USUARIOS_NUEVOS.xlsx</label><input id="archivoUsuarios" type="file" accept=".xlsx,.xls"></div>
     </div>
-    <button id="comparar">Comparar archivos</button>
-    <button id="exportar" disabled>Descargar resultados XLSX</button>
+    <div class="actions"><button id="comparar">Comparar archivos</button>
+    <button class="secondary" id="exportar" disabled>↓ Descargar resultados XLSX</button></div>
     <div id="mensaje" role="status"></div>
   </section>
   <section class="panel">
+    <h2>Resultados de validación</h2>
     <div class="resumen">
       <div class="dato">Procesados<strong id="total">0</strong></div>
       <div class="dato">Encontrados<strong id="encontrados">0</strong></div>
       <div class="dato">No encontrados<strong id="noEncontrados">0</strong></div>
     </div>
-    <label for="filtro">Filtrar por estado</label>
-    <select id="filtro"><option value="">Todos</option><option value="ENCONTRADO">Encontrados</option><option value="NO ENCONTRADO">No encontrados</option></select>
+    <div class="toolbar"><label for="filtro">Filtrar por estado</label>
+    <select id="filtro"><option value="">Todos</option><option value="ENCONTRADO">Encontrados</option><option value="NO ENCONTRADO">No encontrados</option></select></div>
     <div class="tabla-contenedor">
       <table id="tabla" class="display">
         <thead><tr><th>Estado</th><th>Usuario</th><th>Nombre</th><th>Posición</th><th>Sociedad</th></tr></thead>
@@ -46,6 +84,7 @@
       </table>
     </div>
   </section>
+  </main>
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.datatables.net/2.1.8/js/dataTables.min.js"></script>
@@ -141,11 +180,13 @@
       const archivoDB = document.getElementById('archivoDB').files[0];
       const archivoUsuarios = document.getElementById('archivoUsuarios').files[0];
       if (!archivoDB || !archivoUsuarios) {
-        mensaje.textContent = 'Selecciona los dos archivos Excel antes de comparar.';
+        mensaje.classList.add('error');
+         mensaje.textContent = 'Selecciona los dos archivos Excel antes de comparar.';
         return;
       }
       document.getElementById('exportar').disabled = true;
-      mensaje.textContent = 'Procesando archivos...';
+      mensaje.classList.remove('error');
+       mensaje.textContent = 'Procesando archivos...';
       try {
         const [hojasDB, hojasUsuarios] = await Promise.all([
           leerExcel(archivoDB, [columnasDB.usuario, columnasDB.posicion, columnasDB.sociedad]),
@@ -178,7 +219,8 @@
         document.getElementById('exportar').disabled = resultados.length === 0;
         mensaje.textContent = 'Comparación finalizada. Se conservaron todas las filas del listado de usuarios.';
       } catch (error) {
-        mensaje.textContent = 'Error: ' + error.message;
+        mensaje.classList.add('error');
+         mensaje.textContent = 'Error: ' + error.message;
         console.error(error);
       }
     });
