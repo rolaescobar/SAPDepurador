@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Validación de usuarios - Sagitario y Huehueteca</title>
+  <link rel="stylesheet" href="https://cdn.datatables.net/2.1.8/css/dataTables.dataTables.min.css">
+  <style>
+    body {font-family:Arial,sans-serif;max-width:1200px;margin:35px auto;padding:0 18px;color:#243447;background:#f5f7fa}
+    h1 {font-size:24px} .panel {background:white;padding:22px;border-radius:10px;box-shadow:0 2px 9px #0001;margin-bottom:20px}
+    .archivos {display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px}
+    label {font-weight:bold;display:block;margin-bottom:10px} input[type=file] {max-width:100%}
+    button,select {padding:10px 15px;border:1px solid #ccd4dd;border-radius:6px}
+    button {background:#1763a6;color:white;cursor:pointer;border:0;margin:14px 8px 0 0}
+    button:disabled {opacity:.45;cursor:not-allowed} .resumen {display:flex;gap:15px;flex-wrap:wrap;margin-bottom:18px}
+    .dato {background:#eef3f8;padding:14px 20px;border-radius:8px;min-width:120px}
+    .dato strong {display:block;font-size:25px;margin-top:5px}
+    .ok {color:#137a41;font-weight:bold} .no {color:#b43535;font-weight:bold}
+    #mensaje {margin-top:12px;white-space:pre-line} table {width:100%!important}
+    .tabla-contenedor {overflow-x:auto}
+  </style>
+</head>
+<body>
+  <h1>Validación de usuarios - Sagitario / Huehueteca</h1>
+  <section class="panel">
+    <div class="archivos">
+      <div><label for="archivoDB">1. Base de datos: DB_SAGITARIO_HUEHUETECA.xlsx</label><input id="archivoDB" type="file" accept=".xlsx,.xls"></div>
+      <div><label for="archivoUsuarios">2. Listado: LISTADO_USUARIOS_NUEVOS.xlsx</label><input id="archivoUsuarios" type="file" accept=".xlsx,.xls"></div>
+    </div>
+    <button id="comparar">Comparar archivos</button>
+    <button id="exportar" disabled>Descargar resultados XLSX</button>
+    <div id="mensaje" role="status"></div>
+  </section>
+  <section class="panel">
+    <div class="resumen">
+      <div class="dato">Procesados<strong id="total">0</strong></div>
+      <div class="dato">Encontrados<strong id="encontrados">0</strong></div>
+      <div class="dato">No encontrados<strong id="noEncontrados">0</strong></div>
+    </div>
+    <label for="filtro">Filtrar por estado</label>
+    <select id="filtro"><option value="">Todos</option><option value="ENCONTRADO">Encontrados</option><option value="NO ENCONTRADO">No encontrados</option></select>
+    <div class="tabla-contenedor">
+      <table id="tabla" class="display">
+        <thead><tr><th>Estado</th><th>Usuario</th><th>Nombre</th><th>Posición</th><th>Sociedad</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.datatables.net/2.1.8/js/dataTables.min.js"></script>
+  <script>
+    // Normaliza encabezados: ignora tildes, espacios repetidos y mayúsculas.
+    function normalizar(texto) {
+      return String(texto ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .trim().toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().replace(/\s+/g, ' ');
+    }
+
+    // Evita diferencias entre códigos numéricos y códigos almacenados como texto.
+    function codigo(valor) {
+      return String(valor ?? '').trim().replace(/\.0$/, '');
+    }
+
+    function obtenerColumna(encabezados, opciones) {
+      return encabezados.findIndex(c => {
+        const encabezado = normalizar(c);
+        return opciones.some(opcion => encabezado === opcion ||
+          (opcion === 'id de usuario' && encabezado.startsWith('id de usuario')));
+      });
+    }
+
+    async function leerExcel(archivo, columnasObligatorias) {
+      const datos = await archivo.arrayBuffer();
+      const libro = XLSX.read(datos, { type: 'array' });
+      const hojas = [];
+      for (const nombreHoja of libro.SheetNames) {
+        const filas = XLSX.utils.sheet_to_json(libro.Sheets[nombreHoja], {
+          header: 1, defval: '', raw: false
+        });
+        // Busca encabezados en las primeras 20 filas de cada hoja.
+        for (let i = 0; i < Math.min(filas.length, 20); i++) {
+          const indices = columnasObligatorias.map(opciones => obtenerColumna(filas[i], opciones));
+          if (indices.every(indice => indice >= 0)) {
+            hojas.push({ nombreHoja, filas: filas.slice(i + 1), encabezados: filas[i] });
+            break;
+          }
+        }
+      }
+      if (!hojas.length) throw new Error('No se encontraron las columnas esperadas en ' + archivo.name);
+      return hojas;
+    }
+
+    const columnasDB = {
+      usuario: ['id de usuario', 'usuario', 'codigo de usuario', 'codigo usuario'],
+      nombre: ['nombre completo', 'nombre'],
+      posicion: ['posicion', 'puesto'],
+      sociedad: ['sociedad descripcion', 'sociedad']
+    };
+    const columnasListado = {
+      usuario: ['usuario', 'id de usuario', 'codigo de usuario', 'codigo usuario'],
+      nombre: ['nombre', 'nombre completo']
+    };
+
+    function convertirHojas(hojas, definicion) {
+      const registros = [];
+      for (const hoja of hojas) {
+        const indices = Object.fromEntries(Object.entries(definicion).map(
+          ([clave, opciones]) => [clave, obtenerColumna(hoja.encabezados, opciones)]
+        ));
+        for (const fila of hoja.filas) {
+          const usuario = codigo(fila[indices.usuario]);
+          if (!usuario) continue;
+          const registro = { usuario };
+          for (const campo of Object.keys(definicion)) {
+            if (campo !== 'usuario') {
+              registro[campo] = indices[campo] >= 0 ? String(fila[indices[campo]] ?? '').trim() : '';
+            }
+          }
+          registros.push(registro);
+        }
+      }
+      return registros;
+    }
+
+    const tabla = new DataTable('#tabla', {
+      data: [],
+      columns: [
+        { data: 'estado', render: (dato, tipo) => tipo === 'display'
+          ? (dato === 'ENCONTRADO' ? '<span class="ok">ENCONTRADO</span>' : '<span class="no">NO ENCONTRADO</span>') : dato },
+        { data: 'usuario' }, { data: 'nombre' }, { data: 'posicion' }, { data: 'sociedad' }
+      ],
+      pageLength: 25,
+      order: [],
+      language: { url: 'https://cdn.datatables.net/plug-ins/2.1.8/i18n/es-ES.json' }
+    });
+
+    let resultados = [];
+    const mensaje = document.getElementById('mensaje');
+
+    document.getElementById('comparar').addEventListener('click', async () => {
+      const archivoDB = document.getElementById('archivoDB').files[0];
+      const archivoUsuarios = document.getElementById('archivoUsuarios').files[0];
+      if (!archivoDB || !archivoUsuarios) {
+        mensaje.textContent = 'Selecciona los dos archivos Excel antes de comparar.';
+        return;
+      }
+      document.getElementById('exportar').disabled = true;
+      mensaje.textContent = 'Procesando archivos...';
+      try {
+        const [hojasDB, hojasUsuarios] = await Promise.all([
+          leerExcel(archivoDB, [columnasDB.usuario, columnasDB.posicion, columnasDB.sociedad]),
+          leerExcel(archivoUsuarios, [columnasListado.usuario])
+        ]);
+        const db = convertirHojas(hojasDB, columnasDB);
+        const usuarios = convertirHojas(hojasUsuarios, columnasListado);
+        const indiceDB = new Map();
+        for (const registro of db) {
+          // Si hay duplicados, conserva el primero encontrado en la base.
+          if (!indiceDB.has(registro.usuario)) indiceDB.set(registro.usuario, registro);
+        }
+        resultados = usuarios.map(persona => {
+          const encontrado = indiceDB.get(persona.usuario);
+          return {
+            estado: encontrado ? 'ENCONTRADO' : 'NO ENCONTRADO',
+            usuario: persona.usuario,
+            nombre: encontrado?.nombre || persona.nombre || 'No disponible',
+            posicion: encontrado?.posicion || 'No disponible',
+            sociedad: encontrado?.sociedad || 'No disponible'
+          };
+        });
+        tabla.clear().rows.add(resultados).draw();
+        document.getElementById('filtro').value = '';
+        tabla.column(0).search('').draw();
+        const encontrados = resultados.filter(r => r.estado === 'ENCONTRADO').length;
+        document.getElementById('total').textContent = resultados.length;
+        document.getElementById('encontrados').textContent = encontrados;
+        document.getElementById('noEncontrados').textContent = resultados.length - encontrados;
+        document.getElementById('exportar').disabled = resultados.length === 0;
+        mensaje.textContent = 'Comparación finalizada. Se conservaron todas las filas del listado de usuarios.';
+      } catch (error) {
+        mensaje.textContent = 'Error: ' + error.message;
+        console.error(error);
+      }
+    });
+
+    document.getElementById('filtro').addEventListener('change', event => {
+      tabla.column(0).search(event.target.value ? '^' + event.target.value + '$' : '', true, false).draw();
+    });
+
+    document.getElementById('exportar').addEventListener('click', () => {
+      if (!resultados.length) return;
+      // Exporta el filtro activo, respetando el orden visible.
+      const visibles = tabla.rows({ search: 'applied', order: 'applied' }).data().toArray();
+      const filas = visibles.map(r => ({
+        Estado: r.estado, Usuario: r.usuario, Nombre: r.nombre,
+        'Posición': r.posicion, Sociedad: r.sociedad
+      }));
+      const hoja = XLSX.utils.json_to_sheet(filas);
+      hoja['!cols'] = [{ wch: 18 }, { wch: 17 }, { wch: 42 }, { wch: 34 }, { wch: 45 }];
+      const libro = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(libro, hoja, 'Validación');
+      XLSX.writeFile(libro, 'RESULTADO_VALIDACION_USUARIOS.xlsx');
+    });
+  </script>
+</body>
+</html>
