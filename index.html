@@ -31,152 +31,168 @@
         .card-buscatx:hover { border-color: #2563eb; box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.3); }
         .card-estructura:hover { border-color: #00d2ff; box-shadow: 0 10px 25px -5px rgba(0, 210, 255, 0.3); }
         .card-objetos:hover { border-color: #f97316; box-shadow: 0 10px 25px -5px rgba(249, 115, 22, 0.3); }
+        .card-keyuser:hover { border-color: #eab308; box-shadow: 0 10px 25px -5px rgba(234, 179, 8, 0.3); }
 
         .icon-box {
             width: 64px; height: 64px; border-radius: 9999px;
             display: flex; align-items: center; justify-content: center;
             margin-bottom: 1rem; font-size: 1.875rem;
         }
+
+        /* Estilo personalizado para la barra de desplazamiento */
+        .custom-scroll::-webkit-scrollbar {
+            width: 8px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 4px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: rgba(51, 65, 85, 0.8);
+            border-radius: 4px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb:hover {
+            background: rgba(71, 85, 105, 1);
+        }
     </style>
 </head>
-<body class="text-slate-200 min-h-screen flex flex-col">
+<body class="text-slate-200 h-screen flex flex-col overflow-hidden">
 
-    <header class="py-12 text-center">
+    <header class="py-8 text-center flex-shrink-0">
         <h1 class="text-4xl font-extrabold text-white mb-2 tracking-tight">
             <i class="fas fa-microchip text-blue-500 mr-3"></i>SAP DEPURADOR TOOLKIT
         </h1>
         <p class="text-slate-400 max-w-md mx-auto">Colección de utilidades para optimización de datos, seguridad y auditoría en entornos SAP.</p>
     </header>
 
-    <main class="flex-grow container mx-auto px-4 pb-20">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-        
-            <a href="validadorderoles.html" class="glass-card card-validator p-8 rounded-2xl flex flex-col items-center text-center">
-                <div class="icon-box bg-emerald-500/20 text-emerald-400"><i class="fas fa-check-double"></i></div>
-                <h2 class="text-xl font-semibold text-white mb-2">Validador de Roles</h2>
-                <p class="text-slate-400 text-sm mb-6">Valida roles solicitados vs. roles en producción por mandante.</p>
-                <span class="mt-auto inline-flex items-center text-emerald-400 font-medium">Abrir <i class="fas fa-arrow-right ml-2 text-xs"></i></span>
-            </a>
+    <main class="flex-grow container mx-auto px-4 pb-12 overflow-hidden flex flex-col">
+        <!-- Contenedor con scroll vertical elegante para mantener el diseño limpio -->
+        <div class="overflow-y-auto custom-scroll pr-2 flex-grow">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 pb-6">
+            
+                <!-- 1. Validador de Roles -->
+                <a href="validadorderoles.html" class="glass-card card-validator p-8 rounded-2xl flex flex-col items-center text-center">
+                    <div class="icon-box bg-emerald-500/20 text-emerald-400"><i class="fas fa-check-double"></i></div>
+                    <h2 class="text-xl font-semibold text-white mb-2">Validador de Roles</h2>
+                    <p class="text-slate-400 text-sm mb-6">Valida roles solicitados vs. roles en producción por mandante.</p>
+                    <span class="mt-auto inline-flex items-center text-emerald-400 font-medium">Abrir <i class="fas fa-arrow-right ml-2 text-xs"></i></span>
+                </a>
 
-            <a href="validadorDeMT.html" class="glass-card card-matriz p-8 rounded-2xl flex flex-col items-center text-center">
-                <div class="icon-box bg-blue-500/20 text-blue-400"><i class="fas fa-table"></i></div>
-                <h2 class="text-xl font-semibold text-white mb-2">Validador de Matrices</h2>
-                <p class="text-slate-400 text-sm mb-6">Auditoría cruzada interactiva para validar múltiples roles vs usuarios de forma simultánea.</p>
-                <span class="mt-auto inline-flex items-center text-blue-400 font-medium">Abrir <i class="fas fa-arrow-right ml-2 text-xs"></i></span>
-            </a>
+                <!-- 2. Validador de Matrices -->
+                <a href="validadorDeMT.html" class="glass-card card-matriz p-8 rounded-2xl flex flex-col items-center text-center">
+                    <div class="icon-box bg-blue-500/20 text-blue-400"><i class="fas fa-table"></i></div>
+                    <h2 class="text-xl font-semibold text-white mb-2">Validador de Matrices</h2>
+                    <p class="text-slate-400 text-sm mb-6">Auditoría cruzada interactiva para validar múltiples roles vs usuarios de forma simultánea.</p>
+                    <span class="mt-auto inline-flex items-center text-blue-400 font-medium">Abrir <i class="fas fa-arrow-right ml-2 text-xs"></i></span>
+                </a>
 
-            <a href="verificadordetxenriesgoporusuario.html" class="glass-card card-tx p-8 rounded-2xl flex flex-col items-center text-center">
-                <div class="icon-box bg-pink-500/20 text-pink-400"><i class="fas fa-exclamation-triangle"></i></div>
-                <h2 class="text-xl font-semibold text-white mb-2">Verificador Tx Riesgo</h2>
-                <p class="text-slate-400 text-sm mb-6">Roles actualmente asignados a el usuario que contienen transacciones en conflicto con la transacción a evaluar.</p>
-                <span class="mt-auto inline-flex items-center text-pink-400 font-medium">Abrir <i class="fas fa-arrow-right ml-2 text-xs"></i></span>
-            </a>
+                <!-- 3. Verificador Tx Riesgo -->
+                <a href="verificadordetxenriesgoporusuario.html" class="glass-card card-tx p-8 rounded-2xl flex flex-col items-center text-center">
+                    <div class="icon-box bg-pink-500/20 text-pink-400"><i class="fas fa-exclamation-triangle"></i></div>
+                    <h2 class="text-xl font-semibold text-white mb-2">Verificador Tx Riesgo</h2>
+                    <p class="text-slate-400 text-sm mb-6">Roles actualmente asignados a el usuario que contienen transacciones en conflicto con la transacción a evaluar.</p>
+                    <span class="mt-auto inline-flex items-center text-pink-400 font-medium">Abrir <i class="fas fa-arrow-right ml-2 text-xs"></i></span>
+                </a>
 
-            <a href="exploradorderoles.html" class="glass-card card-explorer p-8 rounded-2xl flex flex-col items-center text-center">
-                <div class="icon-box bg-purple-500/20 text-purple-400"><i class="fas fa-sitemap"></i></div>
-                <h2 class="text-xl font-semibold text-white mb-2">Explorador de Roles</h2>
-                <p class="text-slate-400 text-sm mb-6">Busca T-Codes dentro de roles y desglosa contenido técnico.</p>
-                <span class="mt-auto inline-flex items-center text-purple-400 font-medium">Abrir <i class="fas fa-arrow-right ml-2 text-xs"></i></span>
-            </a>
+                <!-- 4. Explorador de Roles -->
+                <a href="exploradorderoles.html" class="glass-card card-explorer p-8 rounded-2xl flex flex-col items-center text-center">
+                    <div class="icon-box bg-purple-500/20 text-purple-400"><i class="fas fa-sitemap"></i></div>
+                    <h2 class="text-xl font-semibold text-white mb-2">Explorador de Roles</h2>
+                    <p class="text-slate-400 text-sm mb-6">Busca T-Codes dentro de roles y desglosa contenido técnico.</p>
+                    <span class="mt-auto inline-flex items-center text-purple-400 font-medium">Abrir <i class="fas fa-arrow-right ml-2 text-xs"></i></span>
+                </a>
 
-            <a href="limpiadorEspacios.html" class="glass-card card-limpiador p-8 rounded-2xl flex flex-col items-center text-center">
-                <div class="icon-box bg-violet-500/20 text-violet-400"><i class="fas fa-eraser"></i></div>
-                <h2 class="text-xl font-semibold text-white mb-2">Limpiador Espacios</h2>
-                <p class="text-slate-400 text-sm mb-6">Herramienta para optimizar y limpiar espacios en tablas o reportes.</p>
-                <span class="mt-auto inline-flex items-center text-violet-400 font-medium">Abrir <i class="fas fa-arrow-right ml-2 text-xs"></i></span>
-            </a>
+                <!-- 5. Limpiador Espacios -->
+                <a href="limpiadorEspacios.html" class="glass-card card-limpiador p-8 rounded-2xl flex flex-col items-center text-center">
+                    <div class="icon-box bg-violet-500/20 text-violet-400"><i class="fas fa-eraser"></i></div>
+                    <h2 class="text-xl font-semibold text-white mb-2">Limpiador Espacios</h2>
+                    <p class="text-slate-400 text-sm mb-6">Herramienta para optimizar y limpiar espacios en tablas o reportes.</p>
+                    <span class="mt-auto inline-flex items-center text-violet-400 font-medium">Abrir <i class="fas fa-arrow-right ml-2 text-xs"></i></span>
+                </a>
 
-            <a href="nubedeideas.html" class="glass-card card-nube p-8 rounded-2xl flex flex-col items-center text-center">
-                <div class="icon-box bg-cyan-500/20 text-cyan-400"><i class="fas fa-cloud-sun"></i></div>
-                <h2 class="text-xl font-semibold text-white mb-2">Nube de Ideas</h2>
-                <p class="text-slate-400 text-sm mb-6">Espacio creativo para documentar procesos, ideas y flujos de trabajo.</p>
-                <span class="mt-auto inline-flex items-center text-cyan-400 font-medium">Abrir <i class="fas fa-arrow-right ml-2 text-xs"></i></span>
-            </a>
+                <!-- 6. Nube de Ideas -->
+                <a href="nubedeideas.html" class="glass-card card-nube p-8 rounded-2xl flex flex-col items-center text-center">
+                    <div class="icon-box bg-cyan-500/20 text-cyan-400"><i class="fas fa-cloud-sun"></i></div>
+                    <h2 class="text-xl font-semibold text-white mb-2">Nube de Ideas</h2>
+                    <p class="text-slate-400 text-sm mb-6">Espacio creativo para documentar procesos, ideas y flujos de trabajo.</p>
+                    <span class="mt-auto inline-flex items-center text-cyan-400 font-medium">Abrir <i class="fas fa-arrow-right ml-2 text-xs"></i></span>
+                </a>
 
-            <a href="reporte.html" class="glass-card card-nube p-8 rounded-2xl flex flex-col items-center text-center">
-                <div class="icon-box bg-cyan-500/20 text-cyan-400">
-                    <i class="fas fa-chart-line"></i>
-                </div>
-                <h2 class="text-xl font-semibold text-white mb-2">Reporte de proyecto</h2>
-                <p class="text-slate-400 text-sm mb-6">Generador de estatus de proyectos</p>
-                <span class="mt-auto inline-flex items-center text-cyan-400 font-medium">Abrir <i class="fas fa-arrow-right ml-2 text-xs"></i></span>
-            </a>
+                <!-- 7. Reporte de proyecto -->
+                <a href="reporte.html" class="glass-card card-nube p-8 rounded-2xl flex flex-col items-center text-center">
+                    <div class="icon-box bg-cyan-500/20 text-cyan-400">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <h2 class="text-xl font-semibold text-white mb-2">Reporte de proyecto</h2>
+                    <p class="text-slate-400 text-sm mb-6">Generador de estatus de proyectos</p>
+                    <span class="mt-auto inline-flex items-center text-cyan-400 font-medium">Abrir <i class="fas fa-arrow-right ml-2 text-xs"></i></span>
+                </a>
 
-            <a href="buscatransacciones.html" class="glass-card card-buscatx p-8 rounded-2xl flex flex-col items-center text-center">
-                <div class="icon-box bg-blue-600/20 text-blue-400">
-                    <i class="fas fa-search-dollar"></i>
-                </div>
-                <h2 class="text-xl font-semibold text-white mb-2">Busca Transacciones</h2>
-                <p class="text-slate-400 text-sm mb-6">Filtra transacciones por listado de roles desde Excel.</p>
-                <span class="mt-auto inline-flex items-center text-blue-400 font-medium">Abrir <i class="fas fa-arrow-right ml-2 text-xs"></i></span>
-            </a>
+                <!-- 8. Busca Transacciones -->
+                <a href="buscatransacciones.html" class="glass-card card-buscatx p-8 rounded-2xl flex flex-col items-center text-center">
+                    <div class="icon-box bg-blue-600/20 text-blue-400">
+                        <i class="fas fa-search-dollar"></i>
+                    </div>
+                    <h2 class="text-xl font-semibold text-white mb-2">Busca Transacciones</h2>
+                    <p class="text-slate-400 text-sm mb-6">Filtra transacciones por listado de roles desde Excel.</p>
+                    <span class="mt-auto inline-flex items-center text-blue-400 font-medium">Abrir <i class="fas fa-arrow-right ml-2 text-xs"></i></span>
+                </a>
 
-            <a href="estructura.html" class="glass-card card-estructura p-8 rounded-2xl flex flex-col items-center text-center">
-                <div class="icon-box bg-sky-500/20 text-sky-400">
-                    <i class="fas fa-diagram-project"></i>
-                </div>
-                <h2 class="text-xl font-semibold text-white mb-2">Estructura Organizativa</h2>
-                <p class="text-slate-400 text-sm mb-6">Visualización en árbol de Sociedades, Centros, Almacenes y consulta de Roles y Transacciones.</p>
-                <span class="mt-auto inline-flex items-center text-sky-400 font-medium">Abrir <i class="fas fa-arrow-right ml-2 text-xs"></i></span>
-            </a>
+                <!-- 9. Estructura Organizativa -->
+                <a href="estructura.html" class="glass-card card-estructura p-8 rounded-2xl flex flex-col items-center text-center">
+                    <div class="icon-box bg-sky-500/20 text-sky-400">
+                        <i class="fas fa-diagram-project"></i>
+                    </div>
+                    <h2 class="text-xl font-semibold text-white mb-2">Estructura Organizativa</h2>
+                    <p class="text-slate-400 text-sm mb-6">Visualización en árbol de Sociedades, Centros, Almacenes y consulta de Roles y Transacciones.</p>
+                    <span class="mt-auto inline-flex items-center text-sky-400 font-medium">Abrir <i class="fas fa-arrow-right ml-2 text-xs"></i></span>
+                </a>
 
-            <a href="busquedaporobjetos.html" class="glass-card card-objetos p-8 rounded-2xl flex flex-col items-center text-center">
-                <div class="icon-box bg-orange-500/20 text-orange-400">
-                    <i class="fas fa-cubes"></i>
-                </div>
-                <h2 class="text-xl font-semibold text-white mb-2">Búsqueda por Objetos</h2>
-                <p class="text-slate-400 text-sm mb-6">Búsqueda y análisis de objetos de autorización y sus valores asignados.</p>
-                <span class="mt-auto inline-flex items-center text-orange-400 font-medium">Abrir <i class="fas fa-arrow-right ml-2 text-xs"></i></span>
-            </a>
-       
-            <a href="validacionUsuarios.html"
-            class="glass-card card-objetos p-8 rounded-2xl flex flex-col items-center text-center">
-                <div class="icon-box bg-orange-500/20 text-orange-400">
-                    <i class="fas fa-user-check"></i>
-                </div>
-                <h2 class="text-xl font-semibold text-white mb-2">
-                    Validador de usuarios CONECTA
-                </h2>
-                <p class="text-slate-400 text-sm mb-6">
-                    Validar usuarios nuevos en matrices contra CONECTA
-                </p>
-                <span class="mt-auto inline-flex items-center text-orange-400 font-medium">
-                    Abrir
-                    <i class="fas fa-arrow-right ml-2 text-xs"></i>
-                </span>
-            </a>
+                <!-- 10. Búsqueda por Objetos -->
+                <a href="busquedaporobjetos.html" class="glass-card card-objetos p-8 rounded-2xl flex flex-col items-center text-center">
+                    <div class="icon-box bg-orange-500/20 text-orange-400">
+                        <i class="fas fa-cubes"></i>
+                    </div>
+                    <h2 class="text-xl font-semibold text-white mb-2">Búsqueda por Objetos</h2>
+                    <p class="text-slate-400 text-sm mb-6">Búsqueda y análisis de objetos de autorización y sus valores asignados.</p>
+                    <span class="mt-auto inline-flex items-center text-orange-400 font-medium">Abrir <i class="fas fa-arrow-right ml-2 text-xs"></i></span>
+                </a>
 
+                <!-- 11. Validador de usuarios CONECTA -->
+                <a href="validacionUsuarios.html" class="glass-card card-objetos p-8 rounded-2xl flex flex-col items-center text-center">
+                    <div class="icon-box bg-orange-500/20 text-orange-400">
+                        <i class="fas fa-user-check"></i>
+                    </div>
+                    <h2 class="text-xl font-semibold text-white mb-2">Validador de usuarios CONECTA</h2>
+                    <p class="text-slate-400 text-sm mb-6">Validar usuarios nuevos en matrices contra CONECTA</p>
+                    <span class="mt-auto inline-flex items-center text-orange-400 font-medium">Abrir <i class="fas fa-arrow-right ml-2 text-xs"></i></span>
+                </a>
 
-<!-- Búsqueda en Matriz -->
-<a href="busquedaEnMatriz.html"
-   class="glass-card card-matriz p-8 rounded-2xl flex flex-col items-center text-center">
+                <!-- 12. Búsqueda en Matriz -->
+                <a href="busquedaEnMatriz.html" class="glass-card card-matriz p-8 rounded-2xl flex flex-col items-center text-center">
+                    <div class="icon-box bg-green-500/20 text-green-400">
+                        <i class="fas fa-file-excel"></i>
+                    </div>
+                    <h2 class="text-xl font-semibold text-white mb-2">Búsqueda en Matriz</h2>
+                    <p class="text-slate-400 text-sm mb-6">Valida usuarios SAP contra múltiples matrices de Excel. Identifica los módulos y archivos donde aparece cada usuario.</p>
+                    <span class="mt-auto inline-flex items-center text-green-400 font-medium">Abrir <i class="fas fa-arrow-right ml-2 text-xs"></i></span>
+                </a>
 
-    <div class="icon-box bg-green-500/20 text-green-400">
-        <i class="fas fa-file-excel"></i>
-    </div>
+                <!-- 13. NUEVA: Busca de Keyuser -->
+                <a href="busquedaKeyuser.html" class="glass-card card-keyuser p-8 rounded-2xl flex flex-col items-center text-center">
+                    <div class="icon-box bg-yellow-500/20 text-yellow-400">
+                        <i class="fas fa-user-shield"></i>
+                    </div>
+                    <h2 class="text-xl font-semibold text-white mb-2">Busca de Keyuser</h2>
+                    <p class="text-slate-400 text-sm mb-6">Localización y gestión de Keyusers asignados por proceso para usuario final.</p>
+                    <span class="mt-auto inline-flex items-center text-yellow-400 font-medium">Abrir <i class="fas fa-arrow-right ml-2 text-xs"></i></span>
+                </a>
 
-    <h2 class="text-xl font-semibold text-white mb-2">
-        Búsqueda en Matriz
-    </h2>
-
-    <p class="text-slate-400 text-sm mb-6">
-        Valida usuarios SAP contra múltiples matrices de Excel.
-        Identifica los módulos y archivos donde aparece cada usuario
-        y exporta los resultados a Excel.
-    </p>
-
-    <span class="mt-auto inline-flex items-center text-green-400 font-medium">
-        Abrir
-        <i class="fas fa-arrow-right ml-2 text-xs"></i>
-    </span>
-
-</a>
-
-
+            </div>
         </div>
     </main>
 
-    <footer class="py-8 border-t border-slate-800/50 text-center text-slate-500 text-sm">
+    <footer class="py-6 border-t border-slate-800/50 text-center text-slate-500 text-sm flex-shrink-0">
         <p class="mb-1">&copy; 2026 SAP Toolkit - Desarrollado por <strong>Rolaescobar</strong></p>
     </footer>
 </body>

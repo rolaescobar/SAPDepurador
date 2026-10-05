@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buscador de Key Users Corporativo</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- SheetJS (xlsx) para leer archivos de Excel -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- FontAwesome para Iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        navy: {
+                            50: '#f0f4f8',
+                            100: '#d9e2ec',
+                            200: '#bcccdc',
+                            300: '#9fb3c8',
+                            400: '#829ab1',
+                            500: '#627d98',
+                            600: '#486581',
+                            700: '#334e68',
+                            800: '#243b53',
+                            900: '#102a43',
+                            950: '#0a192f',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="h-full bg-navy-50 text-navy-800 font-sans antialiased flex flex-col justify-between">
+
+    <header class="bg-navy-950 text-white shadow-lg border-b border-navy-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="w-12 h-12 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center shadow-md text-white text-xl">
+                    <i class="fa-solid fa-network-wired"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold tracking-tight text-white">Directorio de Key Users</h1>
+                    <p class="text-xs text-navy-300">Asistencia y Soporte de Sistemas Corporativos</p>
+                </div>
+            </div>
+            
+            <div id="headerActions" class="hidden items-center gap-3 w-full md:w-auto">
+                <label for="excelFileTop" class="cursor-pointer bg-navy-800 hover:bg-navy-700 text-navy-100 text-sm font-medium px-4 py-2.5 rounded-xl border border-navy-700 shadow-sm transition-all flex items-center gap-2 justify-center w-full md:w-auto">
+                    <i class="fa-solid fa-file-excel text-emerald-400"></i>
+                    <span>Cargar Otro Excel</span>
+                </label>
+                <input type="file" id="excelFileTop" accept=".xlsx, .xls, .csv" class="hidden">
+                
+                <button id="resetBtn" class="bg-navy-900 hover:bg-navy-800 text-navy-300 hover:text-white p-2.5 rounded-xl border border-navy-800 transition-all text-sm" title="Restaurar / Cargar nuevo archivo">
+                    <i class="fa-solid fa-rotate-right"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Vista Inicial: Carga de Archivo (Drag & Drop) -->
+        <div id="uploadView" class="max-w-2xl mx-auto py-12">
+            <div class="bg-white rounded-3xl shadow-xl border border-navy-100 p-8 sm:p-12 text-center">
+                <div class="w-20 h-20 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto text-3xl mb-6 shadow-inner border border-blue-100">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-navy-900 mb-2">Carga tu archivo Excel</h2>
+                <p class="text-sm text-navy-600 mb-8 max-w-md mx-auto">
+                    Arrastra y suelta tu archivo Excel (.xlsx, .xls, .csv) aquí o selecciona uno desde tu equipo para comenzar la búsqueda de Key Users.
+                </p>
+
+                <!-- Drag & Drop Zone -->
+                <div id="dropZone" class="border-2 border-dashed border-navy-200 hover:border-blue-600 rounded-2xl p-8 transition-all bg-navy-50/50 hover:bg-blue-50/20 cursor-pointer mb-6">
+                    <div class="flex flex-col items-center justify-center space-y-3">
+                        <i class="fa-solid fa-file-excel text-emerald-500 text-4xl"></i>
+                        <p class="text-sm font-semibold text-navy-800">Haz clic para buscar el archivo o arrástralo aquí</p>
+                        <p class="text-xs text-navy-400">Soporta hojas de cálculo de Excel formateadas con asignaciones</p>
+                    </div>
+                    <input type="file" id="excelFile" accept=".xlsx, .xls, .csv" class="hidden">
+                </div>
+
+                <div class="flex items-center justify-center gap-2 text-xs text-navy-400">
+                    <i class="fa-solid fa-shield-halved text-emerald-500"></i>
+                    <span>Tus datos se procesan de forma local y segura en tu navegador</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Vista Operativa: Buscador y Resultados (Oculta al inicio) -->
+        <div id="appView" class="hidden">
+            
+            <!-- Search & Filter Card -->
+            <div class="bg-white rounded-2xl shadow-sm border border-navy-100 p-6 mb-8">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                    <div>
+                        <h2 class="text-xl font-semibold text-navy-900 mb-1">Buscador de Asignaciones</h2>
+                        <p class="text-sm text-navy-600">Busca por nombre de usuario final o filtra por módulo y sociedad.</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span id="dataSourceBadge" class="bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-full font-medium text-xs border border-emerald-100 flex items-center gap-1.5">
+                            <i class="fa-solid fa-circle-check"></i> Archivo cargado con éxito
+                        </span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <!-- Search Input with Auto-complete container -->
+                    <div class="md:col-span-2 relative">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-navy-400">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                        </div>
+                        <input type="text" id="searchInput" placeholder="Escribe el nombre del usuario final (Ej. Jose Luis Garcia)..." class="w-full pl-11 pr-4 py-3 bg-navy-50 border border-navy-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white text-sm transition-all shadow-inner">
+                        <!-- Suggestions Dropdown -->
+                        <div id="suggestions" class="absolute z-20 left-0 right-0 mt-1 bg-white border border-navy-100 rounded-xl shadow-xl max-h-60 overflow-y-auto hidden"></div>
+                    </div>
+
+                    <!-- Module Filter -->
+                    <div>
+                        <select id="moduleFilter" class="w-full px-4 py-3 bg-navy-50 border border-navy-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white text-sm transition-all text-navy-700 shadow-inner">
+                            <option value="">Filtrar por Módulo (Todos)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Tabs / Controls for views -->
+                <div class="flex justify-between items-center mt-6 pt-4 border-t border-navy-50 text-xs">
+                    <span id="recordCount" class="text-navy-500 font-medium">Mostrando registros</span>
+                    <div class="flex items-center gap-2">
+                        <button id="viewCardsBtn" class="bg-blue-600 text-white px-3.5 py-1.5 rounded-lg font-medium transition-all shadow-sm flex items-center gap-1.5">
+                            <i class="fa-solid fa-address-card"></i> Tarjetas
+                        </button>
+                        <button id="viewTableBtn" class="bg-navy-100 hover:bg-navy-200 text-navy-700 px-3.5 py-1.5 rounded-lg font-medium transition-all flex items-center gap-1.5">
+                            <i class="fa-solid fa-table"></i> Vista Tabla Completa
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cards Container -->
+            <div id="resultsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+
+            <!-- Table Container (Hidden by default) -->
+            <div id="tableContainer" class="hidden bg-white rounded-2xl shadow-sm border border-navy-100 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="bg-navy-900 text-white font-semibold">
+                                <th class="p-3.5">Usuario Final</th>
+                                <th class="p-3.5">Puesto</th>
+                                <th class="p-3.5">Key User Asignado</th>
+                                <th class="p-3.5">Correo Key User</th>
+                                <th class="p-3.5">Soporte</th>
+                                <th class="p-3.5">Módulo</th>
+                                <th class="p-3.5">Sociedad</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody" class="divide-y divide-navy-100 text-navy-700">
+                            <!-- Rows inserted dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Empty State for Search -->
+            <div id="emptyState" class="hidden text-center py-16 bg-white rounded-2xl border border-navy-100 shadow-sm mt-4">
+                <div class="w-16 h-16 bg-navy-50 rounded-full flex items-center justify-center mx-auto text-navy-400 text-2xl mb-4">
+                    <i class="fa-solid fa-folder-open"></i>
+                </div>
+                <h3 class="text-base font-semibold text-navy-900 mb-1">No se encontraron resultados</h3>
+                <p class="text-sm text-navy-500 max-w-sm mx-auto">Intenta buscar con otro nombre de usuario final o revisa los filtros aplicados.</p>
+            </div>
+
+        </div>
+
+    </main>
+
+    <footer class="bg-white border-t border-navy-100 py-4 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 text-center text-xs text-navy-500">
+            Herramienta de Soporte Corporativo &bull; Tema Azul Marino &bull; Diseñado para Usuarios Finales
+        </div>
+    </footer>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 bg-navy-900 text-white px-4 py-3 rounded-xl shadow-xl transform translate-y-20 opacity-0 transition-all duration-300 flex items-center gap-3 text-sm">
+        <i class="fa-solid fa-circle-check text-emerald-400 text-base"></i>
+        <span id="toastMessage">Acción realizada correctamente</span>
+    </div>
+
+    <script>
+        let currentDataset = [];
+        let currentFilteredDataset = [];
+        let activeView = 'cards'; // 'cards' or 'table'
+
+        // DOM Elements
+        const uploadView = document.getElementById('uploadView');
+        const appView = document.getElementById('appView');
+        const headerActions = document.getElementById('headerActions');
+        const dropZone = document.getElementById('dropZone');
+        const excelFile = document.getElementById('excelFile');
+        const excelFileTop = document.getElementById('excelFileTop');
+        const resetBtn = document.getElementById('resetBtn');
+        const searchInput = document.getElementById('searchInput');
+        const suggestions = document.getElementById('suggestions');
+        const moduleFilter = document.getElementById('moduleFilter');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const tableContainer = document.getElementById('tableContainer');
+        const tableBody = document.getElementById('tableBody');
+        const emptyState = document.getElementById('emptyState');
+        const recordCount = document.getElementById('recordCount');
+        const viewCardsBtn = document.getElementById('viewCardsBtn');
+        const viewTableBtn = document.getElementById('viewTableBtn');
+        const toast = document.getElementById('toast');
+        const toastMessage = document.getElementById('toastMessage');
+
+        function showToast(message) {
+            toastMessage.textContent = message;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        function initApp() {
+            setupEventListeners();
+        }
+
+        function setupEventListeners() {
+            // Drag and Drop events
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropZone.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dropZone.classList.add('border-blue-600', 'bg-blue-50/40');
+                }, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dropZone.classList.remove('border-blue-600', 'bg-blue-50/40');
+                }, false);
+            });
+
+            dropZone.addEventListener('drop', (e) => {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                if (files.length > 0) {
+                    handleFile(files[0]);
+                }
+            });
+
+            dropZone.addEventListener('click', () => {
+                excelFile.click();
+            });
+
+            excelFile.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    handleFile(e.target.files[0]);
+                }
+            });
+
+            excelFileTop.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    handleFile(e.target.files[0]);
+                }
+            });
+
+            resetBtn.addEventListener('click', () => {
+                currentDataset = [];
+                currentFilteredDataset = [];
+                searchInput.value = '';
+                moduleFilter.value = '';
+                excelFile.value = '';
+                excelFileTop.value = '';
+                
+                appView.classList.add('hidden');
+                uploadView.classList.remove('hidden');
+                headerActions.classList.add('hidden');
+                headerActions.classList.remove('flex');
+                showToast("Se ha restablecido la sesión. Carga un nuevo archivo.");
+            });
+
+            // Buscador dinámico
+            searchInput.addEventListener('input', filterData);
+            moduleFilter.addEventListener('change', filterData);
+
+            // Sugerencias de autocompletado
+            searchInput.addEventListener('focus', () => {
+                if(searchInput.value.trim().length > 0) {
+                    suggestions.classList.remove('hidden');
+                }
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!searchInput.contains(e.target) && !suggestions.contains(e.target)) {
+                    suggestions.classList.add('hidden');
+                }
+            });
+
+            // Vistas (Tarjetas vs Tabla)
+            viewCardsBtn.addEventListener('click', () => {
+                activeView = 'cards';
+                viewCardsBtn.className = "bg-blue-600 text-white px-3.5 py-1.5 rounded-lg font-medium transition-all shadow-sm flex items-center gap-1.5";
+                viewTableBtn.className = "bg-navy-100 hover:bg-navy-200 text-navy-700 px-3.5 py-1.5 rounded-lg font-medium transition-all flex items-center gap-1.5";
+                resultsContainer.classList.remove('hidden');
+                tableContainer.classList.add('hidden');
+                renderResults(currentFilteredDataset);
+            });
+
+            viewTableBtn.addEventListener('click', () => {
+                activeView = 'table';
+                viewTableBtn.className = "bg-blue-600 text-white px-3.5 py-1.5 rounded-lg font-medium transition-all shadow-sm flex items-center gap-1.5";
+                viewCardsBtn.className = "bg-navy-100 hover:bg-navy-200 text-navy-700 px-3.5 py-1.5 rounded-lg font-medium transition-all flex items-center gap-1.5";
+                tableContainer.classList.remove('hidden');
+                resultsContainer.classList.add('hidden');
+                renderResults(currentFilteredDataset);
+            });
+        }
+
+        // Procesar Archivo Excel
+        function handleFile(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const json = XLSX.utils.sheet_to_json(worksheet);
+
+                    if (json.length === 0) {
+                        showToast("El archivo Excel está vacío o no contiene registros.");
+                        return;
+                    }
+
+                    // Mapeo flexible de columnas para adaptarse a cualquier estructura similar
+                    currentDataset = json.map(row => {
+                        return {
+                            vpKey: row["Vicepresidencia Usuario Clave"] || row["vpKey"] || "N/D",
+                            nombreKey: row["Nombre Usuario Clave"] || row["nombreKey"] || row["Key User"] || "N/D",
+                            correoKey: row["Correo Electrónico Usuario Clave"] || row["correoKey"] || row["Correo Key User"] || "N/D",
+                            soporte: row["Soporte"] || row["soporte"] || "TEAMS",
+                            vpFinal: row["Vicepresidencia Usuario Final"] || row["vpFinal"] || "N/D",
+                            nombreFinal: row["Nombre Usuario Final Asignado"] || row["nombreFinal"] || row["Usuario Final"] || "N/D",
+                            sociedad: row["Sociedad Usuario Final"] || row["sociedad"] || row["Sociedad"] || "N/D",
+                            modulo: row["Módulo"] || row["modulo"] || row["Modulo"] || "N/D",
+                            puesto: row["Puesto Genérico (CAPA)"] || row["puesto"] || row["Puesto"] || "N/D"
+                        };
+                    });
+
+                    currentFilteredDataset = [...currentDataset];
+                    populateModuleFilter();
+                    
+                    // Cambiar a vista de aplicación
+                    uploadView.classList.add('hidden');
+                    appView.classList.remove('hidden');
+                    headerActions.classList.remove('hidden');
+                    headerActions.classList.add('flex');
+
+                    renderResults(currentFilteredDataset);
+                    showToast(`¡Se cargaron ${currentDataset.length} registros con éxito!`);
+                } catch (error) {
+                    console.error(error);
+                    showToast("Error al leer el archivo Excel. Verifique el formato.");
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function populateModuleFilter() {
+            const modules = [...new Set(currentDataset.map(item => item.modulo))].filter(Boolean).sort();
+            moduleFilter.innerHTML = '<option value="">Filtrar por Módulo (Todos)</option>';
+            modules.forEach(mod => {
+                const opt = document.createElement('option');
+                opt.value = mod;
+                opt.textContent = mod;
+                moduleFilter.appendChild(opt);
+            });
+        }
+
+        function filterData() {
+            const query = searchInput.value.toLowerCase().trim();
+            const selectedModule = moduleFilter.value;
+
+            currentFilteredDataset = currentDataset.filter(item => {
+                const matchName = item.nombreFinal.toLowerCase().includes(query) || 
+                                  item.nombreKey.toLowerCase().includes(query) ||
+                                  item.sociedad.toLowerCase().includes(query) ||
+                                  item.puesto.toLowerCase().includes(query);
+                const matchModule = selectedModule === "" || item.modulo === selectedModule;
+                return matchName && matchModule;
+            });
+
+            renderResults(currentFilteredDataset);
+            updateSuggestions(query);
+        }
+
+        function renderResults(data) {
+            recordCount.textContent = `Mostrando ${data.length} de ${currentDataset.length} registro(s)`;
+
+            if (data.length === 0) {
+                emptyState.classList.remove('hidden');
+                resultsContainer.classList.add('hidden');
+                tableContainer.classList.add('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+
+            if (activeView === 'cards') {
+                resultsContainer.classList.remove('hidden');
+                tableContainer.classList.add('hidden');
+                resultsContainer.innerHTML = '';
+
+                data.forEach((item) => {
+                    const card = document.createElement('div');
+                    card.className = "bg-white rounded-2xl shadow-sm border border-navy-100 hover:shadow-md transition-all duration-200 p-6 flex flex-col justify-between group relative overflow-hidden";
+                    
+                    card.innerHTML = `
+                        <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-blue-600 to-indigo-500"></div>
+                        
+                        <div>
+                            <!-- Usuario Final (Solicitante) -->
+                            <div class="mb-4 pb-4 border-b border-navy-50">
+                                <span class="inline-block text-[11px] font-semibold tracking-wider text-blue-600 uppercase bg-blue-50 px-2.5 py-0.5 rounded-full mb-1.5">Usuario Final</span>
+                                <h3 class="text-base font-bold text-navy-900 leading-snug">${escapeHtml(item.nombreFinal)}</h3>
+                                <div class="text-xs text-navy-500 mt-1 flex items-center gap-1.5">
+                                    <i class="fa-solid fa-briefcase text-navy-400"></i>
+                                    <span>${escapeHtml(item.puesto || 'No especificado')}</span>
+                                </div>
+                            </div>
+
+                            <!-- Key User Asignado -->
+                            <div class="bg-navy-50/70 rounded-xl p-4 mb-4 border border-navy-100/60">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-[11px] font-semibold text-navy-600 uppercase tracking-wider">Key User Asignado</span>
+                                    <span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                                        <i class="fa-solid fa-headset"></i> ${escapeHtml(item.soporte || 'TEAMS')}
+                                    </span>
+                                </div>
+                                <div class="font-bold text-navy-900 text-sm mb-1">${escapeHtml(item.nombreKey)}</div>
+                                <a href="mailto:${escapeHtml(item.correoKey)}" class="text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1.5 transition-colors truncate">
+                                    <i class="fa-solid fa-envelope text-navy-400"></i>
+                                    <span class="truncate">${escapeHtml(item.correoKey)}</span>
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Detalles / Sociedad / Módulo -->
+                        <div class="pt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-navy-600 border-t border-navy-50">
+                            <div class="flex items-center gap-1.5 max-w-[60%]">
+                                <i class="fa-solid fa-building text-navy-400 shrink-0"></i>
+                                <span class="truncate" title="${escapeHtml(item.sociedad)}">${escapeHtml(item.sociedad)}</span>
+                            </div>
+                            <span class="bg-navy-900 text-white font-medium px-2.5 py-1 rounded-lg text-[11px]">
+                                ${escapeHtml(item.modulo)}
+                            </span>
+                        </div>
+                    `;
+                    resultsContainer.appendChild(card);
+                });
+            } else {
+                tableContainer.classList.remove('hidden');
+                resultsContainer.classList.add('hidden');
+                tableBody.innerHTML = '';
+
+                data.forEach((item, index) => {
+                    const row = document.createElement('tr');
+                    row.className = index % 2 === 0 ? 'bg-white hover:bg-navy-50/50' : 'bg-navy-50/30 hover:bg-navy-50/50';
+                    row.innerHTML = `
+                        <td class="p-3.5 font-bold text-navy-900">${escapeHtml(item.nombreFinal)}</td>
+                        <td class="p-3.5 text-navy-600">${escapeHtml(item.puesto)}</td>
+                        <td class="p-3.5 font-semibold text-blue-700">${escapeHtml(item.nombreKey)}</td>
+                        <td class="p-3.5"><a href="mailto:${escapeHtml(item.correoKey)}" class="text-blue-600 hover:underline">${escapeHtml(item.correoKey)}</a></td>
+                        <td class="p-3.5"><span class="bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded text-[10px]">${escapeHtml(item.soporte)}</span></td>
+                        <td class="p-3.5"><span class="bg-navy-900 text-white font-medium px-2 py-0.5 rounded text-[10px]">${escapeHtml(item.modulo)}</span></td>
+                        <td class="p-3.5 text-navy-600">${escapeHtml(item.sociedad)}</td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            }
+        }
+
+        function updateSuggestions(query) {
+            if (!query || query.length < 2) {
+                suggestions.classList.add('hidden');
+                return;
+            }
+
+            const matches = [...new Set(currentDataset
+                .map(item => item.nombreFinal)
+                .filter(name => name.toLowerCase().includes(query))
+            )].slice(0, 5);
+
+            if (matches.length === 0) {
+                suggestions.classList.add('hidden');
+                return;
+            }
+
+            suggestions.innerHTML = '';
+            matches.forEach(name => {
+                const div = document.createElement('div');
+                div.className = "px-4 py-2.5 hover:bg-navy-50 cursor-pointer text-xs font-medium text-navy-800 border-b border-navy-50 last:border-none flex items-center justify-between";
+                div.innerHTML = `<span>${escapeHtml(name)}</span> <i class="fa-solid fa-arrow-right text-navy-400"></i>`;
+                div.addEventListener('click', () => {
+                    searchInput.value = name;
+                    suggestions.classList.add('hidden');
+                    filterData();
+                });
+                suggestions.appendChild(div);
+            });
+
+            suggestions.classList.remove('hidden');
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        window.onload = function() {
+            initApp();
+        };
+    </script>
+</body>
+</html>
