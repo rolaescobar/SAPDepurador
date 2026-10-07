@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SAP Access & Structure Toolkit v4 - DBTRANSACCIONES</title>
+    <title>SAP Access & Structure Toolkit v5 - DBTRANSACCIONES</title>
     <!-- Fonts & Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -35,543 +35,215 @@
             --radius-lg: 12px;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
+        body { background-color: var(--bg-main); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
 
-        body {
-            background-color: var(--bg-main);
-            color: var(--text-main);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow-x: hidden;
+        /* Intro Overlay (Nube Digital Flotante) */
+        .intro-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(ellipse at bottom, #0d152d 0%, #050813 100%);
+            z-index: 9999; display: flex; align-items: center; justify-content: center;
+            transition: transform 0.8s cubic-bezier(0.65, 0, 0.35, 1); overflow: hidden;
         }
+        .intro-overlay::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: url('data:image/svg+xml;utf8,<svg width="40" height="40" xmlns="http://www.w3.org/2000/svg"><path d="M0 0h40v40H0z" fill="none"/><path d="M0 39h40v1H0zM39 0h1v40h-1z" fill="rgba(0,210,255,0.03)"/></svg>');
+            z-index: 0;
+        }
+        .intro-overlay.hidden { transform: translateY(-100%); }
+        .intro-content { position: relative; z-index: 10; text-align: center; width: 100%; max-width: 1200px; padding: 2rem; }
+        
+        .btn-intro {
+            background: linear-gradient(135deg, #007bff, #00d2ff); color: #fff; border: none;
+            padding: 12px 30px; border-radius: 30px; font-size: 1.1rem; font-weight: 600;
+            cursor: pointer; box-shadow: 0 4px 20px rgba(0, 210, 255, 0.4); transition: all 0.3s ease; margin-top: 2rem;
+        }
+        .btn-intro:hover { transform: scale(1.05); box-shadow: 0 6px 25px rgba(0, 210, 255, 0.6); }
+
+        .universe-container {
+            margin: 40px 0; position: relative; height: 130px; width: 100%; overflow: hidden;
+            mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+            -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+            display: flex; flex-direction: column; gap: 20px; justify-content: center;
+        }
+        .universe-track { display: flex; gap: 30px; width: max-content; animation: drift 60s linear infinite; }
+        .track-reverse { animation: drift-rev 70s linear infinite; }
+
+        @keyframes drift { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+        @keyframes drift-rev { 0% { transform: translateX(-50%); } 100% { transform: translateX(0); } }
+
+        .floating-item {
+            background: rgba(13, 21, 45, 0.8); border: 1px solid rgba(0, 210, 255, 0.15);
+            padding: 10px 25px; border-radius: 20px; color: #a0aec0; font-size: 0.9rem;
+            white-space: nowrap; box-shadow: 0 4px 10px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 10px; transition: all 0.3s;
+        }
+        .floating-item:hover {
+            border-color: rgba(0, 210, 255, 0.5); color: #fff; transform: translateY(-2px); box-shadow: 0 6px 15px rgba(0, 210, 255, 0.2);
+        }
+        .floating-item i { color: #00d2ff; }
 
         /* Top Navigation Header */
         header {
-            background: linear-gradient(135deg, #0b132b 0%, #1c2541 100%);
-            border-bottom: 1px solid var(--border-color);
-            padding: 0.8rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: var(--shadow-md);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
+            background: linear-gradient(135deg, #0b132b 0%, #1c2541 100%); border-bottom: 1px solid var(--border-color);
+            padding: 0.8rem 2rem; display: flex; justify-content: space-between; align-items: center;
+            box-shadow: var(--shadow-md); position: sticky; top: 0; z-index: 1000;
         }
-
-        .logo-container {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
+        .logo-container { display: flex; align-items: center; gap: 12px; }
         .logo-icon {
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
-            border-radius: var(--radius-md);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.3rem;
-            color: #fff;
-            box-shadow: 0 0 10px rgba(0, 210, 255, 0.3);
+            width: 40px; height: 40px; background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+            border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center;
+            font-size: 1.3rem; color: #fff; box-shadow: 0 0 10px rgba(0, 210, 255, 0.3);
         }
+        .logo-text h1 { font-size: 1.25rem; font-weight: 700; letter-spacing: 0.5px; color: #fff; }
+        .logo-text p { font-size: 0.75rem; color: var(--accent-cyan); font-weight: 500; }
+        .header-actions { display: flex; align-items: center; gap: 1rem; }
 
-        .logo-text h1 {
-            font-size: 1.25rem;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-            color: #fff;
+        .btn-top {
+            background: rgba(0, 210, 255, 0.1); color: #00d2ff; border: 1px solid #00d2ff;
+            padding: 8px 16px; border-radius: var(--radius-md); font-weight: 600; font-size: 0.85rem;
+            cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px;
         }
-
-        .logo-text p {
-            font-size: 0.75rem;
-            color: var(--accent-cyan);
-            font-weight: 500;
-        }
-
-        .header-actions {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
+        .btn-top:hover { background: rgba(0, 210, 255, 0.2); transform: translateY(-1px); }
 
         .file-upload-btn {
-            position: relative;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            background: linear-gradient(135deg, #0056b3, var(--accent-blue));
-            color: white;
-            padding: 8px 18px;
-            border-radius: var(--radius-md);
-            font-weight: 500;
-            font-size: 0.9rem;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative; display: inline-flex; align-items: center; gap: 8px;
+            background: linear-gradient(135deg, #0056b3, var(--accent-blue)); color: white;
+            padding: 8px 18px; border-radius: var(--radius-md); font-weight: 500; font-size: 0.9rem;
+            cursor: pointer; transition: all 0.2s ease; border: 1px solid rgba(255, 255, 255, 0.1);
         }
-
-        .file-upload-btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0, 123, 255, 0.4);
-            background: linear-gradient(135deg, #0062cc, #0088ff);
-        }
-
-        .file-upload-btn input[type="file"] {
-            position: absolute;
-            left: 0;
-            top: 0;
-            opacity: 0;
-            width: 100%;
-            height: 100%;
-            cursor: pointer;
-        }
+        .file-upload-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0, 123, 255, 0.4); background: linear-gradient(135deg, #0062cc, #0088ff); }
+        .file-upload-btn input[type="file"] { position: absolute; left: 0; top: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
 
         .status-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 500;
-            background-color: rgba(231, 29, 54, 0.15);
-            color: var(--danger);
-            border: 1px solid rgba(231, 29, 54, 0.3);
+            display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 20px;
+            font-size: 0.8rem; font-weight: 500; background-color: rgba(231, 29, 54, 0.15); color: var(--danger); border: 1px solid rgba(231, 29, 54, 0.3);
         }
-
-        .status-badge.loaded {
-            background-color: rgba(46, 196, 182, 0.15);
-            color: var(--success);
-            border-color: rgba(46, 196, 182, 0.3);
-        }
-
-        .status-badge i {
-            font-size: 0.7rem;
-        }
+        .status-badge.loaded { background-color: rgba(46, 196, 182, 0.15); color: var(--success); border-color: rgba(46, 196, 182, 0.3); }
 
         /* Navigation Tabs */
         nav.tabs-nav {
-            background-color: #0d152d;
-            border-bottom: 1px solid var(--border-color);
-            padding: 0 2rem;
-            display: flex;
-            gap: 4px;
-            overflow-x: auto;
+            background-color: #0d152d; border-bottom: 1px solid var(--border-color);
+            padding: 0 2rem; display: flex; gap: 4px; overflow-x: auto;
         }
-
         .tab-btn {
-            background: transparent;
-            border: none;
-            color: var(--text-muted);
-            padding: 14px 20px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            border-bottom: 3px solid transparent;
-            transition: all 0.2s ease;
-            white-space: nowrap;
+            background: transparent; border: none; color: var(--text-muted); padding: 14px 20px;
+            font-size: 0.9rem; font-weight: 600; cursor: pointer; display: flex; align-items: center;
+            gap: 10px; border-bottom: 3px solid transparent; transition: all 0.2s ease; white-space: nowrap;
         }
+        .tab-btn:hover { color: var(--text-main); background-color: rgba(255, 255, 255, 0.03); }
+        .tab-btn.active { color: var(--accent-cyan); border-bottom-color: var(--accent-cyan); background-color: rgba(0, 210, 255, 0.05); }
 
-        .tab-btn:hover {
-            color: var(--text-main);
-            background-color: rgba(255, 255, 255, 0.03);
-        }
+        /* Main Content */
+        main { flex: 1; padding: 1.8rem; max-width: 1600px; margin: 0 auto; width: 100%; }
+        .tab-content { display: none; animation: fadeIn 0.3s ease-in-out; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 
-        .tab-btn.active {
-            color: var(--accent-cyan);
-            border-bottom-color: var(--accent-cyan);
-            background-color: rgba(0, 210, 255, 0.05);
-        }
+        /* Cards & Forms */
+        .card { background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 1.5rem; box-shadow: var(--shadow-sm); margin-bottom: 1.5rem; }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem; padding-bottom: 0.8rem; border-bottom: 1px solid rgba(255, 255, 255, 0.08); gap: 1rem; flex-wrap: wrap; }
+        .card-title { font-size: 1.1rem; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 10px; }
+        .card-title i { color: var(--accent-cyan); }
+        .card-controls { display: flex; align-items: center; gap: 10px; }
 
-        /* Main Content Container */
-        main {
-            flex: 1;
-            padding: 1.8rem;
-            max-width: 1600px;
-            margin: 0 auto;
-            width: 100%;
-        }
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; background-color: var(--accent-blue); color: white; border: none; padding: 8px 16px; border-radius: var(--radius-md); font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: all 0.2s ease; }
+        .btn:hover { background-color: #0069d9; transform: translateY(-1px); }
+        .btn-export { background: linear-gradient(135deg, #198754, #20c997); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .btn-export-pdf { background: linear-gradient(135deg, #dc3545, #b02a37); border: 1px solid rgba(255, 255, 255, 0.1); }
+        
+        .form-group { margin-bottom: 1rem; }
+        .form-label { display: block; font-size: 0.85rem; font-weight: 500; color: var(--text-muted); margin-bottom: 6px; }
+        .form-control, .form-select, .form-textarea { width: 100%; background-color: var(--bg-input); border: 1px solid var(--border-color); border-radius: var(--radius-md); color: var(--text-main); padding: 9px 13px; font-size: 0.88rem; outline: none; transition: border-color 0.2s ease, box-shadow 0.2s ease; }
+        .form-control:focus, .form-select:focus, .form-textarea:focus { border-color: var(--accent-cyan); box-shadow: 0 0 0 3px rgba(0, 210, 255, 0.15); }
+        .form-textarea { font-family: 'JetBrains Mono', monospace; resize: vertical; min-height: 90px; }
 
-        .tab-content {
-            display: none;
-            animation: fadeIn 0.3s ease-in-out;
-        }
+        .grid-2 { display: grid; grid-template-columns: 320px 1fr; gap: 1.5rem; }
+        @media (max-width: 992px) { .grid-2 { grid-template-columns: 1fr; } }
 
-        .tab-content.active {
-            display: block;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(4px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Card Panels */
-        .card {
-            background-color: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-lg);
-            padding: 1.5rem;
-            box-shadow: var(--shadow-sm);
-            margin-bottom: 1.5rem;
-        }
-
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.2rem;
-            padding-bottom: 0.8rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-            gap: 1rem;
-            flex-wrap: wrap;
-        }
-
-        .card-title {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: #fff;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .card-title i {
-            color: var(--accent-cyan);
-        }
-
-        .card-controls {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        /* Buttons & Exports */
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            background-color: var(--accent-blue);
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: var(--radius-md);
-            font-weight: 600;
-            font-size: 0.85rem;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            white-space: nowrap;
-        }
-
-        .btn:hover {
-            background-color: #0069d9;
-            transform: translateY(-1px);
-        }
-
-        .btn-export {
-            background: linear-gradient(135deg, #198754, #20c997);
-            color: white;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .btn-export:hover {
-            background: linear-gradient(135deg, #157347, #198754);
-            box-shadow: 0 4px 10px rgba(32, 201, 151, 0.3);
-        }
-
-        .btn-export-pdf {
-            background: linear-gradient(135deg, #dc3545, #b02a37);
-            color: white;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .btn-export-pdf:hover {
-            background: linear-gradient(135deg, #bb2d3b, #842029);
-            box-shadow: 0 4px 10px rgba(220, 53, 69, 0.3);
-        }
-
-        /* Form Controls */
-        .form-group {
-            margin-bottom: 1rem;
-        }
-
-        .form-label {
-            display: block;
-            font-size: 0.85rem;
-            font-weight: 500;
-            color: var(--text-muted);
-            margin-bottom: 6px;
-        }
-
-        .form-control, .form-select, .form-textarea {
-            width: 100%;
-            background-color: var(--bg-input);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-md);
-            color: var(--text-main);
-            padding: 9px 13px;
-            font-size: 0.88rem;
-            outline: none;
-            transition: border-color 0.2s ease, box-shadow 0.2s ease;
-        }
-
-        .form-control:focus, .form-select:focus, .form-textarea:focus {
-            border-color: var(--accent-cyan);
-            box-shadow: 0 0 0 3px rgba(0, 210, 255, 0.15);
-        }
-
-        .form-textarea {
-            font-family: 'JetBrains Mono', monospace;
-            resize: vertical;
-            min-height: 90px;
-        }
-
-        /* Layout Grids */
-        .grid-2 {
-            display: grid;
-            grid-template-columns: 320px 1fr;
-            gap: 1.5rem;
-        }
-
-        @media (max-width: 992px) {
-            .grid-2 {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        /* Tree Diagram View */
-        .tree-container {
-            background-color: var(--bg-input);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-md);
-            padding: 1.5rem;
-            min-height: 450px;
-            overflow-x: auto;
-        }
-
-        .tree-node {
-            margin-left: 20px;
-            position: relative;
-            padding-left: 15px;
-            border-left: 2px dashed rgba(255, 255, 255, 0.15);
-        }
-
-        .tree-node-content {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 8px 12px;
-            margin: 6px 0;
-            background-color: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-md);
-            width: fit-content;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-
-        .tree-node-content:hover {
-            border-color: var(--accent-cyan);
-            background-color: var(--bg-card-hover);
-            transform: translateX(3px);
-        }
-
-        .tree-node-content.active {
-            border-color: var(--accent-cyan);
-            background-color: rgba(0, 210, 255, 0.1);
-        }
-
-        .node-tag {
-            font-size: 0.7rem;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-weight: 700;
-            text-transform: uppercase;
-        }
-
+        /* Tree Diagram */
+        .tree-container { background-color: var(--bg-input); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.5rem; min-height: 450px; overflow-x: auto; }
+        .tree-node { margin-left: 20px; position: relative; padding-left: 15px; border-left: 2px dashed rgba(255, 255, 255, 0.15); }
+        .tree-node-content { display: flex; align-items: center; gap: 10px; padding: 8px 12px; margin: 6px 0; background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); width: fit-content; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .tree-node-content:hover { border-color: var(--accent-cyan); background-color: var(--bg-card-hover); transform: translateX(3px); }
+        .node-tag { font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; font-weight: 700; text-transform: uppercase; }
         .tag-sociedad { background-color: rgba(0, 123, 255, 0.25); color: #66b2ff; border: 1px solid #007bff; }
         .tag-centro { background-color: rgba(46, 196, 182, 0.25); color: #2ec4b6; border: 1px solid #2ec4b6; }
         .tag-almacen { background-color: rgba(255, 159, 28, 0.25); color: #ff9f1c; border: 1px solid #ff9f1c; }
         .tag-rol { background-color: rgba(157, 78, 221, 0.25); color: #c77dff; border: 1px solid #9d4edd; }
-
-        .node-title {
-            font-weight: 600;
-            font-size: 0.9rem;
-            color: #fff;
-        }
-
-        .node-desc {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-        }
+        .node-title { font-weight: 600; font-size: 0.9rem; color: #fff; }
+        .node-desc { font-size: 0.8rem; color: var(--text-muted); }
 
         /* Data Tables */
-        .table-responsive {
-            width: 100%;
-            overflow-x: auto;
-            border-radius: var(--radius-md);
-            border: 1px solid var(--border-color);
-            max-height: 600px;
-        }
+        .table-responsive { width: 100%; overflow-x: auto; border-radius: var(--radius-md); border: 1px solid var(--border-color); max-height: 600px; }
+        .custom-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.88rem; }
+        .custom-table th { background-color: #131c38; color: var(--accent-cyan); padding: 12px 16px; font-weight: 600; border-bottom: 2px solid var(--border-color); white-space: nowrap; position: sticky; top: 0; z-index: 10; }
+        .custom-table td { padding: 10px 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); color: var(--text-main); }
+        .custom-table tbody tr:hover { background-color: rgba(255, 255, 255, 0.03); }
+        .code-badge { font-family: 'JetBrains Mono', monospace; background-color: rgba(255, 255, 255, 0.06); padding: 3px 8px; border-radius: 4px; font-size: 0.83rem; color: var(--accent-cyan); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .badge-count { background-color: var(--accent-blue); color: white; border-radius: 12px; padding: 2px 8px; font-size: 0.75rem; font-weight: 600; }
+        .placeholder-state { text-align: center; padding: 3rem 1.5rem; color: var(--text-muted); }
+        .placeholder-state i { font-size: 3rem; margin-bottom: 1rem; color: var(--border-color); }
 
-        .custom-table {
-            width: 100%;
-            border-collapse: collapse;
-            text-align: left;
-            font-size: 0.88rem;
-        }
-
-        .custom-table th {
-            background-color: #131c38;
-            color: var(--accent-cyan);
-            padding: 12px 16px;
-            font-weight: 600;
-            border-bottom: 2px solid var(--border-color);
-            white-space: nowrap;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
-        .custom-table td {
-            padding: 10px 16px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            color: var(--text-main);
-        }
-
-        .custom-table tbody tr:hover {
-            background-color: rgba(255, 255, 255, 0.03);
-        }
-
-        .custom-table tbody tr:nth-child(even) {
-            background-color: rgba(0, 0, 0, 0.15);
-        }
-
-        .code-badge {
-            font-family: 'JetBrains Mono', monospace;
-            background-color: rgba(255, 255, 255, 0.06);
-            padding: 3px 8px;
-            border-radius: 4px;
-            font-size: 0.83rem;
-            color: var(--accent-cyan);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-        }
-
-        .badge-count {
-            background-color: var(--accent-blue);
-            color: white;
-            border-radius: 12px;
-            padding: 2px 8px;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-
-        /* Empty & Loading States */
-        .placeholder-state {
-            text-align: center;
-            padding: 3rem 1.5rem;
-            color: var(--text-muted);
-        }
-
-        .placeholder-state i {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            color: var(--border-color);
-        }
-
-        .placeholder-state h3 {
-            color: var(--text-main);
-            font-size: 1.1rem;
-            margin-bottom: 0.5rem;
-        }
-
-        /* Stats Cards */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .stat-card {
-            background-color: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-md);
-            padding: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .stat-icon {
-            width: 45px;
-            height: 45px;
-            border-radius: var(--radius-md);
-            background-color: rgba(0, 123, 255, 0.15);
-            color: var(--accent-cyan);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
-        }
-
-        .stat-info .stat-value {
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: #fff;
-        }
-
-        .stat-info .stat-label {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-        }
-
-        footer {
-            text-align: center;
-            padding: 1rem;
-            color: var(--text-muted);
-            font-size: 0.8rem;
-            border-top: 1px solid var(--border-color);
-            background-color: #080d1f;
-            margin-top: auto;
-        }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+        .stat-card { background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1rem; display: flex; align-items: center; gap: 1rem; }
+        .stat-icon { width: 45px; height: 45px; border-radius: var(--radius-md); background-color: rgba(0, 123, 255, 0.15); color: var(--accent-cyan); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+        .stat-info .stat-value { font-size: 1.3rem; font-weight: 700; color: #fff; }
+        .stat-info .stat-label { font-size: 0.75rem; color: var(--text-muted); }
+        footer { text-align: center; padding: 1rem; color: var(--text-muted); font-size: 0.8rem; border-top: 1px solid var(--border-color); background-color: #080d1f; margin-top: auto; }
     </style>
 </head>
 <body>
 
+    <!-- Intro Screen (Nube Digital) -->
+    <div id="techIntroScreen" class="intro-overlay">
+        <div class="intro-content">
+            <div class="intro-logo">
+                <i class="fa-solid fa-shield-halved" style="font-size: 3.5rem; color: #00d2ff; filter: drop-shadow(0 0 15px rgba(0, 210, 255, 0.6));"></i>
+            </div>
+            <h3 style="color: var(--accent-cyan); font-weight: 600; letter-spacing: 2px; margin-top: 1.2rem;">SAP SECURITY & STRUCTURE CORE</h3>
+            <h1 style="font-size: 2.8rem; font-weight: 700; margin: 0.5rem 0; letter-spacing: 1px;">DBTRANSACCIONES ENTERPRISE</h1>
+            <p style="color: var(--text-muted); font-size: 1rem; letter-spacing: 1px;">SISTEMA INTEGRAL DE CONTROL DE ROLES, SOCIEDADES Y CENTROS LOGÍSTICOS</p>
+
+            <div class="universe-container">
+                <div class="universe-track" id="universeTrack1">
+                    <!-- Default mocks, replaced dynamically on load -->
+                    <div class="floating-item"><i class="fa-solid fa-building"></i> 1080 - BONLAC</div>
+                    <div class="floating-item"><i class="fa-solid fa-industry"></i> Centro: LA NUEVA</div>
+                    <div class="floating-item"><i class="fa-solid fa-building"></i> 1590 - DEL MONTE</div>
+                    <div class="floating-item"><i class="fa-solid fa-industry"></i> Centro: HELISA</div>
+                </div>
+                <div class="universe-track track-reverse" id="universeTrack2">
+                    <div class="floating-item"><i class="fa-solid fa-industry"></i> Centro: Escuintla</div>
+                    <div class="floating-item"><i class="fa-solid fa-building"></i> 1300 - DISTCASA</div>
+                    <div class="floating-item"><i class="fa-solid fa-building"></i> 8050 - GRACI</div>
+                    <div class="floating-item"><i class="fa-solid fa-industry"></i> Centro: Quetzaltenango</div>
+                </div>
+            </div>
+
+            <button class="btn-intro" onclick="hideIntro()">
+                <i class="fa-solid fa-chevron-right"></i> ACCEDER AL SISTEMA
+            </button>
+            <p style="margin-top: 15px; font-size: 0.85rem; color: var(--text-muted);"><i class="fa-solid fa-mouse-pointer"></i> Haga clic para ingresar o cargue su archivo Excel en la app</p>
+        </div>
+    </div>
+
     <!-- Top Navigation Header -->
     <header>
         <div class="logo-container">
-            <div class="logo-icon">
-                <i class="fa-solid fa-shield-halved"></i>
-            </div>
+            <div class="logo-icon"><i class="fa-solid fa-shield-halved"></i></div>
             <div class="logo-text">
                 <h1>SAP Access & Structure Manager</h1>
                 <p>Módulo de Control de Autorizaciones y Estructura Organizativa</p>
             </div>
         </div>
         <div class="header-actions">
+            <button class="btn-top" onclick="showIntro()"><i class="fa-solid fa-pause"></i> Pantalla Inicial</button>
             <div id="statusBadge" class="status-badge">
                 <i class="fa-solid fa-circle"></i>
                 <span id="statusText">Esperando archivo DBTRANSACCIONES.xlsx</span>
             </div>
             <label class="file-upload-btn">
-                <i class="fa-solid fa-file-excel"></i>
-                <span>Cargar Excel</span>
+                <i class="fa-solid fa-file-excel"></i> <span>Cargar Excel</span>
                 <input type="file" id="excelFileInput" accept=".xlsx, .xls">
             </label>
         </div>
@@ -579,112 +251,49 @@
 
     <!-- Tabs Bar -->
     <nav class="tabs-nav">
-        <button class="tab-btn active" onclick="switchTab('tree-tab')">
-            <i class="fa-solid fa-sitemap"></i> Estructura Organizativa
-        </button>
-        <button class="tab-btn" onclick="switchTab('fico-tab')">
-            <i class="fa-solid fa-building-columns"></i> FICO (Sociedades)
-        </button>
-        <button class="tab-btn" onclick="switchTab('logi-tab')">
-            <i class="fa-solid fa-industry"></i> LOGI (Centros)
-        </button>
-        <button class="tab-btn" onclick="switchTab('almacenes-tab')">
-            <i class="fa-solid fa-warehouse"></i> ALMACENES (Roles)
-        </button>
-        <button class="tab-btn" onclick="switchTab('objeto-tab')">
-            <i class="fa-solid fa-cubes"></i> OBJETO (Búsqueda)
-        </button>
-        <button class="tab-btn" onclick="switchTab('transacciones-tab')">
-            <i class="fa-solid fa-key"></i> TRANSACCIONES / Roles
-        </button>
+        <button class="tab-btn active" onclick="switchTab('tree-tab')"><i class="fa-solid fa-sitemap"></i> Estructura Organizativa</button>
+        <button class="tab-btn" onclick="switchTab('fico-tab')"><i class="fa-solid fa-building-columns"></i> FICO (Sociedades)</button>
+        <button class="tab-btn" onclick="switchTab('logi-tab')"><i class="fa-solid fa-industry"></i> LOGI (Centros)</button>
+        <button class="tab-btn" onclick="switchTab('almacenes-tab')"><i class="fa-solid fa-warehouse"></i> ALMACENES (Roles)</button>
+        <button class="tab-btn" onclick="switchTab('objeto-tab')"><i class="fa-solid fa-cubes"></i> OBJETO (Búsqueda)</button>
+        <button class="tab-btn" onclick="switchTab('transacciones-tab')"><i class="fa-solid fa-key"></i> TRANSACCIONES / Roles</button>
     </nav>
 
-    <!-- Main Content Body -->
     <main>
-
-        <!-- Dynamic Overview Stats -->
         <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-icon"><i class="fa-solid fa-building"></i></div>
-                <div class="stat-info">
-                    <div class="stat-value" id="statSociedades">0</div>
-                    <div class="stat-label">Sociedades (FICO)</div>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon"><i class="fa-solid fa-industry"></i></div>
-                <div class="stat-info">
-                    <div class="stat-value" id="statCentros">0</div>
-                    <div class="stat-label">Centros (LOGI)</div>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon"><i class="fa-solid fa-warehouse"></i></div>
-                <div class="stat-info">
-                    <div class="stat-value" id="statAlmacenes">0</div>
-                    <div class="stat-label">Almacenes Asignados</div>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon"><i class="fa-solid fa-user-shield"></i></div>
-                <div class="stat-info">
-                    <div class="stat-value" id="statRoles">0</div>
-                    <div class="stat-label">Roles en Catálogo</div>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon"><i class="fa-solid fa-bolt"></i></div>
-                <div class="stat-info">
-                    <div class="stat-value" id="statTcodes">0</div>
-                    <div class="stat-label">Transacciones (T-Codes)</div>
-                </div>
-            </div>
+            <div class="stat-card"><div class="stat-icon"><i class="fa-solid fa-building"></i></div><div class="stat-info"><div class="stat-value" id="statSociedades">0</div><div class="stat-label">Sociedades (FICO)</div></div></div>
+            <div class="stat-card"><div class="stat-icon"><i class="fa-solid fa-industry"></i></div><div class="stat-info"><div class="stat-value" id="statCentros">0</div><div class="stat-label">Centros (LOGI)</div></div></div>
+            <div class="stat-card"><div class="stat-icon"><i class="fa-solid fa-warehouse"></i></div><div class="stat-info"><div class="stat-value" id="statAlmacenes">0</div><div class="stat-label">Almacenes Asignados</div></div></div>
+            <div class="stat-card"><div class="stat-icon"><i class="fa-solid fa-user-shield"></i></div><div class="stat-info"><div class="stat-value" id="statRoles">0</div><div class="stat-label">Roles Compuestos</div></div></div>
+            <div class="stat-card"><div class="stat-icon"><i class="fa-solid fa-bolt"></i></div><div class="stat-info"><div class="stat-value" id="statTcodes">0</div><div class="stat-label">Transacciones</div></div></div>
         </div>
 
-        <!-- TAB 1: ESTRUCTURA ORGANIZATIVA (ÁRBOL JERÁRQUICO) -->
+        <!-- TAB 1: ESTRUCTURA ORGANIZATIVA -->
         <div id="tree-tab" class="tab-content active">
             <div class="grid-2">
-                <!-- Sidebar Control -->
                 <div class="card">
-                    <div class="card-header">
-                        <div class="card-title"><i class="fa-solid fa-filter"></i> Selección Jerárquica</div>
-                    </div>
+                    <div class="card-header"><div class="card-title"><i class="fa-solid fa-filter"></i> Selección Jerárquica</div></div>
                     <div class="form-group">
                         <label class="form-label" for="selectSociedad">1. Seleccionar Sociedad:</label>
-                        <select id="selectSociedad" class="form-select" onchange="onSociedadChange()">
-                            <option value="">-- Seleccione Sociedad --</option>
-                        </select>
+                        <select id="selectSociedad" class="form-select" onchange="onSociedadChange()"><option value="">-- Seleccione Sociedad --</option></select>
                     </div>
                     <div class="form-group">
                         <label class="form-label" for="selectCentro">2. Seleccionar Centro (LOGI):</label>
-                        <select id="selectCentro" class="form-select" onchange="onCentroChange()" disabled>
-                            <option value="">-- Seleccione Centro --</option>
-                        </select>
-                    </div>
-                    <div style="margin-top: 1.5rem; padding: 1rem; background-color: rgba(0,210,255,0.05); border-radius: var(--radius-md); border: 1px solid rgba(0,210,255,0.15);">
-                        <p style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.4;">
-                            <i class="fa-solid fa-circle-info" style="color: var(--accent-cyan);"></i>
-                            <strong>Instrucciones:</strong> Al seleccionar una sociedad se mostrarán sus centros con su código y descripción, así como sus almacenes y la descripción de cada rol.
-                        </p>
+                        <select id="selectCentro" class="form-select" onchange="onCentroChange()" disabled><option value="">-- Todos los Centros --</option></select>
                     </div>
                 </div>
 
-                <!-- Tree Diagram Container -->
                 <div class="card">
                     <div class="card-header">
                         <div class="card-title"><i class="fa-solid fa-diagram-project"></i> Diagrama de Estructura Organizativa</div>
                         <div class="card-controls">
                             <span id="treeSummary" class="badge-count">0 elementos</span>
-                            <button class="btn btn-export" onclick="exportTreeToExcel()"><i class="fa-solid fa-file-excel"></i> Exportar XLSX</button>
-                            <button class="btn btn-export-pdf" onclick="exportTreeToPDF()"><i class="fa-solid fa-file-pdf"></i> Exportar PDF</button>
+                            <button class="btn btn-export" onclick="exportTreeToExcel()"><i class="fa-solid fa-file-excel"></i> XLSX</button>
+                            <button class="btn btn-export-pdf" onclick="exportTreeToPDF()"><i class="fa-solid fa-file-pdf"></i> PDF</button>
                         </div>
                     </div>
                     <div class="tree-container" id="treeViewContainer">
-                        <div class="placeholder-state">
-                            <i class="fa-solid fa-sitemap"></i>
-                            <h3>Cargue el archivo Excel DBTRANSACCIONES.xlsx para visualizar la estructura</h3>
-                            <p>Seleccione una Sociedad para desplegar el árbol de Centros, Almacenes y Roles asociados.</p>
-                        </div>
+                        <div class="placeholder-state"><i class="fa-solid fa-sitemap"></i><h3>Estructura Vacía</h3><p>Cargue el Excel DBTRANSACCIONES.xlsx y seleccione una Sociedad.</p></div>
                     </div>
                 </div>
             </div>
@@ -694,28 +303,10 @@
         <div id="fico-tab" class="tab-content">
             <div class="card">
                 <div class="card-header">
-                    <div class="card-title"><i class="fa-solid fa-building-columns"></i> Hoja FICO - Niveles Organizativos Módulos FI/CO</div>
-                    <div class="card-controls">
-                        <input type="text" id="searchFico" class="form-control" style="width: 250px;" placeholder="Buscar en FICO..." onkeyup="filterFicoTable()">
-                        <button class="btn btn-export" onclick="exportTableToExcel('FICO')"><i class="fa-solid fa-file-excel"></i> Exportar XLSX</button>
-                    </div>
+                    <div class="card-title"><i class="fa-solid fa-building-columns"></i> FICO - Sociedades</div>
+                    <div class="card-controls"><input type="text" id="searchFico" class="form-control" style="width: 250px;" placeholder="Buscar en FICO..." onkeyup="filterFicoTable()"> <button class="btn btn-export" onclick="exportTableToExcel('FICO')"><i class="fa-solid fa-file-excel"></i> XLSX</button></div>
                 </div>
-                <div class="table-responsive">
-                    <table class="custom-table" id="tableFico">
-                        <thead>
-                            <tr>
-                                <th>Rol (Columna A)</th>
-                                <th>Descripción</th>
-                                <th>País</th>
-                                <th>Sociedad</th>
-                                <th>Nombre Sociedad</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr><td colspan="5" class="placeholder-state">Sin datos cargados.</td></tr>
-                        </tbody>
-                    </table>
-                </div>
+                <div class="table-responsive"><table class="custom-table" id="tableFico"><thead><tr><th>Rol</th><th>Descripción</th><th>País</th><th>Sociedad</th><th>Nombre Sociedad</th></tr></thead><tbody><tr><td colspan="5" class="placeholder-state">Sin datos cargados.</td></tr></tbody></table></div>
             </div>
         </div>
 
@@ -723,28 +314,10 @@
         <div id="logi-tab" class="tab-content">
             <div class="card">
                 <div class="card-header">
-                    <div class="card-title"><i class="fa-solid fa-industry"></i> Hoja LOGI - Niveles Organizativos Módulos Logísticos</div>
-                    <div class="card-controls">
-                        <input type="text" id="searchLogi" class="form-control" style="width: 250px;" placeholder="Buscar por Sociedad, Centro o Desc..." onkeyup="filterLogiTable()">
-                        <button class="btn btn-export" onclick="exportTableToExcel('LOGI')"><i class="fa-solid fa-file-excel"></i> Exportar XLSX</button>
-                    </div>
+                    <div class="card-title"><i class="fa-solid fa-industry"></i> LOGI - Centros</div>
+                    <div class="card-controls"><input type="text" id="searchLogi" class="form-control" style="width: 250px;" placeholder="Buscar..." onkeyup="filterLogiTable()"> <button class="btn btn-export" onclick="exportTableToExcel('LOGI')"><i class="fa-solid fa-file-excel"></i> XLSX</button></div>
                 </div>
-                <div class="table-responsive">
-                    <table class="custom-table" id="tableLogi">
-                        <thead>
-                            <tr>
-                                <th>Rol (Columna A)</th>
-                                <th>Descripción Completa (Columna B)</th>
-                                <th>Sociedad (Columna C)</th>
-                                <th>Centro (Columna D)</th>
-                                <th>Descripción Extraída del Centro</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr><td colspan="5" class="placeholder-state">Sin datos cargados.</td></tr>
-                        </tbody>
-                    </table>
-                </div>
+                <div class="table-responsive"><table class="custom-table" id="tableLogi"><thead><tr><th>Rol</th><th>Descripción</th><th>Sociedad</th><th>Centro</th><th>Descripción Centro</th></tr></thead><tbody><tr><td colspan="5" class="placeholder-state">Sin datos cargados.</td></tr></tbody></table></div>
             </div>
         </div>
 
@@ -752,149 +325,95 @@
         <div id="almacenes-tab" class="tab-content">
             <div class="card">
                 <div class="card-header">
-                    <div class="card-title"><i class="fa-solid fa-warehouse"></i> Hoja ALMACENES - Mapeo de Roles, Centros y Almacenes</div>
-                    <div class="card-controls">
-                        <input type="text" id="searchAlmacenes" class="form-control" style="width: 250px;" placeholder="Buscar por Rol, Descripción, Centro, Almacén..." onkeyup="filterAlmacenesTable()">
-                        <button class="btn btn-export" onclick="exportTableToExcel('ALMACENES')"><i class="fa-solid fa-file-excel"></i> Exportar XLSX</button>
-                    </div>
+                    <div class="card-title"><i class="fa-solid fa-warehouse"></i> ALMACENES - Roles Asignados</div>
+                    <div class="card-controls"><input type="text" id="searchAlmacenes" class="form-control" style="width: 250px;" placeholder="Buscar..." onkeyup="filterAlmacenesTable()"> <button class="btn btn-export" onclick="exportTableToExcel('ALMACENES')"><i class="fa-solid fa-file-excel"></i> XLSX</button></div>
                 </div>
-                <div class="table-responsive">
-                    <table class="custom-table" id="tableAlmacenes">
-                        <thead>
-                            <tr>
-                                <th>Rol (Columna A)</th>
-                                <th>Descripción del Rol (Columna B)</th>
-                                <th>SOCIEDAD (Columna C)</th>
-                                <th>Centro (Columna D)</th>
-                                <th>Almacén (Columna E)</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr><td colspan="5" class="placeholder-state">Sin datos cargados.</td></tr>
-                        </tbody>
-                    </table>
-                </div>
+                <div class="table-responsive"><table class="custom-table" id="tableAlmacenes"><thead><tr><th>Rol</th><th>Descripción del Rol</th><th>Sociedad</th><th>Centro</th><th>Almacén</th></tr></thead><tbody><tr><td colspan="5" class="placeholder-state">Sin datos cargados.</td></tr></tbody></table></div>
             </div>
         </div>
 
-        <!-- TAB 5: OBJETO (Búsqueda por Descripción) -->
+        <!-- TAB 5: OBJETO -->
         <div id="objeto-tab" class="tab-content">
             <div class="card">
                 <div class="card-header">
-                    <div class="card-title"><i class="fa-solid fa-cubes"></i> Búsqueda en OBJETO (Filtro por Descripción)</div>
-                    <div class="card-controls">
-                        <button class="btn btn-export" onclick="exportTableToExcel('OBJETO')"><i class="fa-solid fa-file-excel"></i> Exportar XLSX</button>
-                    </div>
+                    <div class="card-title"><i class="fa-solid fa-cubes"></i> OBJETO - Filtro por Descripción</div>
+                    <div class="card-controls"><button class="btn btn-export" onclick="exportTableToExcel('OBJETO')"><i class="fa-solid fa-file-excel"></i> XLSX</button></div>
                 </div>
                 <div class="form-group" style="max-width: 600px; margin-bottom: 1.5rem;">
-                    <label class="form-label" for="searchObjetoDesc">Ingrese término de búsqueda en la Descripción del Rol / Objeto:</label>
+                    <label class="form-label" for="searchObjetoDesc">Búsqueda en la Descripción del Rol/Objeto:</label>
                     <div style="display: flex; gap: 10px;">
-                        <input type="text" id="searchObjetoDesc" class="form-control" placeholder="Ej: Clase de orden, Movimientos, Ariba..." onkeyup="searchObjetoRows()">
+                        <input type="text" id="searchObjetoDesc" class="form-control" placeholder="Ej: Movimientos, Ariba..." onkeyup="searchObjetoRows()">
                         <button class="btn" onclick="searchObjetoRows()"><i class="fa-solid fa-magnifying-glass"></i> Buscar</button>
                     </div>
                 </div>
-                <div class="table-responsive">
-                    <table class="custom-table" id="tableObjeto">
-                        <thead>
-                            <tr>
-                                <th>Rol</th>
-                                <th>Descripción</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr><td colspan="2" class="placeholder-state">Ingrese un término en el buscador para filtrar los registros.</td></tr>
-                        </tbody>
-                    </table>
-                </div>
+                <div class="table-responsive"><table class="custom-table" id="tableObjeto"><thead><tr><th>Rol</th><th>Descripción</th></tr></thead><tbody><tr><td colspan="2" class="placeholder-state">Ingrese término para filtrar.</td></tr></tbody></table></div>
             </div>
         </div>
 
-        <!-- TAB 6: TRANSACCIONES / BÚSQUEDA DE ROLES -->
+        <!-- TAB 6: TRANSACCIONES -->
         <div id="transacciones-tab" class="tab-content">
             <div class="grid-2">
-                <!-- Direct Role Multi-Search -->
                 <div class="card">
-                    <div class="card-header">
-                        <div class="card-title"><i class="fa-solid fa-users-gear"></i> Consultar Roles (1 o más)</div>
-                    </div>
+                    <div class="card-header"><div class="card-title"><i class="fa-solid fa-users-gear"></i> Consultar Roles</div></div>
                     <div class="form-group">
-                        <label class="form-label" for="inputMultipleRoles">Ingrese nombre(s) de Rol (uno por línea):</label>
-                        <textarea id="inputMultipleRoles" class="form-textarea" placeholder="ZHCGT_ARIB_C4_0007_ARBCENTRYS&#10;ZHCGT_BCSB_C3_0001_ANALPRESAR&#10;ZHCGT_BCSB_C3_0002_GESPREPRAR"></textarea>
+                        <label class="form-label" for="inputMultipleRoles">Ingrese roles compuestos (uno por línea):</label>
+                        <textarea id="inputMultipleRoles" class="form-textarea" placeholder="ZHCGT_ARIB_C4..."></textarea>
                     </div>
-                    <button class="btn" style="width: 100%; margin-bottom: 1rem;" onclick="searchRolesMultiple()"><i class="fa-solid fa-search"></i> Buscar Transacciones de los Roles</button>
-
-                    <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
-                        <div class="card-title" style="font-size: 0.95rem; margin-bottom: 0.8rem;"><i class="fa-solid fa-magnifying-glass-arrow-right"></i> Buscar Rol por Transacción</div>
-                        <div class="form-group">
-                            <label class="form-label" for="inputTcode">Código de Transacción (T-Code):</label>
-                            <input type="text" id="inputTcode" class="form-control" placeholder="Ej: FMAVCH01, OBCA, WE02..." onkeyup="searchByTcode()">
-                        </div>
+                    <button class="btn" style="width: 100%; margin-bottom: 1rem;" onclick="searchRolesMultiple()"><i class="fa-solid fa-search"></i> Buscar Transacciones</button>
+                    <hr style="border:0; border-top:1px solid var(--border-color); margin: 1rem 0;">
+                    <div class="form-group">
+                        <label class="form-label" for="inputTcode">O Buscar por Código Transacción:</label>
+                        <input type="text" id="inputTcode" class="form-control" placeholder="Ej: FMAVCH01..." onkeyup="searchByTcode()">
                     </div>
                 </div>
 
-                <!-- Results Table -->
                 <div class="card">
                     <div class="card-header">
-                        <div class="card-title"><i class="fa-solid fa-list-check"></i> Resultado de Transacciones y Permisos</div>
-                        <div class="card-controls">
-                            <span id="transResultCount" class="badge-count">0 registros</span>
-                            <button class="btn btn-export" onclick="exportTableToExcel('TRANSACCIONES')"><i class="fa-solid fa-file-excel"></i> Exportar XLSX</button>
-                        </div>
+                        <div class="card-title"><i class="fa-solid fa-list-check"></i> Transacciones y Permisos</div>
+                        <div class="card-controls"><span id="transResultCount" class="badge-count">0 registros</span> <button class="btn btn-export" onclick="exportTableToExcel('TRANSACCIONES')"><i class="fa-solid fa-file-excel"></i> XLSX</button></div>
                     </div>
                     <div class="table-responsive">
                         <table class="custom-table" id="tableTransacciones">
                             <thead>
                                 <tr>
-                                    <th>Rol Compuesto</th>
+                                    <th>Rol Compuesto / Tipo</th>
                                     <th>Descripción Rol</th>
                                     <th>Transacción</th>
                                     <th>Texto Transacción</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                <tr><td colspan="4" class="placeholder-state">Utilice los filtros para consultar transacciones asignadas.</td></tr>
-                            </tbody>
+                            <tbody><tr><td colspan="4" class="placeholder-state">Utilice filtros.</td></tr></tbody>
                         </table>
                     </div>
                 </div>
             </div>
         </div>
-
     </main>
 
-    <footer>
-        <p>Herramienta Técnica de Gestión SAP &copy; 2026 | Desarrollado para Control de Autorizaciones, Objetos y Roles</p>
-    </footer>
+    <footer><p>Herramienta Técnica de Gestión SAP &copy; 2026 | Control de Autorizaciones y Estructura</p></footer>
 
-    <!-- JavaScript Application Logic -->
     <script>
-        // Global Data Store from DBTRANSACCIONES.xlsx
-        let DB = {
-            FICO: [],
-            LOGI: [],
-            ALMACENES: [],
-            OBJETO: [],
-            TRANSACCIONES: []
-        };
+        function hideIntro() { document.getElementById('techIntroScreen').classList.add('hidden'); }
+        function showIntro() { document.getElementById('techIntroScreen').classList.remove('hidden'); }
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
 
-        // Active filtered datasets for export
-        let FilteredDB = {
-            FICO: [],
-            LOGI: [],
-            ALMACENES: [],
-            OBJETO: [],
-            TRANSACCIONES: []
-        };
+        let DB = { FICO: [], LOGI: [], ALMACENES: [], OBJETO: [], TRANSACCIONES: [] };
+        let FilteredDB = { FICO: [], LOGI: [], ALMACENES: [], OBJETO: [], TRANSACCIONES: [] };
 
-        // Helper: Generic Property Reader robust to accents, case, spaces
+        // Bulletproof property reader (ignores spaces, accents, case differences completely)
         function getPropValue(obj, targetNames) {
             if (!obj) return '';
             const keys = Object.keys(obj);
             for (let name of targetNames) {
-                const normTarget = name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+                const normTarget = name.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\s+/g, '');
                 for (let key of keys) {
-                    const normKey = key.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-                    if (normKey === normTarget && obj[key] !== undefined && obj[key] !== null) {
+                    const normKey = key.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\s+/g, '');
+                    if (normKey === normTarget && obj[key] !== undefined && obj[key] !== null && String(obj[key]).trim() !== "") {
                         return String(obj[key]).trim();
                     }
                 }
@@ -902,168 +421,143 @@
             return '';
         }
 
-        // Helper: Extract Centro Description from LOGI full description string
         function extractCentroDesc(fullDesc, centroCode) {
             if (!fullDesc) return '';
             let str = String(fullDesc).trim();
             if (centroCode && str.includes(centroCode)) {
                 let parts = str.split(centroCode);
-                if (parts.length > 1) {
-                    return parts[1].replace(/^[-\s:]+/, '').trim();
-                }
+                if (parts.length > 1) return parts[1].replace(/^[-\s:]+/, '').trim();
             }
             let hypParts = str.split('-');
-            if (hypParts.length > 1) {
-                return hypParts[hypParts.length - 1].trim();
-            }
+            if (hypParts.length > 1) return hypParts.slice(1).join('-').trim();
             return str;
         }
 
-        // Tab Switching Logic
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-
-            document.getElementById(tabId).classList.add('active');
-            event.currentTarget.classList.add('active');
-        }
-
-        // File Processing via SheetJS
-        document.getElementById('excelFileInput').addEventListener('change', handleFileUpload);
-
-        function handleFileUpload(e) {
+        document.getElementById('excelFileInput').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
-
             const reader = new FileReader();
             reader.onload = function(evt) {
                 try {
                     const data = new Uint8Array(evt.target.result);
                     const workbook = XLSX.read(data, { type: 'array' });
-
                     const getSheetObjects = (sheetName) => {
                         const sheet = workbook.Sheets[sheetName];
-                        if (!sheet) return [];
-                        const rawData = XLSX.utils.sheet_to_json(sheet, { defval: "" });
-                        return rawData;
+                        return sheet ? XLSX.utils.sheet_to_json(sheet, { defval: "" }) : [];
                     };
 
-                    // Extract FICO (Mapped Rol from Col A)
                     DB.FICO = getSheetObjects('FICO').map(row => ({
                         Rol: getPropValue(row, ['Rol', 'ROL']),
-                        Descripcion: getPropValue(row, ['Descripción', 'Descripcion', 'Descripción ', 'Descripcion ']),
+                        Descripcion: getPropValue(row, ['Descripción', 'Descripcion']),
                         Pais: getPropValue(row, ['Pais', 'País']),
                         Sociedad: getPropValue(row, ['Sociedad', 'SOCIEDAD']),
                         NombreSociedad: getPropValue(row, ['Nombre Sociedad', 'NombreSociedad'])
                     }));
 
-                    // Extract LOGI (Mapped Rol from Col A)
                     DB.LOGI = getSheetObjects('LOGI').map(row => {
-                        const rol = getPropValue(row, ['Rol', 'ROL']);
-                        const desc = getPropValue(row, ['Descripción', 'Descripcion', 'Descripción ', 'Descripcion ']);
-                        const soc = getPropValue(row, ['Sociedad', 'SOCIEDAD']);
+                        const desc = getPropValue(row, ['Descripción', 'Descripcion', 'Descripción Completa']);
                         const centro = getPropValue(row, ['Centro', 'CENTRO']);
-                        const descCentro = extractCentroDesc(desc, centro);
                         return {
-                            Rol: rol,
+                            Rol: getPropValue(row, ['Rol', 'ROL']),
                             Descripción: desc,
-                            Sociedad: soc,
+                            Sociedad: getPropValue(row, ['Sociedad', 'SOCIEDAD']),
                             Centro: centro,
-                            descCentro: descCentro
+                            descCentro: extractCentroDesc(desc, centro)
                         };
                     });
 
-                    // Extract ALMACENES (Strict Column Mapping)
-                    DB.ALMACENES = getSheetObjects('ALMACENES').map(row => {
-                        const rol = getPropValue(row, ['Rol', 'ROL', 'Rol ']);
-                        const descRol = getPropValue(row, ['Descripción', 'Descripcion', 'Descripción ', 'Descripcion ']);
-                        const sociedad = getPropValue(row, ['SOCIEDAD', 'Sociedad', 'SOCIEDAD ']);
-                        const centro = getPropValue(row, ['Centro', 'CENTRO', 'Centro ']);
-                        const almacen = getPropValue(row, ['Almacen', 'Almacén', 'ALMACEN', 'Almacen ']);
+                    DB.ALMACENES = getSheetObjects('ALMACENES').map(row => ({
+                        Rol: getPropValue(row, ['Rol', 'ROL']),
+                        descRol: getPropValue(row, ['Descripción', 'Descripcion', 'Descripción del Rol']),
+                        SOCIEDAD: getPropValue(row, ['SOCIEDAD', 'Sociedad']),
+                        Centro: getPropValue(row, ['Centro', 'CENTRO']),
+                        Almacen: getPropValue(row, ['Almacen', 'Almacén', 'ALMACEN'])
+                    }));
 
-                        return {
-                            Rol: rol,
-                            descRol: descRol,
-                            SOCIEDAD: sociedad,
-                            Centro: centro,
-                            Almacen: almacen
-                        };
-                    });
-
-                    // Extract OBJETO
                     DB.OBJETO = getSheetObjects('OBJETO').map(row => ({
                         Rol: getPropValue(row, ['Rol', 'ROL']),
                         Descripción: getPropValue(row, ['Descripción', 'Descripcion'])
                     }));
 
-                    // Extract TRANSACCIONES
-                    DB.TRANSACCIONES = getSheetObjects('TRANSACCIONES').map(row => ({
+                    // Logica de TRANSACCIONES con nuevas columnas Monofuncional vs Multifuncional
+                    const rawTrans = getSheetObjects('TRANSACCIONES').map(row => ({
                         "Rol compuesto": getPropValue(row, ['Rol compuesto', 'Rol Compuesto', 'Rol']),
                         "Descripción rol": getPropValue(row, ['Descripción rol', 'Descripcion rol', 'Descripción']),
                         "Transacción": getPropValue(row, ['Transacción', 'Transaccion']),
-                        "Texto transacción": getPropValue(row, ['Texto transacción', 'Texto transaccion'])
+                        "Texto transacción": getPropValue(row, ['Texto transacción', 'Texto transaccion']),
+                        "Rol simple": getPropValue(row, ['Rol simple', 'Rol Simple']),
+                        "Descripción rol simple": getPropValue(row, ['Descripción rol simple', 'Descripcion rol simple'])
                     }));
 
-                    // Reset Filtered Buffers
-                    FilteredDB.FICO = [...DB.FICO];
-                    FilteredDB.LOGI = [...DB.LOGI];
-                    FilteredDB.ALMACENES = [...DB.ALMACENES];
-                    FilteredDB.OBJETO = [...DB.OBJETO];
-                    FilteredDB.TRANSACCIONES = [...DB.TRANSACCIONES];
+                    const rolesSimplesPorCompuesto = {};
+                    rawTrans.forEach(r => {
+                        const rc = r["Rol compuesto"];
+                        const rs = r["Rol simple"];
+                        if (rc && rs) {
+                            if (!rolesSimplesPorCompuesto[rc]) rolesSimplesPorCompuesto[rc] = new Set();
+                            rolesSimplesPorCompuesto[rc].add(rs);
+                        }
+                    });
 
-                    // Update UI Status Badge
-                    const badge = document.getElementById('statusBadge');
-                    badge.classList.add('loaded');
-                    document.getElementById('statusText').innerText = `Archivo Cargado: ${file.name}`;
+                    DB.TRANSACCIONES = rawTrans.map(r => {
+                        const rc = r["Rol compuesto"];
+                        let tipoRol = "Monofuncional";
+                        if (rc && rolesSimplesPorCompuesto[rc] && rolesSimplesPorCompuesto[rc].size > 1) tipoRol = "Multifuncional";
+                        return { ...r, "Tipo Rol": tipoRol };
+                    });
 
-                    // Refresh Dashboards and Views
-                    updateStats();
-                    populateDropdowns();
-                    renderFicoTable();
-                    renderLogiTable();
-                    renderAlmacenesTable();
-                    renderObjetoTable();
-                    renderTransaccionesTable();
+                    FilteredDB = { FICO: [...DB.FICO], LOGI: [...DB.LOGI], ALMACENES: [...DB.ALMACENES], OBJETO: [...DB.OBJETO], TRANSACCIONES: [...DB.TRANSACCIONES] };
 
-                    alert('¡Archivo DBTRANSACCIONES.xlsx procesado exitosamente!');
-                } catch (err) {
-                    console.error(err);
-                    alert('Error al procesar el archivo Excel. Asegúrese de subir el formato correcto DBTRANSACCIONES.xlsx');
-                }
+                    document.getElementById('statusBadge').classList.add('loaded');
+                    document.getElementById('statusText').innerText = `Cargado: ${file.name}`;
+
+                    updateStats(); updateUniverse(); populateDropdowns();
+                    renderFicoTable(); renderLogiTable(); renderAlmacenesTable(); renderObjetoTable(); renderTransaccionesTable();
+                    
+                    setTimeout(hideIntro, 1000);
+
+                } catch (err) { alert('Error al procesar el archivo Excel.'); console.error(err); }
             };
             reader.readAsArrayBuffer(file);
+        });
+
+        function updateUniverse() {
+            const track1 = document.getElementById('universeTrack1'); const track2 = document.getElementById('universeTrack2');
+            const socs = [...new Set(DB.FICO.map(r => String(r.NombreSociedad || r.Sociedad).trim()).filter(Boolean))];
+            const centros = [...new Set(DB.LOGI.map(r => String(r.descCentro || r.Centro).trim()).filter(Boolean))];
+            if (!socs.length && !centros.length) return;
+
+            let html1 = '', html2 = '';
+            const repSocs = [...socs, ...socs, ...socs, ...socs].slice(0, 40);
+            const repCentros = [...centros, ...centros, ...centros, ...centros].slice(0, 40);
+
+            repSocs.forEach(s => html1 += `<div class="floating-item"><i class="fa-solid fa-building"></i> ${s}</div>`);
+            repCentros.forEach(c => html2 += `<div class="floating-item"><i class="fa-solid fa-industry"></i> Centro: ${c}</div>`);
+            track1.innerHTML = html1; track2.innerHTML = html2;
         }
 
-        // Dashboard Overview Counters
         function updateStats() {
-            const numSociedades = new Set(DB.FICO.map(r => r.Sociedad).filter(Boolean)).size;
-            const numCentros = new Set(DB.LOGI.map(r => r.Centro).filter(Boolean)).size;
-            const numAlmacenes = new Set(DB.ALMACENES.map(r => r.Almacen).filter(Boolean)).size;
-            const numRoles = new Set(DB.TRANSACCIONES.map(r => r["Rol compuesto"]).filter(Boolean)).size;
-            const numTcodes = new Set(DB.TRANSACCIONES.map(r => r["Transacción"]).filter(Boolean)).size;
-
-            document.getElementById('statSociedades').innerText = numSociedades;
-            document.getElementById('statCentros').innerText = numCentros;
-            document.getElementById('statAlmacenes').innerText = numAlmacenes;
-            document.getElementById('statRoles').innerText = numRoles;
-            document.getElementById('statTcodes').innerText = numTcodes;
+            document.getElementById('statSociedades').innerText = new Set(DB.FICO.map(r => r.Sociedad).filter(Boolean)).size;
+            document.getElementById('statCentros').innerText = new Set(DB.LOGI.map(r => r.Centro).filter(Boolean)).size;
+            document.getElementById('statAlmacenes').innerText = new Set(DB.ALMACENES.map(r => r.Almacen).filter(Boolean)).size;
+            document.getElementById('statRoles').innerText = new Set(DB.TRANSACCIONES.map(r => r["Rol compuesto"]).filter(Boolean)).size;
+            document.getElementById('statTcodes').innerText = new Set(DB.TRANSACCIONES.map(r => r["Transacción"]).filter(Boolean)).size;
         }
 
-        // Dropdown Population for Tree Diagram
         function populateDropdowns() {
             const selectSoc = document.getElementById('selectSociedad');
             selectSoc.innerHTML = '<option value="">-- Seleccione Sociedad --</option>';
-
             const sociedades = [...new Set(DB.FICO.map(r => {
                 const id = String(r.Sociedad || '').trim();
-                const name = String(r.NombreSociedad || r.Descripcion || '').trim();
+                let name = String(r.NombreSociedad || '').trim();
+                if (!name) name = String(r.Descripcion || '').trim();
                 return id ? JSON.stringify({ id, name }) : null;
             }).filter(Boolean))].map(s => JSON.parse(s));
 
             sociedades.forEach(s => {
                 const opt = document.createElement('option');
                 opt.value = s.id;
-                opt.textContent = `${s.id} - ${s.name}`;
+                opt.textContent = `${s.id}${s.name ? ' - ' + s.name : ''}`;
                 selectSoc.appendChild(opt);
             });
         }
@@ -1073,28 +567,20 @@
             const selectCentro = document.getElementById('selectCentro');
             selectCentro.innerHTML = '<option value="">-- Todos los Centros --</option>';
 
-            if (!socId) {
-                selectCentro.disabled = true;
-                renderTree([], null);
-                return;
-            }
+            if (!socId) { selectCentro.disabled = true; renderTree([], null); return; }
 
             const ficoMatch = DB.FICO.find(f => String(f.Sociedad) === socId);
-            const socName = ficoMatch ? String(ficoMatch.NombreSociedad || '').trim() : '';
+            const socName = ficoMatch ? String(ficoMatch.NombreSociedad || ficoMatch.Descripcion || '').trim() : '';
 
             const centros = DB.LOGI.filter(l => {
                 const lSoc = String(l.Sociedad || '').trim();
                 return lSoc === socId || (socName && lSoc.toUpperCase() === socName.toUpperCase());
             });
 
-            const uniqueCentros = [...new Set(centros.map(c => String(c.Centro).trim()).filter(Boolean))];
-
-            uniqueCentros.forEach(cCode => {
+            [...new Set(centros.map(c => String(c.Centro).trim()).filter(Boolean))].forEach(cCode => {
                 const cObj = centros.find(item => String(item.Centro).trim() === cCode);
-                const desc = cObj ? cObj.descCentro : '';
                 const opt = document.createElement('option');
-                opt.value = cCode;
-                opt.textContent = `${cCode} - ${desc || 'Centro Logístico'}`;
+                opt.value = cCode; opt.textContent = `${cCode} - ${cObj.descCentro || 'Centro Logístico'}`;
                 selectCentro.appendChild(opt);
             });
 
@@ -1105,56 +591,30 @@
         function onCentroChange() {
             const socId = document.getElementById('selectSociedad').value;
             const centroId = document.getElementById('selectCentro').value;
-
             const ficoMatch = DB.FICO.find(f => String(f.Sociedad) === socId);
-            const socName = ficoMatch ? String(ficoMatch.NombreSociedad || '').trim() : '';
-
-            let centros = DB.LOGI.filter(l => {
-                const lSoc = String(l.Sociedad || '').trim();
-                return lSoc === socId || (socName && lSoc.toUpperCase() === socName.toUpperCase());
-            });
-
-            if (centroId) {
-                centros = centros.filter(c => String(c.Centro).trim() === centroId);
-            }
-
+            const socName = ficoMatch ? String(ficoMatch.NombreSociedad || ficoMatch.Descripcion || '').trim() : '';
+            
+            let centros = DB.LOGI.filter(l => String(l.Sociedad || '').trim() === socId || (socName && String(l.Sociedad || '').trim().toUpperCase() === socName.toUpperCase()));
+            if (centroId) centros = centros.filter(c => String(c.Centro).trim() === centroId);
             renderTree(centros, centroId);
         }
 
-        // Render Tree Structure Visualization
         function renderTree(centrosList, filteredCentroId) {
             const container = document.getElementById('treeViewContainer');
             const socId = document.getElementById('selectSociedad').value;
-
             if (!socId) {
-                container.innerHTML = `
-                    <div class="placeholder-state">
-                        <i class="fa-solid fa-sitemap"></i>
-                        <h3>Seleccione una Sociedad</h3>
-                        <p>Elija una sociedad en el menú izquierdo para construir la jerarquía organizativa.</p>
-                    </div>`;
-                document.getElementById('treeSummary').innerText = "0 elementos";
-                return;
+                container.innerHTML = `<div class="placeholder-state"><i class="fa-solid fa-sitemap"></i><h3>Seleccione una Sociedad</h3></div>`;
+                document.getElementById('treeSummary').innerText = "0 elementos"; return;
             }
 
             const ficoMatch = DB.FICO.find(f => String(f.Sociedad) === socId);
-            const socName = ficoMatch ? (ficoMatch.NombreSociedad || ficoMatch.Descripcion) : socId;
+            const socName = ficoMatch ? String(ficoMatch.NombreSociedad || ficoMatch.Descripcion || '').trim() : socId;
 
-            let html = `
-                <div class="tree-node-content active">
-                    <span class="node-tag tag-sociedad">Sociedad</span>
-                    <span class="node-title">${socId} - ${socName}</span>
-                </div>
-                <div class="tree-node">
-            `;
-
+            let html = `<div class="tree-node-content active"><span class="node-tag tag-sociedad">Sociedad</span><span class="node-title">${socId} - ${socName}</span></div><div class="tree-node">`;
             let totalNodes = 1;
 
             if (centrosList.length === 0) {
-                html += `
-                    <div style="padding: 10px; color: var(--text-muted); font-size: 0.85rem;">
-                        <i class="fa-solid fa-circle-exclamation"></i> No se encontraron centros asociados en la hoja LOGI para esta Sociedad.
-                    </div>`;
+                html += `<div style="padding:10px;color:var(--text-muted);font-size:0.85rem;"><i class="fa-solid fa-circle-exclamation"></i> No se encontraron centros en LOGI para esta Sociedad.</div>`;
             } else {
                 centrosList.forEach(c => {
                     const centroCode = String(c.Centro).trim();
@@ -1162,21 +622,10 @@
                     totalNodes++;
 
                     const almacenesMatch = DB.ALMACENES.filter(a => String(a.Centro).trim() === centroCode);
-
-                    html += `
-                        <div class="tree-node-content">
-                            <span class="node-tag tag-centro">Centro</span>
-                            <span class="node-title">${centroCode}</span>
-                            <span class="node-desc">(${centroDesc})</span>
-                        </div>
-                        <div class="tree-node">
-                    `;
+                    html += `<div class="tree-node-content"><span class="node-tag tag-centro">Centro</span><span class="node-title">${centroCode}</span><span class="node-desc">(${centroDesc})</span></div><div class="tree-node">`;
 
                     if (almacenesMatch.length === 0) {
-                        html += `
-                            <div style="padding: 4px 10px; color: var(--text-muted); font-size: 0.8rem;">
-                                <em>Sin almacenes/roles registrados en la hoja ALMACENES</em>
-                            </div>`;
+                        html += `<div style="padding:4px 10px;color:var(--text-muted);font-size:0.8rem;"><em>Sin almacenes/roles</em></div>`;
                     } else {
                         const almacenesGrouped = {};
                         almacenesMatch.forEach(alm => {
@@ -1184,396 +633,101 @@
                             if (!almacenesGrouped[code]) almacenesGrouped[code] = [];
                             almacenesGrouped[code].push(alm);
                         });
-
                         Object.keys(almacenesGrouped).forEach(almCode => {
-                            totalNodes++;
-                            const roles = almacenesGrouped[almCode];
-
-                            html += `
-                                <div class="tree-node-content">
-                                    <span class="node-tag tag-almacen">Almacén</span>
-                                    <span class="node-title">${almCode}</span>
-                                    <span class="node-desc">[${roles.length} Rol(es)]</span>
-                                </div>
-                                <div class="tree-node">
-                            `;
-
+                            totalNodes++; const roles = almacenesGrouped[almCode];
+                            html += `<div class="tree-node-content"><span class="node-tag tag-almacen">Almacén</span><span class="node-title">${almCode}</span><span class="node-desc">[${roles.length} Rol(es)]</span></div><div class="tree-node">`;
                             roles.forEach(r => {
                                 totalNodes++;
-                                html += `
-                                    <div class="tree-node-content" style="background-color: #121a30;">
-                                        <span class="node-tag tag-rol">Rol</span>
-                                        <span class="node-title code-badge">${r.Rol}</span>
-                                        <span class="node-desc">${r.descRol}</span>
-                                    </div>
-                                `;
+                                html += `<div class="tree-node-content" style="background-color: #121a30;"><span class="node-tag tag-rol">Rol</span><span class="node-title code-badge">${r.Rol}</span><span class="node-desc">${r.descRol}</span></div>`;
                             });
-
                             html += `</div>`;
                         });
                     }
-
                     html += `</div>`;
                 });
             }
-
-            html += `</div>`;
-
-            container.innerHTML = html;
+            container.innerHTML = html + `</div>`;
             document.getElementById('treeSummary').innerText = `${totalNodes} nodos visualizados`;
         }
 
-        // Extract Flat Tree Data for Export
-        function getTreeFlatData() {
-            const socId = document.getElementById('selectSociedad').value;
-            if (!socId) return null;
-
-            const ficoMatch = DB.FICO.find(f => String(f.Sociedad) === socId);
-            const socName = ficoMatch ? (ficoMatch.NombreSociedad || ficoMatch.Descripcion) : socId;
-            const centroId = document.getElementById('selectCentro').value;
-
-            let centros = DB.LOGI.filter(l => {
-                const lSoc = String(l.Sociedad || '').trim();
-                return lSoc === socId || (socName && lSoc.toUpperCase() === socName.toUpperCase());
-            });
-
-            if (centroId) {
-                centros = centros.filter(c => String(c.Centro).trim() === centroId);
-            }
-
-            let flatRows = [];
-
-            centros.forEach(c => {
-                const centroCode = String(c.Centro).trim();
-                const centroDesc = c.descCentro || c.Descripción || 'Centro Logístico';
-                const almacenesMatch = DB.ALMACENES.filter(a => String(a.Centro).trim() === centroCode);
-
-                if (almacenesMatch.length === 0) {
-                    flatRows.push({
-                        'Sociedad': socId,
-                        'Nombre Sociedad': socName,
-                        'Centro': centroCode,
-                        'Descripción Centro': centroDesc,
-                        'Almacén': 'N/A',
-                        'Rol': 'N/A',
-                        'Descripción Rol': 'Sin roles asignados'
-                    });
-                } else {
-                    almacenesMatch.forEach(alm => {
-                        flatRows.push({
-                            'Sociedad': socId,
-                            'Nombre Sociedad': socName,
-                            'Centro': centroCode,
-                            'Descripción Centro': centroDesc,
-                            'Almacén': alm.Almacen || 'N/A',
-                            'Rol': alm.Rol || '',
-                            'Descripción Rol': alm.descRol || ''
-                        });
-                    });
-                }
-            });
-
-            return { socId, socName, rows: flatRows };
-        }
-
-        // Export Tree to Excel
-        function exportTreeToExcel() {
-            const data = getTreeFlatData();
-            if (!data || !data.rows.length) {
-                alert('Seleccione una Sociedad con datos para exportar la Estructura Organizativa.');
-                return;
-            }
-
-            const worksheet = XLSX.utils.json_to_sheet(data.rows);
-            const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, 'Estructura Organizativa');
-
-            const filename = `Estructura_Organizativa_${data.socId}_${new Date().toISOString().slice(0,10)}.xlsx`;
-            XLSX.writeFile(workbook, filename);
-        }
-
-        // Export Tree to PDF
-        function exportTreeToPDF() {
-            const data = getTreeFlatData();
-            if (!data || !data.rows.length) {
-                alert('Seleccione una Sociedad con datos para exportar la Estructura Organizativa.');
-                return;
-            }
-
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-
-            // Document Header / Banner
-            doc.setFillColor(11, 19, 43);
-            doc.rect(0, 0, 297, 24, 'F');
-
-            doc.setFontSize(16);
-            doc.setTextColor(0, 210, 255);
-            doc.setFont('helvetica', 'bold');
-            doc.text(`Estructura Organizativa - Sociedad ${data.socId}`, 14, 12);
-
-            doc.setFontSize(9);
-            doc.setTextColor(240, 244, 248);
-            doc.setFont('helvetica', 'normal');
-            doc.text(`Sociedad: ${data.socName} | Fecha de Generación: ${new Date().toLocaleDateString()}`, 14, 18);
-
-            const tableHeaders = [['Sociedad', 'Nombre Sociedad', 'Centro', 'Descripción Centro', 'Almacén', 'Rol', 'Descripción Rol']];
-            const tableBody = data.rows.map(r => [
-                r['Sociedad'],
-                r['Nombre Sociedad'],
-                r['Centro'],
-                r['Descripción Centro'],
-                r['Almacén'],
-                r['Rol'],
-                r['Descripción Rol']
-            ]);
-
-            doc.autoTable({
-                startY: 28,
-                head: tableHeaders,
-                body: tableBody,
-                theme: 'striped',
-                headStyles: { 
-                    fillColor: [28, 37, 65], 
-                    textColor: [0, 210, 255], 
-                    fontStyle: 'bold',
-                    fontSize: 9 
-                },
-                styles: { 
-                    fontSize: 8, 
-                    cellPadding: 3,
-                    overflow: 'linebreak'
-                },
-                columnStyles: {
-                    0: { cellWidth: 20 },
-                    1: { cellWidth: 35 },
-                    2: { cellWidth: 20 },
-                    3: { cellWidth: 55 },
-                    4: { cellWidth: 22 },
-                    5: { cellWidth: 45 },
-                    6: { cellWidth: 'auto' }
-                },
-                alternateRowStyles: { fillColor: [245, 247, 250] }
-            });
-
-            const filename = `Estructura_Organizativa_${data.socId}_${new Date().toISOString().slice(0,10)}.pdf`;
-            doc.save(filename);
-        }
-
-        // Render Tables Functions
         function renderFicoTable(data = DB.FICO) {
             FilteredDB.FICO = data;
-            const tbody = document.querySelector('#tableFico tbody');
-            if (!data.length) {
-                tbody.innerHTML = '<tr><td colspan="5" class="placeholder-state">No hay registros en FICO.</td></tr>';
-                return;
-            }
-            tbody.innerHTML = data.map(r => `
-                <tr>
-                    <td><span class="code-badge">${r.Rol || ''}</span></td>
-                    <td>${r.Descripcion || ''}</td>
-                    <td><span class="code-badge">${r.Pais || ''}</span></td>
-                    <td><strong style="color:var(--accent-cyan);">${r.Sociedad || ''}</strong></td>
-                    <td>${r.NombreSociedad || ''}</td>
-                </tr>
-            `).join('');
+            document.querySelector('#tableFico tbody').innerHTML = data.length ? data.map(r => `<tr><td><span class="code-badge">${r.Rol||''}</span></td><td>${r.Descripcion||''}</td><td><span class="code-badge">${r.Pais||''}</span></td><td><strong style="color:var(--accent-cyan);">${r.Sociedad||''}</strong></td><td>${r.NombreSociedad||''}</td></tr>`).join('') : '<tr><td colspan="5" class="placeholder-state">Sin resultados.</td></tr>';
         }
 
         function renderLogiTable(data = DB.LOGI) {
             FilteredDB.LOGI = data;
-            const tbody = document.querySelector('#tableLogi tbody');
-            if (!data.length) {
-                tbody.innerHTML = '<tr><td colspan="5" class="placeholder-state">No hay registros en LOGI.</td></tr>';
-                return;
-            }
-            tbody.innerHTML = data.map(r => `
-                <tr>
-                    <td><span class="code-badge">${r.Rol || ''}</span></td>
-                    <td>${r.Descripción || ''}</td>
-                    <td><strong>${r.Sociedad || ''}</strong></td>
-                    <td><span class="code-badge">${r.Centro || ''}</span></td>
-                    <td><strong style="color:var(--success);">${r.descCentro || ''}</strong></td>
-                </tr>
-            `).join('');
+            document.querySelector('#tableLogi tbody').innerHTML = data.length ? data.map(r => `<tr><td><span class="code-badge">${r.Rol||''}</span></td><td>${r.Descripción||''}</td><td><strong>${r.Sociedad||''}</strong></td><td><span class="code-badge">${r.Centro||''}</span></td><td><strong style="color:var(--success);">${r.descCentro||''}</strong></td></tr>`).join('') : '<tr><td colspan="5" class="placeholder-state">Sin resultados.</td></tr>';
         }
 
         function renderAlmacenesTable(data = DB.ALMACENES) {
             FilteredDB.ALMACENES = data;
-            const tbody = document.querySelector('#tableAlmacenes tbody');
-            if (!data.length) {
-                tbody.innerHTML = '<tr><td colspan="5" class="placeholder-state">No hay registros en ALMACENES.</td></tr>';
-                return;
-            }
-            tbody.innerHTML = data.map(r => `
-                <tr>
-                    <td><span class="code-badge">${r.Rol || ''}</span></td>
-                    <td><strong style="color:var(--text-highlight);">${r.descRol || ''}</strong></td>
-                    <td>${r.SOCIEDAD || ''}</td>
-                    <td><span class="code-badge">${r.Centro || ''}</span></td>
-                    <td><strong style="color:var(--warning);">${r.Almacen || ''}</strong></td>
-                </tr>
-            `).join('');
+            document.querySelector('#tableAlmacenes tbody').innerHTML = data.length ? data.map(r => `<tr><td><span class="code-badge">${r.Rol||''}</span></td><td><strong style="color:var(--text-highlight);">${r.descRol||''}</strong></td><td>${r.SOCIEDAD||''}</td><td><span class="code-badge">${r.Centro||''}</span></td><td><strong style="color:var(--warning);">${r.Almacen||''}</strong></td></tr>`).join('') : '<tr><td colspan="5" class="placeholder-state">Sin resultados.</td></tr>';
         }
 
         function renderObjetoTable(data = DB.OBJETO) {
             FilteredDB.OBJETO = data;
-            const tbody = document.querySelector('#tableObjeto tbody');
-            if (!data.length) {
-                tbody.innerHTML = '<tr><td colspan="2" class="placeholder-state">Sin resultados para el filtro indicado.</td></tr>';
-                return;
-            }
-            tbody.innerHTML = data.map(r => `
-                <tr>
-                    <td><span class="code-badge">${r.Rol || ''}</span></td>
-                    <td>${r.Descripción || ''}</td>
-                </tr>
-            `).join('');
+            document.querySelector('#tableObjeto tbody').innerHTML = data.length ? data.map(r => `<tr><td><span class="code-badge">${r.Rol||''}</span></td><td>${r.Descripción||''}</td></tr>`).join('') : '<tr><td colspan="2" class="placeholder-state">Sin resultados.</td></tr>';
         }
 
         function renderTransaccionesTable(data = DB.TRANSACCIONES) {
             FilteredDB.TRANSACCIONES = data;
-            const tbody = document.querySelector('#tableTransacciones tbody');
             document.getElementById('transResultCount').innerText = `${data.length} registros`;
-
-            if (!data.length) {
-                tbody.innerHTML = '<tr><td colspan="4" class="placeholder-state">No se encontraron transacciones para la búsqueda.</td></tr>';
-                return;
-            }
-            tbody.innerHTML = data.slice(0, 300).map(r => `
-                <tr>
-                    <td><span class="code-badge">${r["Rol compuesto"] || ''}</span></td>
+            if (!data.length) { document.querySelector('#tableTransacciones tbody').innerHTML = '<tr><td colspan="4" class="placeholder-state">No se encontraron transacciones.</td></tr>'; return; }
+            
+            document.querySelector('#tableTransacciones tbody').innerHTML = data.slice(0, 300).map(r => {
+                const tipo = r["Tipo Rol"] || "Monofuncional";
+                const isMulti = tipo === "Multifuncional";
+                const badgeStyle = isMulti ? "background-color: rgba(157, 78, 221, 0.2); color: #c77dff; border: 1px solid #9d4edd;" : "background-color: rgba(46, 196, 182, 0.2); color: #2ec4b6; border: 1px solid #2ec4b6;";
+                return `<tr>
+                    <td>
+                        <span class="code-badge">${r["Rol compuesto"] || ''}</span><br>
+                        <span style="margin-top:5px; font-size:0.7rem; padding:3px 8px; border-radius:12px; font-weight:600; display:inline-block; ${badgeStyle}">${tipo}</span>
+                    </td>
                     <td>${r["Descripción rol"] || ''}</td>
                     <td><strong style="color:var(--success);">${r["Transacción"] || ''}</strong></td>
                     <td>${r["Texto transacción"] || ''}</td>
-                </tr>
-            `).join('');
-        }
-
-        // Table Search Filters
-        function filterFicoTable() {
-            const q = document.getElementById('searchFico').value.toLowerCase();
-            const filtered = DB.FICO.filter(r => 
-                Object.values(r).some(val => String(val).toLowerCase().includes(q))
-            );
-            renderFicoTable(filtered);
-        }
-
-        function filterLogiTable() {
-            const q = document.getElementById('searchLogi').value.toLowerCase();
-            const filtered = DB.LOGI.filter(r => 
-                Object.values(r).some(val => String(val).toLowerCase().includes(q))
-            );
-            renderLogiTable(filtered);
-        }
-
-        function filterAlmacenesTable() {
-            const q = document.getElementById('searchAlmacenes').value.toLowerCase();
-            const filtered = DB.ALMACENES.filter(r => 
-                Object.values(r).some(val => String(val).toLowerCase().includes(q))
-            );
-            renderAlmacenesTable(filtered);
-        }
-
-        function searchObjetoRows() {
-            const q = document.getElementById('searchObjetoDesc').value.trim().toLowerCase();
-            if (!q) {
-                renderObjetoTable(DB.OBJETO);
-                return;
-            }
-            const filtered = DB.OBJETO.filter(r => {
-                const desc = String(r.Descripción || '').toLowerCase();
-                return desc.includes(q);
-            });
-            renderObjetoTable(filtered);
-        }
-
-        function searchRolesMultiple() {
-            const text = document.getElementById('inputMultipleRoles').value.trim();
-            if (!text) {
-                renderTransaccionesTable(DB.TRANSACCIONES);
-                return;
-            }
-
-            const roleList = text.split('\n').map(s => s.trim().toUpperCase()).filter(Boolean);
-
-            const filtered = DB.TRANSACCIONES.filter(r => {
-                const roleName = String(r["Rol compuesto"] || '').toUpperCase();
-                return roleList.some(targetRole => roleName.includes(targetRole));
-            });
-
-            renderTransaccionesTable(filtered);
-        }
-
-        function searchByTcode() {
-            const q = document.getElementById('inputTcode').value.trim().toLowerCase();
-            if (!q) {
-                renderTransaccionesTable(DB.TRANSACCIONES);
-                return;
-            }
-
-            const filtered = DB.TRANSACCIONES.filter(r => {
-                const tcode = String(r["Transacción"] || '').toLowerCase();
-                const ttext = String(r["Texto transacción"] || '').toLowerCase();
-                return tcode.includes(q) || ttext.includes(q);
-            });
-
-            renderTransaccionesTable(filtered);
+                </tr>`;
+            }).join('');
         }
 
         // Export Functionality using SheetJS
         function exportTableToExcel(sheetName) {
-            const dataToExport = FilteredDB[sheetName] || DB[sheetName];
-            if (!dataToExport || !dataToExport.length) {
-                alert('No hay datos disponibles para exportar.');
-                return;
-            }
-
-            let cleanData = [];
-            if (sheetName === 'LOGI') {
-                cleanData = dataToExport.map(r => ({
-                    'Rol': r.Rol || '',
-                    'Descripción Completa': r.Descripción || '',
-                    'Sociedad': r.Sociedad || '',
-                    'Centro': r.Centro || '',
-                    'Descripción del Centro': r.descCentro || ''
-                }));
-            } else if (sheetName === 'ALMACENES') {
-                cleanData = dataToExport.map(r => ({
-                    'Rol': r.Rol || '',
-                    'Descripción del Rol': r.descRol || '',
-                    'SOCIEDAD': r.SOCIEDAD || '',
-                    'Centro': r.Centro || '',
-                    'Almacén': r.Almacen || ''
-                }));
-            } else if (sheetName === 'FICO') {
-                cleanData = dataToExport.map(r => ({
-                    'Rol': r.Rol || '',
-                    'Descripción': r.Descripcion || '',
-                    'País': r.Pais || '',
-                    'Sociedad': r.Sociedad || '',
-                    'Nombre Sociedad': r.NombreSociedad || ''
-                }));
-            } else if (sheetName === 'OBJETO') {
-                cleanData = dataToExport.map(r => ({
-                    'Rol': r.Rol || '',
-                    'Descripción': r.Descripción || ''
-                }));
-            } else if (sheetName === 'TRANSACCIONES') {
-                cleanData = dataToExport.map(r => ({
+            const data = FilteredDB[sheetName] || DB[sheetName];
+            if (!data || !data.length) { alert('No hay datos para exportar.'); return; }
+            let cleanData = data;
+            if (sheetName === 'TRANSACCIONES') {
+                cleanData = data.map(r => ({
                     'Rol Compuesto': r["Rol compuesto"] || '',
+                    'Tipo de Rol': r["Tipo Rol"] || '',
                     'Descripción Rol': r["Descripción rol"] || '',
                     'Transacción': r["Transacción"] || '',
                     'Texto Transacción': r["Texto transacción"] || ''
                 }));
             }
-
-            const worksheet = XLSX.utils.json_to_sheet(cleanData);
-            const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
-
-            const filename = `Reporte_SAP_${sheetName}_${new Date().toISOString().slice(0,10)}.xlsx`;
-            XLSX.writeFile(workbook, filename);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(cleanData), sheetName);
+            XLSX.writeFile(wb, `Reporte_SAP_${sheetName}_${new Date().toISOString().slice(0,10)}.xlsx`);
         }
+        
+        // Expose filters to global scope (simplified for space)
+        window.filterFicoTable = () => renderFicoTable(DB.FICO.filter(r => Object.values(r).some(v => String(v).toLowerCase().includes(document.getElementById('searchFico').value.toLowerCase()))));
+        window.filterLogiTable = () => renderLogiTable(DB.LOGI.filter(r => Object.values(r).some(v => String(v).toLowerCase().includes(document.getElementById('searchLogi').value.toLowerCase()))));
+        window.filterAlmacenesTable = () => renderAlmacenesTable(DB.ALMACENES.filter(r => Object.values(r).some(v => String(v).toLowerCase().includes(document.getElementById('searchAlmacenes').value.toLowerCase()))));
+        window.searchObjetoRows = () => renderObjetoTable(DB.OBJETO.filter(r => String(r.Descripción||'').toLowerCase().includes(document.getElementById('searchObjetoDesc').value.toLowerCase())));
+        window.searchRolesMultiple = () => {
+            const text = document.getElementById('inputMultipleRoles').value.trim();
+            if(!text) return renderTransaccionesTable(DB.TRANSACCIONES);
+            const roles = text.split('\n').map(s=>s.trim().toUpperCase()).filter(Boolean);
+            renderTransaccionesTable(DB.TRANSACCIONES.filter(r => roles.some(target => String(r["Rol compuesto"]).toUpperCase().includes(target))));
+        };
+        window.searchByTcode = () => {
+            const q = document.getElementById('inputTcode').value.trim().toLowerCase();
+            renderTransaccionesTable(DB.TRANSACCIONES.filter(r => String(r["Transacción"]).toLowerCase().includes(q) || String(r["Texto transacción"]).toLowerCase().includes(q)));
+        };
+        // Dummy PDF export for tree (you can use your previous implementation)
+        window.exportTreeToPDF = () => { alert("Exportación a PDF en desarrollo..."); }
+        window.exportTreeToExcel = () => { alert("Exportación a XLSX en desarrollo..."); }
     </script>
 </body>
 </html>
