@@ -406,7 +406,7 @@
           <div><h3 id="txDetailTitle" style="color:var(--accent-cyan);margin-bottom:8px">Detalle de transacciones</h3><div id="txDetailSubtitle" style="color:var(--text-muted);font-size:.85rem"></div></div>
           <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button class="btn btn-export" onclick="exportTxDetailExcel()"><i class="fa-solid fa-file-excel"></i> Descargar Excel</button><button class="tx-detail-close" onclick="closeTxDetail()" aria-label="Cerrar detalle">✕ Cerrar</button></div>
         </div>
-        <div class="tx-detail-body"><div id="txDetailSummary" class="tx-detail-summary"></div><div class="table-responsive"><table class="custom-table"><thead><tr><th>#</th><th>Transacción</th><th>Descripción</th></tr></thead><tbody id="txDetailRows"></tbody></table></div></div>
+        <div class="tx-detail-body"><div id="txDetailSummary" class="tx-detail-summary"></div><div class="table-responsive"><table class="custom-table"><thead><tr><th>#</th><th>Transacción</th><th>Descripción</th><th>Rol Simple</th><th>Descripción Rol Simple</th></tr></thead><tbody id="txDetailRows"></tbody></table></div></div>
       </div>
     </div>
     <footer><p>Herramienta Técnica de Gestión SAP &copy; 2026 | Control de Autorizaciones y Estructura</p></footer>
@@ -759,13 +759,15 @@
                     'Tipo Rol': t['Tipo Rol'] || '',
                     'Transacción': code,
                     'Descripción Transacción': t['Texto transacción'] || '',
+                    'Rol Simple': t['Rol simple'] || '',
+                    'Descripción Rol Simple': t['Descripción rol simple'] || '',
                     'Estado': n > 1 ? 'Duplicada' : 'Única',
                     'Apariciones': n
                 };
             });
             const wb = XLSX.utils.book_new();
             const ws = XLSX.utils.json_to_sheet(rows);
-            ws['!cols'] = [{wch:7},{wch:43},{wch:55},{wch:19},{wch:22},{wch:62},{wch:15},{wch:14}];
+            ws['!cols'] = [{wch:7},{wch:43},{wch:55},{wch:19},{wch:22},{wch:62},{wch:45},{wch:65},{wch:15},{wch:14}];
             XLSX.utils.book_append_sheet(wb, ws, 'Detalle Transacciones');
             const resumen = XLSX.utils.aoa_to_sheet([
                 ['Rol compuesto', rol],
@@ -800,8 +802,8 @@
                 const code = String(t['Transacción']).trim();
                 const n = counts.get(code.toUpperCase()) || 0;
                 const repeated = n > 1;
-                return `<tr${repeated ? ' class="tx-duplicate-row"' : ''}><td>${i+1}</td><td><span class="code-badge${repeated ? ' tx-duplicate-code' : ''}">${escapeTxHtml(code)}</span>${repeated ? `<span class="tx-duplicate-label">Repetida ×${n}</span>` : ''}</td><td>${escapeTxHtml(t['Texto transacción'] || '')}</td></tr>`;
-            }).join('') : '<tr><td colspan="3">Sin transacciones registradas.</td></tr>';
+                return `<tr${repeated ? ' class="tx-duplicate-row"' : ''}><td>${i+1}</td><td><span class="code-badge${repeated ? ' tx-duplicate-code' : ''}">${escapeTxHtml(code)}</span>${repeated ? `<span class="tx-duplicate-label">Repetida ×${n}</span>` : ''}</td><td>${escapeTxHtml(t['Texto transacción'] || '')}</td><td><span class="code-badge">${escapeTxHtml(t['Rol simple'] || '')}</span></td><td>${escapeTxHtml(t['Descripción rol simple'] || '')}</td></tr>`;
+            }).join('') : '<tr><td colspan="5">Sin transacciones registradas.</td></tr>';
             document.getElementById('txDetailOverlay').classList.add('open');
             document.querySelector('.tx-detail-close').focus();
         }
