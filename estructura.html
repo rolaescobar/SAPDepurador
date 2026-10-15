@@ -406,7 +406,7 @@
       <div class="tx-detail-dialog" role="dialog" aria-modal="true" aria-labelledby="txDetailTitle">
         <div class="tx-detail-header">
           <div><h3 id="txDetailTitle" style="color:var(--accent-cyan);margin-bottom:8px">Detalle de transacciones</h3><div id="txDetailSubtitle" style="color:var(--text-muted);font-size:.85rem"></div></div>
-          <button class="tx-detail-close" onclick="closeTxDetail()" aria-label="Cerrar detalle">✕ Cerrar</button>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button class="btn btn-export" onclick="exportTxDetailExcel()"><i class="fa-solid fa-file-excel"></i> Descargar Excel</button><button class="tx-detail-close" onclick="closeTxDetail()" aria-label="Cerrar detalle">✕ Cerrar</button></div>
         </div>
         <div class="tx-detail-body"><div id="txDetailSummary" class="tx-detail-summary"></div><div class="table-responsive"><table class="custom-table"><thead><tr><th>#</th><th>Transacción</th><th>Descripción</th></tr></thead><tbody id="txDetailRows"></tbody></table></div></div>
       </div>
@@ -705,6 +705,41 @@
         function escapeTxHtml(value) {
             return String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
         }
+        let txDetailExport = null;
+        function exportTxDetailExcel() {
+            if (!txDetailExport || !txDetailExport.items.length) { alert('No hay transacciones para exportar.'); return; }
+            const { rol, items, counts, uniqueCount, duplicateCount } = txDetailExport;
+            const rows = items.map((t, i) => {
+                const code = String(t['Transacción']).trim();
+                const n = counts.get(code.toUpperCase()) || 0;
+                return {
+                    'No.': i + 1,
+                    'Rol Compuesto': rol,
+                    'Descripción Rol': t['Descripción rol'] || '',
+                    'Tipo Rol': t['Tipo Rol'] || '',
+                    'Transacción': code,
+                    'Descripción Transacción': t['Texto transacción'] || '',
+                    'Estado': n > 1 ? 'Duplicada' : 'Única',
+                    'Apariciones': n
+                };
+            });
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.json_to_sheet(rows);
+            ws['!cols'] = [{wch:7},{wch:43},{wch:55},{wch:19},{wch:22},{wch:62},{wch:15},{wch:14}];
+            XLSX.utils.book_append_sheet(wb, ws, 'Detalle Transacciones');
+            const resumen = XLSX.utils.aoa_to_sheet([
+                ['Rol compuesto', rol],
+                ['Descripción', items[0]['Descripción rol'] || ''],
+                ['Registros totales', items.length],
+                ['Transacciones únicas', uniqueCount],
+                ['Registros duplicados', duplicateCount],
+                ['Códigos repetidos', [...counts.values()].filter(n => n > 1).length],
+                ['Criterio', 'Duplicados = registros adicionales a la primera aparición de cada código.']
+            ]);
+            resumen['!cols'] = [{wch:26},{wch:90}];
+            XLSX.utils.book_append_sheet(wb, resumen, 'Resumen');
+            XLSX.writeFile(wb, `Detalle_TX_${rol.replace(/[^a-zA-Z0-9_-]/g, '_')}.xlsx`);
+        }
         function openTxDetail(rol) {
             const key = String(rol).trim().toUpperCase();
             const matches = DB.TRANSACCIONES.filter(r => String(r['Rol compuesto']).trim().toUpperCase() === key && String(r['Transacción'] || '').trim());
@@ -717,6 +752,7 @@
             const duplicateCount = matches.length - uniqueCount;
             const repeatedCodes = [...counts].filter(([, n]) => n > 1).length;
             const items = [...matches].sort((a, b) => String(a['Transacción']).localeCompare(String(b['Transacción']), 'es', {numeric:true}));
+            txDetailExport = { rol, items, counts, uniqueCount, duplicateCount };
             document.getElementById('txDetailTitle').textContent = rol;
             document.getElementById('txDetailSubtitle').textContent = `${matches[0]?.['Descripción rol'] || ''} · ${matches[0]?.['Tipo Rol'] || ''}`;
             document.getElementById('txDetailSummary').innerHTML = `<strong>${matches.length}</strong> registros en Excel &nbsp;·&nbsp; <strong>${uniqueCount}</strong> transacciones únicas &nbsp;·&nbsp; <strong style="color:${duplicateCount ? '#ffbd59' : '#2ec4b6'}">${duplicateCount}</strong> registros duplicados${duplicateCount ? ` (en ${repeatedCodes} códigos de transacción)` : ''}<div style="font-size:.8rem;color:var(--text-muted)">Los duplicados se conservan y aparecen resaltados en naranja. El conteo de duplicados corresponde a registros adicionales sobre la primera aparición de cada código.</div>`;
