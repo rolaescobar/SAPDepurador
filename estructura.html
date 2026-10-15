@@ -190,6 +190,18 @@
         .stat-info .stat-value { font-size: 1.3rem; font-weight: 700; color: #fff; }
         .stat-info .stat-label { font-size: 0.75rem; color: var(--text-muted); }
         footer { text-align: center; padding: 1rem; color: var(--text-muted); font-size: 0.8rem; border-top: 1px solid var(--border-color); background-color: #080d1f; margin-top: auto; }
+        .tx-detail-overlay { position:fixed; inset:0; background:rgba(0,0,0,.78); z-index:2000; display:none; align-items:center; justify-content:center; padding:20px; }
+        .tx-detail-overlay.open { display:flex; }
+        .tx-detail-dialog { background:var(--bg-card); border:1px solid var(--border-color); border-radius:12px; width:min(900px,100%); max-height:85vh; display:flex; flex-direction:column; box-shadow:0 15px 60px rgba(0,0,0,.6); }
+        .tx-detail-header { padding:20px 24px; display:flex; justify-content:space-between; gap:12px; align-items:flex-start; border-bottom:1px solid var(--border-color); }
+        .tx-detail-body { overflow:auto; padding:20px 24px; }
+        .tx-clickable { cursor:pointer; transition:filter .2s; }
+        .tx-clickable:hover { filter:brightness(1.3); text-decoration:underline; }
+        .tx-duplicate-row { background:rgba(255,159,28,.11) !important; }
+        .tx-duplicate-code { color:#ffbd59 !important; border-color:rgba(255,159,28,.65) !important; background:rgba(255,159,28,.14) !important; }
+        .tx-duplicate-label { color:#ffbd59; font-size:.73rem; font-weight:700; margin-left:8px; }
+        .tx-detail-summary { margin:0 0 14px; padding:12px 14px; border:1px solid var(--border-color); border-radius:8px; color:var(--text-main); line-height:1.7; }
+        .tx-detail-close { border:1px solid var(--border-color); background:var(--bg-input); color:white; border-radius:8px; padding:8px 12px; cursor:pointer; }
     </style>
 </head>
 <body>
@@ -390,6 +402,15 @@
         </div>
     </main>
 
+    <div id="txDetailOverlay" class="tx-detail-overlay" role="presentation" onclick="if(event.target===this) closeTxDetail()">
+      <div class="tx-detail-dialog" role="dialog" aria-modal="true" aria-labelledby="txDetailTitle">
+        <div class="tx-detail-header">
+          <div><h3 id="txDetailTitle" style="color:var(--accent-cyan);margin-bottom:8px">Detalle de transacciones</h3><div id="txDetailSubtitle" style="color:var(--text-muted);font-size:.85rem"></div></div>
+          <button class="tx-detail-close" onclick="closeTxDetail()" aria-label="Cerrar detalle">✕ Cerrar</button>
+        </div>
+        <div class="tx-detail-body"><div id="txDetailSummary" class="tx-detail-summary"></div><div class="table-responsive"><table class="custom-table"><thead><tr><th>#</th><th>Transacción</th><th>Descripción</th></tr></thead><tbody id="txDetailRows"></tbody></table></div></div>
+      </div>
+    </div>
     <footer><p>Herramienta Técnica de Gestión SAP &copy; 2026 | Control de Autorizaciones y Estructura</p></footer>
 
     <script>
@@ -499,11 +520,22 @@
                         }
                     });
 
+                    // Conteo de T-Codes únicos por rol compuesto (sin duplicados).
+                    const transaccionesPorCompuesto = new Map();
+                    rawTrans.forEach(r => {
+                        const rc = r["Rol compuesto"].trim().toUpperCase();
+                        const tx = r["Transacción"].trim().toUpperCase();
+                        if (!rc) return;
+                        if (!transaccionesPorCompuesto.has(rc)) transaccionesPorCompuesto.set(rc, new Set());
+                        if (tx) transaccionesPorCompuesto.get(rc).add(tx);
+                    });
+
                     DB.TRANSACCIONES = rawTrans.map(r => {
                         const rc = r["Rol compuesto"];
                         let tipoRol = "Monofuncional";
                         if (rc && rolesSimplesPorCompuesto[rc] && rolesSimplesPorCompuesto[rc].size > 1) tipoRol = "Multifuncional";
-                        return { ...r, "Tipo Rol": tipoRol };
+                        return { ...r, "Tipo Rol": tipoRol,
+                            "Cantidad Transacciones": transaccionesPorCompuesto.get(rc.trim().toUpperCase())?.size || 0 };
                     });
 
                     FilteredDB = { FICO: [...DB.FICO], LOGI: [...DB.LOGI], ALMACENES: [...DB.ALMACENES], OBJETO: [...DB.OBJETO], TRANSACCIONES: [...DB.TRANSACCIONES] };
@@ -670,19 +702,61 @@
             document.querySelector('#tableObjeto tbody').innerHTML = data.length ? data.map(r => `<tr><td><span class="code-badge">${r.Rol||''}</span></td><td>${r.Descripción||''}</td></tr>`).join('') : '<tr><td colspan="2" class="placeholder-state">Sin resultados.</td></tr>';
         }
 
+        function escapeTxHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        }
+        function openTxDetail(rol) {
+            const key = String(rol).trim().toUpperCase();
+            const matches = DB.TRANSACCIONES.filter(r => String(r['Rol compuesto']).trim().toUpperCase() === key && String(r['Transacción'] || '').trim());
+            const counts = new Map();
+            matches.forEach(r => {
+                const code = String(r['Transacción']).trim().toUpperCase();
+                counts.set(code, (counts.get(code) || 0) + 1);
+            });
+            const uniqueCount = counts.size;
+            const duplicateCount = matches.length - uniqueCount;
+            const repeatedCodes = [...counts].filter(([, n]) => n > 1).length;
+            const items = [...matches].sort((a, b) => String(a['Transacción']).localeCompare(String(b['Transacción']), 'es', {numeric:true}));
+            document.getElementById('txDetailTitle').textContent = rol;
+            document.getElementById('txDetailSubtitle').textContent = `${matches[0]?.['Descripción rol'] || ''} · ${matches[0]?.['Tipo Rol'] || ''}`;
+            document.getElementById('txDetailSummary').innerHTML = `<strong>${matches.length}</strong> registros en Excel &nbsp;·&nbsp; <strong>${uniqueCount}</strong> transacciones únicas &nbsp;·&nbsp; <strong style="color:${duplicateCount ? '#ffbd59' : '#2ec4b6'}">${duplicateCount}</strong> registros duplicados${duplicateCount ? ` (en ${repeatedCodes} códigos de transacción)` : ''}<div style="font-size:.8rem;color:var(--text-muted)">Los duplicados se conservan y aparecen resaltados en naranja. El conteo de duplicados corresponde a registros adicionales sobre la primera aparición de cada código.</div>`;
+            document.getElementById('txDetailRows').innerHTML = items.length ? items.map((t,i) => {
+                const code = String(t['Transacción']).trim();
+                const n = counts.get(code.toUpperCase()) || 0;
+                const repeated = n > 1;
+                return `<tr${repeated ? ' class="tx-duplicate-row"' : ''}><td>${i+1}</td><td><span class="code-badge${repeated ? ' tx-duplicate-code' : ''}">${escapeTxHtml(code)}</span>${repeated ? `<span class="tx-duplicate-label">Repetida ×${n}</span>` : ''}</td><td>${escapeTxHtml(t['Texto transacción'] || '')}</td></tr>`;
+            }).join('') : '<tr><td colspan="3">Sin transacciones registradas.</td></tr>';
+            document.getElementById('txDetailOverlay').classList.add('open');
+            document.querySelector('.tx-detail-close').focus();
+        }
+        function closeTxDetail() { document.getElementById('txDetailOverlay').classList.remove('open'); }
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') closeTxDetail(); });
+        document.querySelector('#tableTransacciones tbody').addEventListener('click', e => {
+            const badge = e.target.closest('[data-tx-rol]');
+            if (badge) openTxDetail(badge.dataset.txRol);
+        });
         function renderTransaccionesTable(data = DB.TRANSACCIONES) {
-            FilteredDB.TRANSACCIONES = data;
+            // Priorizar roles con menos transacciones internas (únicas).
+            const ordenados = [...data].sort((a, b) =>
+                (Number(a["Cantidad Transacciones"]) || 0) - (Number(b["Cantidad Transacciones"]) || 0)
+                || String(a["Rol compuesto"] || '').localeCompare(String(b["Rol compuesto"] || ''))
+            );
+            FilteredDB.TRANSACCIONES = ordenados;
             document.getElementById('transResultCount').innerText = `${data.length} registros`;
             if (!data.length) { document.querySelector('#tableTransacciones tbody').innerHTML = '<tr><td colspan="4" class="placeholder-state">No se encontraron transacciones.</td></tr>'; return; }
             
-            document.querySelector('#tableTransacciones tbody').innerHTML = data.slice(0, 300).map(r => {
+            const minimo = Math.min(...ordenados.map(r => Number(r["Cantidad Transacciones"]) || 0));
+            document.querySelector('#tableTransacciones tbody').innerHTML = ordenados.slice(0, 300).map(r => {
+                const esRecomendado = (Number(r["Cantidad Transacciones"]) || 0) === minimo;
                 const tipo = r["Tipo Rol"] || "Monofuncional";
                 const isMulti = tipo === "Multifuncional";
-                const badgeStyle = isMulti ? "background-color: rgba(157, 78, 221, 0.2); color: #c77dff; border: 1px solid #9d4edd;" : "background-color: rgba(46, 196, 182, 0.2); color: #2ec4b6; border: 1px solid #2ec4b6;";
-                return `<tr>
+                const badgeStyle = esRecomendado
+                    ? "background-color: rgba(46, 196, 182, 0.28); color: #6fffe9; border: 1px solid #2ec4b6; box-shadow: 0 0 0 1px rgba(46,196,182,.2);"
+                    : isMulti ? "background-color: rgba(157, 78, 221, 0.2); color: #c77dff; border: 1px solid #9d4edd;" : "background-color: rgba(46, 196, 182, 0.2); color: #2ec4b6; border: 1px solid #2ec4b6;";
+                return `<tr${esRecomendado ? ' style="background-color:rgba(46,196,182,0.08);"' : ''}>
                     <td>
                         <span class="code-badge">${r["Rol compuesto"] || ''}</span><br>
-                        <span style="margin-top:5px; font-size:0.7rem; padding:3px 8px; border-radius:12px; font-weight:600; display:inline-block; ${badgeStyle}">${tipo}</span>
+                        <button type="button" class="tx-clickable" data-tx-rol="${escapeTxHtml(r["Rol compuesto"])}" title="Ver todas las transacciones del rol" style="margin-top:5px; font-size:0.7rem; padding:3px 8px; border-radius:12px; font-weight:600; display:inline-block; ${badgeStyle}">${tipo} (${r["Cantidad Transacciones"]} TX) <i class="fa-solid fa-eye"></i></button>${esRecomendado ? '<span style="margin-left:7px;color:#6fffe9;font-size:.72rem;font-weight:700;white-space:nowrap;"><i class="fa-solid fa-star"></i> Menor cantidad de TX</span>' : ''}
                     </td>
                     <td>${r["Descripción rol"] || ''}</td>
                     <td><strong style="color:var(--success);">${r["Transacción"] || ''}</strong></td>
@@ -700,6 +774,7 @@
                 cleanData = data.map(r => ({
                     'Rol Compuesto': r["Rol compuesto"] || '',
                     'Tipo de Rol': r["Tipo Rol"] || '',
+                    'Cantidad Transacciones': r["Cantidad Transacciones"] ?? 0,
                     'Descripción Rol': r["Descripción rol"] || '',
                     'Transacción': r["Transacción"] || '',
                     'Texto Transacción': r["Texto transacción"] || ''
