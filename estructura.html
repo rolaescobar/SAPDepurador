@@ -202,6 +202,15 @@
         .tx-duplicate-label { color:#ffbd59; font-size:.73rem; font-weight:700; margin-left:8px; }
         .tx-detail-summary { margin:0 0 14px; padding:12px 14px; border:1px solid var(--border-color); border-radius:8px; color:var(--text-main); line-height:1.7; }
         .tx-detail-close { border:1px solid var(--border-color); background:var(--bg-input); color:white; border-radius:8px; padding:8px 12px; cursor:pointer; }
+
+        /* Globo global abstracto: sin sociedades, centros ni datos internos */
+        .globe-stage {height: 300px;max-width: 780px;margin: 12px auto 0;position:relative;overflow:hidden;}
+        #globalNetworkCanvas {display:block;width:100%;height:270px;}
+        .globe-caption {position:absolute;bottom:4px;left:0;right:0;display:flex;justify-content:center;align-items:center;gap:9px;color:#69b9d7;font-size:.72rem;letter-spacing:2px;font-weight:600;}
+        .globe-caption i {color:#00d2ff;}
+        .globe-pulse {width:7px;height:7px;background:#2ec4b6;border-radius:50%;box-shadow:0 0 12px #2ec4b6;animation:globePulse 2s ease-in-out infinite;}
+        @keyframes globePulse {50%{opacity:.3;transform:scale(.7)}}
+        @media(max-width:600px){.globe-stage{height:250px}#globalNetworkCanvas{height:220px}.globe-caption{font-size:.57rem;letter-spacing:1px}}
     </style>
 </head>
 <body>
@@ -216,20 +225,9 @@
             <h1 style="font-size: 2.8rem; font-weight: 700; margin: 0.5rem 0; letter-spacing: 1px;">DBTRANSACCIONES ENTERPRISE</h1>
             <p style="color: var(--text-muted); font-size: 1rem; letter-spacing: 1px;">SISTEMA INTEGRAL DE CONTROL DE ROLES, SOCIEDADES Y CENTROS LOGÍSTICOS</p>
 
-            <div class="universe-container">
-                <div class="universe-track" id="universeTrack1">
-                    <!-- Default mocks, replaced dynamically on load -->
-                    <div class="floating-item"><i class="fa-solid fa-building"></i> 1080 - BONLAC</div>
-                    <div class="floating-item"><i class="fa-solid fa-industry"></i> Centro: LA NUEVA</div>
-                    <div class="floating-item"><i class="fa-solid fa-building"></i> 1590 - DEL MONTE</div>
-                    <div class="floating-item"><i class="fa-solid fa-industry"></i> Centro: HELISA</div>
-                </div>
-                <div class="universe-track track-reverse" id="universeTrack2">
-                    <div class="floating-item"><i class="fa-solid fa-industry"></i> Centro: Escuintla</div>
-                    <div class="floating-item"><i class="fa-solid fa-building"></i> 1300 - DISTCASA</div>
-                    <div class="floating-item"><i class="fa-solid fa-building"></i> 8050 - GRACI</div>
-                    <div class="floating-item"><i class="fa-solid fa-industry"></i> Centro: Quetzaltenango</div>
-                </div>
+            <div class="globe-stage" aria-label="Visualización animada de una red global interconectada">
+                <canvas id="globalNetworkCanvas" aria-hidden="true"></canvas>
+                <div class="globe-caption"><i class="fa-solid fa-globe"></i> RED GLOBAL DE AUTORIZACIONES <span class="globe-pulse"></span> CONECTADA</div>
             </div>
 
             <button class="btn-intro" onclick="hideIntro()">
@@ -543,7 +541,7 @@
                     document.getElementById('statusBadge').classList.add('loaded');
                     document.getElementById('statusText').innerText = `Cargado: ${file.name}`;
 
-                    updateStats(); updateUniverse(); populateDropdowns();
+                    updateStats(); populateDropdowns();
                     renderFicoTable(); renderLogiTable(); renderAlmacenesTable(); renderObjetoTable(); renderTransaccionesTable();
                     
                     setTimeout(hideIntro, 1000);
@@ -553,20 +551,62 @@
             reader.readAsArrayBuffer(file);
         });
 
-        function updateUniverse() {
-            const track1 = document.getElementById('universeTrack1'); const track2 = document.getElementById('universeTrack2');
-            const socs = [...new Set(DB.FICO.map(r => String(r.NombreSociedad || r.Sociedad).trim()).filter(Boolean))];
-            const centros = [...new Set(DB.LOGI.map(r => String(r.descCentro || r.Centro).trim()).filter(Boolean))];
-            if (!socs.length && !centros.length) return;
-
-            let html1 = '', html2 = '';
-            const repSocs = [...socs, ...socs, ...socs, ...socs].slice(0, 40);
-            const repCentros = [...centros, ...centros, ...centros, ...centros].slice(0, 40);
-
-            repSocs.forEach(s => html1 += `<div class="floating-item"><i class="fa-solid fa-building"></i> ${s}</div>`);
-            repCentros.forEach(c => html2 += `<div class="floating-item"><i class="fa-solid fa-industry"></i> Centro: ${c}</div>`);
-            track1.innerHTML = html1; track2.innerHTML = html2;
-        }
+        // Visualización decorativa: no lee ni expone información del Excel.
+        (function animateGlobalNetwork() {
+            const canvas = document.getElementById('globalNetworkCanvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return;
+            const points = Array.from({length: 125}, (_, i) => {
+                const y = 1 - 2 * (i + 0.5) / 125;
+                const angle = i * Math.PI * (3 - Math.sqrt(5));
+                const radius = Math.sqrt(1 - y*y);
+                return {x: Math.cos(angle)*radius, y, z: Math.sin(angle)*radius};
+            });
+            const edges = [];
+            for (let i = 0; i < points.length; i++) {
+                const neighbors = points.map((p,j) => ({j,d:(p.x-points[i].x)**2+(p.y-points[i].y)**2+(p.z-points[i].z)**2}))
+                    .filter(v=>v.j!==i).sort((a,b)=>a.d-b.d).slice(0,3);
+                neighbors.forEach(n=>{ if(n.j>i) edges.push([i,n.j]); });
+            }
+            let frame = 0;
+            function draw() {
+                const rect = canvas.getBoundingClientRect();
+                if (!rect.width || !rect.height) { requestAnimationFrame(draw); return; }
+                const ratio = Math.min(window.devicePixelRatio || 1, 2);
+                const w = Math.round(rect.width*ratio), h = Math.round(rect.height*ratio);
+                if (canvas.width!==w || canvas.height!==h) {canvas.width=w;canvas.height=h;}
+                ctx.setTransform(ratio,0,0,ratio,0,0);
+                const W=rect.width,H=rect.height,cx=W/2,cy=H/2,r=Math.min(H*.43,W*.26);
+                ctx.clearRect(0,0,W,H);
+                const glow=ctx.createRadialGradient(cx,cy,0,cx,cy,r*1.5);
+                glow.addColorStop(0,'rgba(0,210,255,.10)');glow.addColorStop(.72,'rgba(0,123,255,.045)');glow.addColorStop(1,'rgba(0,0,0,0)');
+                ctx.fillStyle=glow;ctx.fillRect(0,0,W,H);
+                const t=frame*.0033, tilt=.25;
+                const projected=points.map(p=>{
+                    const x=p.x*Math.cos(t)-p.z*Math.sin(t), z=p.x*Math.sin(t)+p.z*Math.cos(t);
+                    const y=p.y*Math.cos(tilt)-z*Math.sin(tilt), zz=p.y*Math.sin(tilt)+z*Math.cos(tilt);
+                    return {x:cx+x*r,y:cy+y*r,z:zz};
+                });
+                ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.strokeStyle='rgba(0,210,255,.20)';ctx.lineWidth=1;ctx.stroke();
+                edges.forEach(([i,j])=>{
+                    const a=projected[i],b=projected[j];
+                    const alpha=Math.max(.04,.12+.25*((a.z+b.z+2)/4));
+                    ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);
+                    ctx.strokeStyle=`rgba(0,195,255,${alpha})`;ctx.lineWidth=.8;ctx.stroke();
+                });
+                projected.forEach((p,i)=>{
+                    const alpha=.24+.76*(p.z+1)/2;
+                    ctx.beginPath();ctx.arc(p.x,p.y,(i%9===0?2.7:1.65),0,Math.PI*2);
+                    ctx.fillStyle=`rgba(0,225,255,${alpha})`;ctx.fill();
+                });
+                frame++;
+                if (document.hidden || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+                requestAnimationFrame(draw);
+            }
+            draw();
+            document.addEventListener('visibilitychange',()=>{if(!document.hidden)requestAnimationFrame(draw);});
+        })();
 
         function updateStats() {
             document.getElementById('statSociedades').innerText = new Set(DB.FICO.map(r => r.Sociedad).filter(Boolean)).size;
