@@ -508,16 +508,6 @@
                         "Descripción rol simple": getPropValue(row, ['Descripción rol simple', 'Descripcion rol simple'])
                     }));
 
-                    const rolesSimplesPorCompuesto = {};
-                    rawTrans.forEach(r => {
-                        const rc = r["Rol compuesto"];
-                        const rs = r["Rol simple"];
-                        if (rc && rs) {
-                            if (!rolesSimplesPorCompuesto[rc]) rolesSimplesPorCompuesto[rc] = new Set();
-                            rolesSimplesPorCompuesto[rc].add(rs);
-                        }
-                    });
-
                     // Conteo de T-Codes únicos por rol compuesto (sin duplicados).
                     const transaccionesPorCompuesto = new Map();
                     rawTrans.forEach(r => {
@@ -530,10 +520,10 @@
 
                     DB.TRANSACCIONES = rawTrans.map(r => {
                         const rc = r["Rol compuesto"];
-                        let tipoRol = "Monofuncional";
-                        if (rc && rolesSimplesPorCompuesto[rc] && rolesSimplesPorCompuesto[rc].size > 1) tipoRol = "Multifuncional";
+                        const cantidadTx = transaccionesPorCompuesto.get(rc.trim().toUpperCase())?.size || 0;
+                        const tipoRol = cantidadTx === 1 ? "Monofuncional" : "Multifuncional";
                         return { ...r, "Tipo Rol": tipoRol,
-                            "Cantidad Transacciones": transaccionesPorCompuesto.get(rc.trim().toUpperCase())?.size || 0 };
+                            "Cantidad Transacciones": cantidadTx };
                     });
 
                     FilteredDB = { FICO: [...DB.FICO], LOGI: [...DB.LOGI], ALMACENES: [...DB.ALMACENES], OBJETO: [...DB.OBJETO], TRANSACCIONES: [...DB.TRANSACCIONES] };
