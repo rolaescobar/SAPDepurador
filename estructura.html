@@ -522,8 +522,7 @@
                         const rc = r["Rol compuesto"];
                         const cantidadTx = transaccionesPorCompuesto.get(rc.trim().toUpperCase())?.size || 0;
                         const tipoRol = cantidadTx === 1 ? "Monofuncional" : "Multifuncional";
-                        return { ...r, "Tipo Rol": tipoRol,
-                            "Cantidad Transacciones": cantidadTx };
+                        return { ...r, "Tipo Rol": tipoRol, "Cantidad Transacciones": cantidadTx };
                     });
 
                     FilteredDB = { FICO: [...DB.FICO], LOGI: [...DB.LOGI], ALMACENES: [...DB.ALMACENES], OBJETO: [...DB.OBJETO], TRANSACCIONES: [...DB.TRANSACCIONES] };
@@ -642,7 +641,8 @@
             [...new Set(centros.map(c => String(c.Centro).trim()).filter(Boolean))].forEach(cCode => {
                 const cObj = centros.find(item => String(item.Centro).trim() === cCode);
                 const opt = document.createElement('option');
-                opt.value = cCode; opt.textContent = `${cCode} - ${cObj.descCentro || 'Centro Logístico'}`;
+                opt.value = cCode;
+                opt.textContent = `${cCode} - ${cObj.descCentro || 'Centro Logístico'}`;
                 selectCentro.appendChild(opt);
             });
 
@@ -710,6 +710,84 @@
             }
             container.innerHTML = html + `</div>`;
             document.getElementById('treeSummary').innerText = `${totalNodes} nodos visualizados`;
+        }
+
+        // Construye las filas aplanadas de la estructura organizativa seleccionada
+        function buildTreeExportData() {
+            const socId = document.getElementById('selectSociedad').value;
+            if (!socId) return null;
+
+            const centroId = document.getElementById('selectCentro').value;
+            const ficoMatch = DB.FICO.find(f => String(f.Sociedad).trim() === socId);
+            const socName = ficoMatch ? String(ficoMatch.NombreSociedad || ficoMatch.Descripcion || '').trim() : socId;
+            const pais = ficoMatch ? String(ficoMatch.Pais || '').trim() : '';
+            const rolFico = ficoMatch ? String(ficoMatch.Rol || '').trim() : '';
+
+            let centros = DB.LOGI.filter(l => {
+                const lSoc = String(l.Sociedad || '').trim();
+                return lSoc === socId || (socName && lSoc.toUpperCase() === socName.toUpperCase());
+            });
+
+            if (centroId) {
+                centros = centros.filter(c => String(c.Centro).trim() === centroId);
+            }
+
+            const rows = [];
+
+            if (centros.length === 0) {
+                rows.push({
+                    'Sociedad': socId,
+                    'Nombre Sociedad': socName,
+                    'País': pais,
+                    'Rol FICO': rolFico,
+                    'Centro': 'Sin centros asignados',
+                    'Descripción Centro': '',
+                    'Rol LOGI (Centro)': '',
+                    'Almacén': '',
+                    'Rol Almacén': '',
+                    'Descripción Rol Almacén': ''
+                });
+            } else {
+                centros.forEach(c => {
+                    const centroCode = String(c.Centro || '').trim();
+                    const centroDesc = c.descCentro || c.Descripción || 'Centro Logístico';
+                    const rolLogi = String(c.Rol || '').trim();
+
+                    const almacenesMatch = DB.ALMACENES.filter(a => String(a.Centro || '').trim() === centroCode);
+
+                    if (almacenesMatch.length === 0) {
+                        rows.push({
+                            'Sociedad': socId,
+                            'Nombre Sociedad': socName,
+                            'País': pais,
+                            'Rol FICO': rolFico,
+                            'Centro': centroCode,
+                            'Descripción Centro': centroDesc,
+                            'Rol LOGI (Centro)': rolLogi,
+                            'Almacén': 'Sin almacenes',
+                            'Rol Almacén': '',
+                            'Descripción Rol Almacén': ''
+                        });
+                    } else {
+                        almacenesMatch.forEach(alm => {
+                            rows.push({
+                                'Sociedad': socId,
+                                'Nombre Sociedad': socName,
+                                'País': pais,
+                                'Rol FICO': rolFico,
+                                'Centro': centroCode,
+                                'Descripción Centro': centroDesc,
+                                'Rol LOGI (Centro)': rolLogi,
+                                'Almacén': alm.Almacen || 'N/A',
+                                'Rol Almacén': alm.Rol || '',
+                                'Descripción Rol Almacén': alm.descRol || ''
+                            });
+                        });
+                    }
+                });
+            }
+
+            return { socId, socName, centroId, rows, centrosCount: centros.length };
         }
 
         function renderFicoTable(data = DB.FICO) {
@@ -853,7 +931,7 @@
             XLSX.writeFile(wb, `Reporte_SAP_${sheetName}_${new Date().toISOString().slice(0,10)}.xlsx`);
         }
         
-        // Expose filters to global scope (simplified for space)
+        // Expose filters to global scope
         window.filterFicoTable = () => renderFicoTable(DB.FICO.filter(r => Object.values(r).some(v => String(v).toLowerCase().includes(document.getElementById('searchFico').value.toLowerCase()))));
         window.filterLogiTable = () => renderLogiTable(DB.LOGI.filter(r => Object.values(r).some(v => String(v).toLowerCase().includes(document.getElementById('searchLogi').value.toLowerCase()))));
         window.filterAlmacenesTable = () => renderAlmacenesTable(DB.ALMACENES.filter(r => Object.values(r).some(v => String(v).toLowerCase().includes(document.getElementById('searchAlmacenes').value.toLowerCase()))));
@@ -868,9 +946,101 @@
             const q = document.getElementById('inputTcode').value.trim().toLowerCase();
             renderTransaccionesTable(DB.TRANSACCIONES.filter(r => String(r["Transacción"]).toLowerCase().includes(q) || String(r["Texto transacción"]).toLowerCase().includes(q)));
         };
-        // Dummy PDF export for tree (you can use your previous implementation)
-        window.exportTreeToPDF = () => { alert("Exportación a PDF en desarrollo..."); }
-        window.exportTreeToExcel = () => { alert("Exportación a XLSX en desarrollo..."); }
+
+        // Exportación de Estructura Organizativa a Excel (XLSX)
+        window.exportTreeToExcel = () => {
+            const exportObj = buildTreeExportData();
+            if (!exportObj) {
+                alert('Por favor, cargue el archivo Excel y seleccione una Sociedad antes de exportar.');
+                return;
+            }
+
+            const { socId, socName, centroId, rows, centrosCount } = exportObj;
+            const wb = XLSX.utils.book_new();
+
+            // Hoja 1: Detalle de Estructura Organizativa
+            const ws = XLSX.utils.json_to_sheet(rows);
+            ws['!cols'] = [
+                { wch: 12 }, // Sociedad
+                { wch: 30 }, // Nombre Sociedad
+                { wch: 10 }, // País
+                { wch: 32 }, // Rol FICO
+                { wch: 12 }, // Centro
+                { wch: 32 }, // Descripción Centro
+                { wch: 32 }, // Rol LOGI (Centro)
+                { wch: 14 }, // Almacén
+                { wch: 35 }, // Rol Almacén
+                { wch: 48 }  // Descripción Rol Almacén
+            ];
+            XLSX.utils.book_append_sheet(wb, ws, 'Estructura Organizativa');
+
+            // Hoja 2: Resumen Ejecutivo
+            const uniqueAlmacenes = new Set(rows.map(r => r['Almacén']).filter(a => a && a !== 'Sin almacenes')).size;
+            const uniqueRolesAlm = new Set(rows.map(r => r['Rol Almacén']).filter(Boolean)).size;
+
+            const resumenData = [
+                ['Parámetro', 'Valor'],
+                ['Sociedad Seleccionada', `${socId} - ${socName}`],
+                ['Filtro de Centro', centroId ? centroId : 'Todos los Centros'],
+                ['Total Centros Exportados', centrosCount],
+                ['Total Almacenes Únicos', uniqueAlmacenes],
+                ['Total Roles de Almacén Únicos', uniqueRolesAlm],
+                ['Total Filas de Detalle', rows.length],
+                ['Fecha de Exportación', new Date().toLocaleString('es-GT')]
+            ];
+            const wsResumen = XLSX.utils.aoa_to_sheet(resumenData);
+            wsResumen['!cols'] = [{ wch: 30 }, { wch: 45 }];
+            XLSX.utils.book_append_sheet(wb, wsResumen, 'Resumen');
+
+            const fileSuffix = `${socId}${centroId ? '_' + centroId : ''}_${new Date().toISOString().slice(0, 10)}`;
+            XLSX.writeFile(wb, `Estructura_Organizativa_SAP_${fileSuffix}.xlsx`);
+        };
+
+        // Exportación de Estructura Organizativa a PDF
+        window.exportTreeToPDF = () => {
+            const exportObj = buildTreeExportData();
+            if (!exportObj) {
+                alert('Por favor, cargue el archivo Excel y seleccione una Sociedad antes de exportar.');
+                return;
+            }
+
+            const { socId, socName, centroId, rows } = exportObj;
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+
+            doc.setFontSize(14);
+            doc.setTextColor(10, 17, 40);
+            doc.text(`Estructura Organizativa SAP - Sociedad: ${socId} (${socName})`, 40, 35);
+
+            doc.setFontSize(10);
+            doc.setTextColor(100, 100, 100);
+            doc.text(`Filtro Centro: ${centroId ? centroId : 'Todos los Centros'} | Fecha: ${new Date().toLocaleDateString('es-GT')} | Registros: ${rows.length}`, 40, 52);
+
+            const tableColumn = ['Sociedad', 'Rol FICO', 'Centro', 'Descripción Centro', 'Rol LOGI', 'Almacén', 'Rol Almacén', 'Descripción Rol Almacén'];
+            const tableRows = rows.map(r => [
+                r['Sociedad'],
+                r['Rol FICO'],
+                r['Centro'],
+                r['Descripción Centro'],
+                r['Rol LOGI (Centro)'],
+                r['Almacén'],
+                r['Rol Almacén'],
+                r['Descripción Rol Almacén']
+            ]);
+
+            doc.autoTable({
+                head: [tableColumn],
+                body: tableRows,
+                startY: 65,
+                theme: 'grid',
+                styles: { fontSize: 8, cellPadding: 4 },
+                headStyles: { fillColor: [19, 28, 56], textColor: [0, 210, 255], fontStyle: 'bold' },
+                alternateRowStyles: { fillColor: [245, 247, 250] }
+            });
+
+            const fileSuffix = `${socId}${centroId ? '_' + centroId : ''}_${new Date().toISOString().slice(0, 10)}`;
+            doc.save(`Estructura_Organizativa_SAP_${fileSuffix}.pdf`);
+        };
     </script>
 </body>
 </html>
