@@ -2,116 +2,558 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Validador de Conflictos SAP - Final</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Validador SoD SAP | Cruce de Conflictos y Roles</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- SheetJS para leer y exportar Excel -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        body { background-color: #0a192f; color: #e6f1ff; font-family: 'Segoe UI', sans-serif; padding: 20px; }
-        .container { max-width: 1000px; margin: auto; background: #112240; padding: 25px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-        h2 { color: #64ffda; border-bottom: 2px solid #233554; padding-bottom: 10px; }
-        .upload-section { padding: 15px; border: 1px dashed #64ffda; margin-bottom: 20px; }
-        button { background: #64ffda; color: #0a192f; border: none; padding: 12px 20px; cursor: pointer; font-weight: bold; margin: 5px; border-radius: 4px; }
-        .btn-export { background: #3b82f6; color: white; font-size: 12px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; background: #172a45; font-size: 13px; }
-        th, td { border: 1px solid #233554; padding: 8px; text-align: left; }
-        th { background-color: #233554; color: #64ffda; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .drop-zone { transition: all 0.2s ease-in-out; }
+        .drop-zone.loaded { border-color: #10b981; background-color: #ecfdf5; }
+        .drop-zone:hover { border-color: #3b82f6; }
     </style>
 </head>
-<body>
-<div class="container">
-    <h2>Análisis de Conflictos SAP</h2>
-    <div class="upload-section">
-        <p>1. DBTRANSACCIONES.xlsx: <input type="file" id="dbTrans" accept=".xlsx"></p>
-        <p>2. Archivo de Conflictos el cual se obtiene del portal de riesgos, No,Función,Transacción: <input type="file" id="fileConflict" accept=".xlsx"></p>
-        <p>3. RLUSUARIOS.xlsx: <input type="file" id="rlUsers" accept=".xlsx"></p>
-    </div>
-    <button onclick="procesarConflictos()">Ejecutar Análisis</button>
-    <div id="contenedorResultados"></div>
-</div>
+<body class="text-slate-800 antialiased">
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script>
-    let dbTrans = [], fileConflict = [], rlUsers = [], nombreArchivo = "";
-    let cargados = { db: false, conflict: false, users: false };
+    <!-- Navbar -->
+    <header class="bg-slate-900 text-white shadow-md sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-blue-600 p-2 rounded-lg">
+                    <i data-lucide="shield-alert" class="w-6 h-6 text-white"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold tracking-tight">Validador de Conflictos SoD — SAP GRC</h1>
+                    <p class="text-xs text-slate-400">Cruce de Matriz de Riesgos vs. Roles Compuestos y Simples Asignados</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-3">
+                <button onclick="resetAll()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-md border border-slate-700 flex items-center gap-1.5 transition">
+                    <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> Limpiar Todo
+                </button>
+            </div>
+        </div>
+    </header>
 
-    document.getElementById('dbTrans').addEventListener('change', (e) => cargar(e, 'db'));
-    document.getElementById('fileConflict').addEventListener('change', (e) => {
-        nombreArchivo = e.target.files[0].name.replace('.xlsx', '');
-        cargar(e, 'conflict');
-    });
-    document.getElementById('rlUsers').addEventListener('change', (e) => cargar(e, 'users'));
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
 
-    function cargar(e, tipo) {
-        const file = e.target.files[0];
-        const reader = new FileReader();
-        reader.onload = (evt) => {
-            const data = new Uint8Array(evt.target.result);
-            const wb = XLSX.read(data, {type: 'array'});
-            const json = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
-            if(tipo === 'db') { dbTrans = json; cargados.db = true; }
-            if(tipo === 'conflict') { fileConflict = json; cargados.conflict = true; }
-            if(tipo === 'users') { rlUsers = json; cargados.users = true; }
+        <!-- Paso 1: Carga de Archivos -->
+        <section>
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-500 flex items-center gap-2">
+                    <span class="bg-blue-600 text-white w-5 h-5 rounded-full inline-flex items-center justify-center text-xs">1</span>
+                    Carga de Fuentes de Datos (.xlsx)
+                </h2>
+                <span class="text-xs text-slate-400">Procesamiento 100% local en navegador</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Card 1: DBTRANSACCIONES -->
+                <div id="zone-db" class="drop-zone bg-white border-2 border-dashed border-slate-300 rounded-xl p-5 flex flex-col justify-between shadow-sm">
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold uppercase px-2.5 py-0.5 rounded bg-indigo-100 text-indigo-700">Base Maestra</span>
+                            <i id="icon-db" data-lucide="database" class="w-5 h-5 text-slate-400"></i>
+                        </div>
+                        <h3 class="font-semibold text-slate-900">DBTRANSACCIONES.xlsx</h3>
+                        <p class="text-xs text-slate-500 mt-1">Col A: Rol compuesto | Col B: Rol simple | Col C: Transacción</p>
+                    </div>
+                    <div class="mt-4">
+                        <label class="cursor-pointer w-full inline-flex items-center justify-center px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-lg transition">
+                            <i data-lucide="upload" class="w-4 h-4 mr-2"></i>
+                            <span id="label-db">Seleccionar archivo</span>
+                            <input type="file" id="file-db" accept=".xlsx,.xls" class="hidden" onchange="handleFileUpload(event, 'db')">
+                        </label>
+                        <p id="status-db" class="text-xs text-slate-400 mt-2 truncate">Pendiente de carga...</p>
+                    </div>
+                </div>
+
+                <!-- Card 2: Archivo de Conflictos -->
+                <div id="zone-conflict" class="drop-zone bg-white border-2 border-dashed border-slate-300 rounded-xl p-5 flex flex-col justify-between shadow-sm">
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold uppercase px-2.5 py-0.5 rounded bg-amber-100 text-amber-700">Riesgo SoD</span>
+                            <i id="icon-conflict" data-lucide="file-warning" class="w-5 h-5 text-slate-400"></i>
+                        </div>
+                        <h3 class="font-semibold text-slate-900">Conflictos (ej. ME51N.xlsx)</h3>
+                        <p class="text-xs text-slate-500 mt-1">Col B: Función | Col C: Transacción en conflicto</p>
+                    </div>
+                    <div class="mt-4">
+                        <label class="cursor-pointer w-full inline-flex items-center justify-center px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-lg transition">
+                            <i data-lucide="upload" class="w-4 h-4 mr-2"></i>
+                            <span id="label-conflict">Seleccionar archivo</span>
+                            <input type="file" id="file-conflict" accept=".xlsx,.xls" class="hidden" onchange="handleFileUpload(event, 'conflict')">
+                        </label>
+                        <p id="status-conflict" class="text-xs text-slate-400 mt-2 truncate">Pendiente de carga...</p>
+                    </div>
+                </div>
+
+                <!-- Card 3: RLUSUARIOS -->
+                <div id="zone-users" class="drop-zone bg-white border-2 border-dashed border-slate-300 rounded-xl p-5 flex flex-col justify-between shadow-sm">
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold uppercase px-2.5 py-0.5 rounded bg-emerald-100 text-emerald-700">Accesos Actuales</span>
+                            <i id="icon-users" data-lucide="users" class="w-5 h-5 text-slate-400"></i>
+                        </div>
+                        <h3 class="font-semibold text-slate-900">RLUSUARIOS.xlsx</h3>
+                        <p class="text-xs text-slate-500 mt-1">Col A: Usuario | Col B: Nombre | Col C: Rol asignado</p>
+                    </div>
+                    <div class="mt-4">
+                        <label class="cursor-pointer w-full inline-flex items-center justify-center px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-lg transition">
+                            <i data-lucide="upload" class="w-4 h-4 mr-2"></i>
+                            <span id="label-users">Seleccionar archivo</span>
+                            <input type="file" id="file-users" accept=".xlsx,.xls" class="hidden" onchange="handleFileUpload(event, 'users')">
+                        </label>
+                        <p id="status-users" class="text-xs text-slate-400 mt-2 truncate">Pendiente de carga...</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Paso 2: Configuración y Ejecución -->
+        <section class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Transacción Solicitada (Detectada)</label>
+                        <input type="text" id="input-tx-solicitada" placeholder="Ej. ME51N" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 uppercase font-mono">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Filtrar Usuario a Evaluar</label>
+                        <select id="select-usuario" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
+                            <option value="ALL">-- Todos los usuarios en RLUSUARIOS --</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <button id="btn-validar" onclick="ejecutarValidacion()" disabled class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-medium text-sm rounded-lg shadow-sm flex items-center gap-2 transition">
+                        <i data-lucide="play" class="w-4 h-4"></i> Ejecutar Validación SoD
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Paso 3: Resultados -->
+        <section id="results-section" class="hidden space-y-6">
+            <!-- KPIs -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <p class="text-xs font-medium text-slate-500">Estado de Solicitud</p>
+                    <div id="kpi-veredicto" class="mt-1 flex items-center gap-2 text-lg font-bold">
+                        <!-- Dinámico -->
+                    </div>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <p class="text-xs font-medium text-slate-500">Conflictos Detectados (Total)</p>
+                    <p id="kpi-total-conflictos" class="mt-1 text-2xl font-bold text-slate-900">0</p>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <p class="text-xs font-medium text-slate-500">Vía Rol Compuesto</p>
+                    <p id="kpi-compuestos" class="mt-1 text-2xl font-bold text-rose-600">0</p>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <p class="text-xs font-medium text-slate-500">Vía Rol Simple Directo</p>
+                    <p id="kpi-simples" class="mt-1 text-2xl font-bold text-amber-600">0</p>
+                </div>
+            </div>
+
+            <!-- Tabla de Resultados -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="p-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50">
+                    <div>
+                        <h3 class="font-semibold text-slate-800 text-sm">Detalle de Roles en Conflicto Encontrados</h3>
+                        <p id="results-subtitle" class="text-xs text-slate-500">Mostrando coincidencias entre matriz de riesgos y roles asignados</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="text" id="search-table" onkeyup="filtrarTabla()" placeholder="Buscar rol, tx o usuario..." class="px-3 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:border-blue-500">
+                        <button onclick="exportarExcel()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-lg flex items-center gap-1.5 transition">
+                            <i data-lucide="download" class="w-3.5 h-3.5"></i> Exportar Excel
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse" id="tabla-resultados">
+                        <thead>
+                            <tr class="bg-slate-100 text-slate-600 text-xs uppercase tracking-wider border-b border-slate-200">
+                                <th class="py-3 px-4 font-semibold">Usuario</th>
+                                <th class="py-3 px-4 font-semibold">Nombre Completo</th>
+                                <th class="py-3 px-4 font-semibold">Tx Solicitada</th>
+                                <th class="py-3 px-4 font-semibold">Función SoD</th>
+                                <th class="py-3 px-4 font-semibold">Tx en Conflicto</th>
+                                <th class="py-3 px-4 font-semibold">Nivel Detección</th>
+                                <th class="py-3 px-4 font-semibold">Rol Asignado al Usuario</th>
+                                <th class="py-3 px-4 font-semibold">Rol Simple Contenedor</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-resultados" class="divide-y divide-slate-200 text-xs">
+                            <!-- Filas dinámicas -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Mensaje Sin Conflictos -->
+                <div id="empty-state" class="hidden p-10 text-center">
+                    <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 mb-3">
+                        <i data-lucide="check-circle-2" class="w-6 h-6"></i>
+                    </div>
+                    <h4 class="text-sm font-semibold text-slate-900">¡Sin conflictos de segregación de funciones!</h4>
+                    <p class="text-xs text-slate-500 mt-1 max-w-md mx-auto">El usuario evaluado no posee roles compuestos ni simples que contengan las transacciones listadas en el archivo de conflicto.</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // Inicializar iconos
+        lucide.createIcons();
+
+        // Almacenamiento global de datos
+        const state = {
+            dbLoaded: false,
+            conflictLoaded: false,
+            usersLoaded: false,
+            // Mapa: Tx -> Array de { rolCompuesto, rolSimple, textoTx }
+            dbTxMap: new Map(),
+            // Array de { funcion, txConflicto }
+            conflictList: [],
+            // Array de { usuario, nombre, rol, fechaInicio, fechaFin, descripcion }
+            userRoles: [],
+            // Resultados procesados
+            resultados: []
         };
-        reader.readAsArrayBuffer(file);
-    }
 
-    function procesarConflictos() {
-        if (!cargados.db || !cargados.conflict || !cargados.users) { alert("Carga los 3 archivos."); return; }
+        // Normalizador de cadenas para cruces exactos
+        const norm = (val) => (val === undefined || val === null) ? '' : String(val).trim().toUpperCase();
 
-        const colTrans = Object.keys(fileConflict[0]).find(k => k.toLowerCase().includes('transacc'));
-        const transList = [...new Set(fileConflict.map(r => String(r[colTrans] || "").trim().toUpperCase()))];
-        
-        renderSeccion('Transacciones que entran en conflicto con la transacción solicitada: ' + nombreArchivo, transList.map(t => ({Transaccion: t})));
-        
-        // Mapeo con transacciones incluidas
-        const rolesAsociados = dbTrans.filter(r => transList.includes(String(r.TRANSACCION || "").trim().toUpperCase()))
-            .map(r => ({ Rol: String(r["ROL COMPUESTO"] || "").trim(), Transaccion: r.TRANSACCION }));
-        renderSeccion('Roles Compuestos que tienen las transacciónes que entran en riesgo con lo solicitado', rolesAsociados);
+        // Manejador de carga de archivos Excel
+        function handleFileUpload(event, type) {
+            const file = event.target.files[0];
+            if (!file) return;
 
-        // Reporte Final con columna Transaccion integrada
-        const reporte = rlUsers.flatMap(u => {
-            const match = rolesAsociados.find(ra => ra.Rol === String(u.Rol || "").trim());
-            if (match) {
-                let nuevoU = {...u};
-                const columnasExcluidas = ['Tipo rol', 'Tipo de asignación', 'Asignación (usuario de referencia)', 'Fecha de inicio', 'Fecha fin'];
-                columnasExcluidas.forEach(col => delete nuevoU[col]);
-                nuevoU['Transaccion'] = match.Transaccion; // Agregamos la transacción vinculada
-                return [nuevoU];
-            }
-            return [];
-        });
-        
-        renderSeccion('Roles detectados en Usuarios el cual tiene riesgos con la transacción a solicitar (GRC)', reporte);
-    }
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                // Leer como matriz de arreglos (header: 1) para respetar posiciones exactas de columna (A=0, B=1, C=2...)
+                const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: '' });
 
-    function renderSeccion(titulo, data) {
-        const div = document.createElement('div');
-        div.innerHTML = `<h3>${titulo}</h3>`;
-        if(data.length > 0) {
-            const btn = document.createElement('button');
-            btn.className = 'btn-export';
-            btn.innerText = 'Descargar a Excel';
-            btn.onclick = () => exportarExcel(data, titulo);
-            div.appendChild(btn);
-            
-            let table = document.createElement('table');
-            let head = table.insertRow();
-            Object.keys(data[0]).forEach(k => head.insertCell().innerHTML = `<th>${k}</th>`);
-            data.forEach(r => {
-                let row = table.insertRow();
-                Object.values(r).forEach(v => row.insertCell().innerText = v);
-            });
-            div.appendChild(table);
-        } else {
-            div.innerHTML += '<p>Sin resultados.</p>';
+                if (type === 'db') {
+                    procesarDB(rows, file.name);
+                } else if (type === 'conflict') {
+                    procesarConflictos(rows, file.name);
+                } else if (type === 'users') {
+                    procesarUsuarios(rows, file.name);
+                }
+
+                checkReady();
+            };
+            reader.readAsArrayBuffer(file);
         }
-        document.getElementById('contenedorResultados').appendChild(div);
-    }
 
-    function exportarExcel(data, nombre) {
-        const ws = XLSX.utils.json_to_sheet(data);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Resultados");
-        XLSX.writeFile(wb, nombre.replace(/ /g, '_') + ".xlsx");
-    }
-</script>
+        // 1. Procesar DBTRANSACCIONES.xlsx
+        // Col A (0): Rol compuesto | Col B (1): Rol simple | Col C (2): Transaccion | Col D (3): Texto transacción
+        function procesarDB(rows, fileName) {
+            state.dbTxMap.clear();
+            let count = 0;
+
+            for (let i = 1; i < rows.length; i++) {
+                const row = rows[i];
+                const rolCompuesto = norm(row[0]);
+                const rolSimple = norm(row[1]);
+                const tx = norm(row[2]);
+                const textoTx = row[3] ? String(row[3]).trim() : '';
+
+                if (!tx) continue;
+
+                if (!state.dbTxMap.has(tx)) {
+                    state.dbTxMap.set(tx, []);
+                }
+                state.dbTxMap.get(tx).push({ rolCompuesto, rolSimple, textoTx });
+                count++;
+            }
+
+            state.dbLoaded = true;
+            updateCardUI('db', fileName, `${count.toLocaleString()} registros cargados (${state.dbTxMap.size.toLocaleString()} Txs únicas)`);
+        }
+
+        // 2. Procesar Archivo de Conflictos (ej. ME51N.xlsx)
+        // Col A (0): No. | Col B (1): Función | Col C (2): Transacción
+        function procesarConflictos(rows, fileName) {
+            state.conflictList = [];
+            const seenTx = new Set();
+
+            // Extraer nombre de transacción del nombre del archivo (ej. "ME51N.xlsx" -> "ME51N")
+            const baseName = fileName.replace(/\.[^/.]+$/, "").trim().toUpperCase();
+            document.getElementById('input-tx-solicitada').value = baseName;
+
+            for (let i = 1; i < rows.length; i++) {
+                const row = rows[i];
+                const funcion = norm(row[1]);
+                const txConflicto = norm(row[2]);
+
+                if (!txConflicto) continue;
+
+                const key = `${funcion}|${txConflicto}`;
+                if (!seenTx.has(key)) {
+                    seenTx.add(key);
+                    state.conflictList.push({ funcion, txConflicto });
+                }
+            }
+
+            state.conflictLoaded = true;
+            updateCardUI('conflict', fileName, `${state.conflictList.length} transacciones en conflicto detectadas`);
+        }
+
+        // 3. Procesar RLUSUARIOS.xlsx
+        // Col A (0): Usuario | Col B (1): Nombre completo | Col C (2): Rol | Col G (6): Fecha inicio | Col H (7): Fecha fin
+        function procesarUsuarios(rows, fileName) {
+            state.userRoles = [];
+            const usuariosUnicos = new Map();
+
+            for (let i = 1; i < rows.length; i++) {
+                const row = rows[i];
+                const usuario = norm(row[0]);
+                const nombre = row[1] ? String(row[1]).trim() : '';
+                const rol = norm(row[2]);
+
+                if (!usuario || !rol) continue;
+
+                state.userRoles.push({
+                    usuario,
+                    nombre,
+                    rol,
+                    fechaInicio: row[6] || '',
+                    fechaFin: row[7] || '',
+                    descripcion: row[8] || ''
+                });
+
+                if (!usuariosUnicos.has(usuario)) {
+                    usuariosUnicos.set(usuario, nombre);
+                }
+            }
+
+            // Poblar selector de usuarios
+            const select = document.getElementById('select-usuario');
+            select.innerHTML = `<option value="ALL">-- Todos los usuarios (${usuariosUnicos.size}) --</option>`;
+            usuariosUnicos.forEach((nombre, codigo) => {
+                const opt = document.createElement('option');
+                opt.value = codigo;
+                opt.textContent = `${codigo} - ${nombre}`;
+                select.appendChild(opt);
+            });
+
+            // Si solo hay un usuario en el archivo, seleccionarlo automáticamente
+            if (usuariosUnicos.size === 1) {
+                select.selectedIndex = 1;
+            }
+
+            state.usersLoaded = true;
+            updateCardUI('users', fileName, `${state.userRoles.length.toLocaleString()} asignaciones (${usuariosUnicos.size} usuario/s)`);
+        }
+
+        function updateCardUI(type, fileName, statusText) {
+            const zone = document.getElementById(`zone-${type}`);
+            const label = document.getElementById(`label-${type}`);
+            const status = document.getElementById(`status-${type}`);
+
+            zone.classList.add('loaded');
+            label.textContent = fileName;
+            status.textContent = statusText;
+            status.classList.remove('text-slate-400');
+            status.classList.add('text-emerald-700', 'font-medium');
+        }
+
+        function checkReady() {
+            const btn = document.getElementById('btn-validar');
+            btn.disabled = !(state.dbLoaded && state.conflictLoaded && state.usersLoaded);
+        }
+
+        // 4. Lógica Central de Validación Cruzada
+        function ejecutarValidacion() {
+            const txSolicitada = norm(document.getElementById('input-tx-solicitada').value) || 'N/A';
+            const filtroUsuario = document.getElementById('select-usuario').value;
+
+            // Filtrar asignaciones de usuario según selección
+            const asignacionesEvaluar = filtroUsuario === 'ALL'
+                ? state.userRoles
+                : state.userRoles.filter(u => u.usuario === filtroUsuario);
+
+            // Agrupar roles asignados por usuario para búsqueda rápida O(1)
+            // Map: usuario -> { nombre, rolesSet: Set<string> }
+            const mapaUsuarios = new Map();
+            asignacionesEvaluar.forEach(item => {
+                if (!mapaUsuarios.has(item.usuario)) {
+                    mapaUsuarios.set(item.usuario, {
+                        nombre: item.nombre,
+                        rolesSet: new Set()
+                    });
+                }
+                mapaUsuarios.get(item.usuario).rolesSet.add(item.rol);
+            });
+
+            state.resultados = [];
+            const duplicadosGuard = new Set();
+
+            // Flujo:
+            // 1. Iterar cada transacción en conflicto del archivo de riesgos
+            // 2. Buscar en DBTRANSACCIONES qué Roles Compuestos y Simples contienen esa transacción
+            // 3. Validar si el usuario tiene asignado ese Rol Compuesto (prioritario) o Rol Simple
+            state.conflictList.forEach(({ funcion, txConflicto }) => {
+                const registrosDB = state.dbTxMap.get(txConflicto);
+                if (!registrosDB || registrosDB.length === 0) return;
+
+                mapaUsuarios.forEach((userData, codUsuario) => {
+                    registrosDB.forEach(dbItem => {
+                        const tieneCompuesto = dbItem.rolCompuesto && userData.rolesSet.has(dbItem.rolCompuesto);
+                        const tieneSimple = dbItem.rolSimple && userData.rolesSet.has(dbItem.rolSimple);
+
+                        // Prioridad: Rol Compuesto (ya engloba los simples internamente)
+                        if (tieneCompuesto) {
+                            const uniqueKey = `${codUsuario}|${funcion}|${txConflicto}|COMPUESTO|${dbItem.rolCompuesto}`;
+                            if (!duplicadosGuard.has(uniqueKey)) {
+                                duplicadosGuard.add(uniqueKey);
+                                state.resultados.push({
+                                    usuario: codUsuario,
+                                    nombre: userData.nombre,
+                                    txSolicitada,
+                                    funcion,
+                                    txConflicto,
+                                    textoTx: dbItem.textoTx,
+                                    tipoRol: 'Rol Compuesto',
+                                    rolAsignado: dbItem.rolCompuesto,
+                                    rolSimpleDerivado: dbItem.rolSimple
+                                });
+                            }
+                        } else if (tieneSimple) {
+                            // Si no tiene el compuesto, validar si tiene el rol simple asignado directamente
+                            const uniqueKey = `${codUsuario}|${funcion}|${txConflicto}|SIMPLE|${dbItem.rolSimple}`;
+                            if (!duplicadosGuard.has(uniqueKey)) {
+                                duplicadosGuard.add(uniqueKey);
+                                state.resultados.push({
+                                    usuario: codUsuario,
+                                    nombre: userData.nombre,
+                                    txSolicitada,
+                                    funcion,
+                                    txConflicto,
+                                    textoTx: dbItem.textoTx,
+                                    tipoRol: 'Rol Simple Directo',
+                                    rolAsignado: dbItem.rolSimple,
+                                    rolSimpleDerivado: dbItem.rolSimple
+                                });
+                            }
+                        }
+                    });
+                });
+            });
+
+            renderResultados();
+        }
+
+        function renderResultados() {
+            const section = document.getElementById('results-section');
+            const tbody = document.getElementById('tbody-resultados');
+            const emptyState = document.getElementById('empty-state');
+            const tabla = document.getElementById('tabla-resultados');
+
+            section.classList.remove('hidden');
+            tbody.innerHTML = '';
+
+            const total = state.resultados.length;
+            const totalCompuestos = state.resultados.filter(r => r.tipoRol === 'Rol Compuesto').length;
+            const totalSimples = state.resultados.filter(r => r.tipoRol === 'Rol Simple Directo').length;
+
+            // Actualizar KPIs
+            document.getElementById('kpi-total-conflictos').textContent = total;
+            document.getElementById('kpi-compuestos').textContent = totalCompuestos;
+            document.getElementById('kpi-simples').textContent = totalSimples;
+
+            const kpiVeredicto = document.getElementById('kpi-veredicto');
+            if (total > 0) {
+                kpiVeredicto.innerHTML = `<span class="text-rose-600 flex items-center gap-1.5"><i data-lucide="x-octagon" class="w-5 h-5"></i> CONFLICTO DETECTADO</span>`;
+                tabla.classList.remove('hidden');
+                emptyState.classList.add('hidden');
+            } else {
+                kpiVeredicto.innerHTML = `<span class="text-emerald-600 flex items-center gap-1.5"><i data-lucide="check-circle" class="w-5 h-5"></i> LIBRE DE CONFLICTO</span>`;
+                tabla.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+            }
+
+            // Renderizar filas
+            state.resultados.forEach(row => {
+                const badgeClass = row.tipoRol === 'Rol Compuesto'
+                    ? 'bg-rose-100 text-rose-800 border-rose-200'
+                    : 'bg-amber-100 text-amber-800 border-amber-200';
+
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50 transition';
+                tr.innerHTML = `
+                    <td class="py-3 px-4 font-mono font-medium text-slate-900">${row.usuario}</td>
+                    <td class="py-3 px-4 text-slate-700">${row.nombre}</td>
+                    <td class="py-3 px-4 font-mono font-bold text-blue-700">${row.txSolicitada}</td>
+                    <td class="py-3 px-4 font-mono text-slate-600">${row.funcion}</td>
+                    <td class="py-3 px-4">
+                        <span class="font-mono font-bold text-slate-900">${row.txConflicto}</span>
+                        ${row.textoTx ? `<span class="block text-[11px] text-slate-400">${row.textoTx}</span>` : ''}
+                    </td>
+                    <td class="py-3 px-4">
+                        <span class="px-2 py-0.5 rounded-full text-[11px] font-semibold border ${badgeClass}">
+                            ${row.tipoRol}
+                        </span>
+                    </td>
+                    <td class="py-3 px-4 font-mono font-semibold text-slate-900">${row.rolAsignado}</td>
+                    <td class="py-3 px-4 font-mono text-slate-500">${row.rolSimpleDerivado}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            lucide.createIcons();
+            section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // Búsqueda rápida en tabla
+        function filtrarTabla() {
+            const term = document.getElementById('search-table').value.toLowerCase();
+            const rows = document.querySelectorAll('#tbody-resultados tr');
+            rows.forEach(tr => {
+                tr.style.display = tr.textContent.toLowerCase().includes(term) ? '' : 'none';
+            });
+        }
+
+        // Exportar resultados a Excel
+        function exportarExcel() {
+            if (state.resultados.length === 0) return;
+
+            const txSol = norm(document.getElementById('input-tx-solicitada').value) || 'VALIDACION';
+            const dataExport = state.resultados.map(r => ({
+                'Código Usuario': r.usuario,
+                'Nombre Completo': r.nombre,
+                'Transacción Solicitada': r.txSolicitada,
+                'Función Riesgo': r.funcion,
+                'Transacción en Conflicto': r.txConflicto,
+                'Descripción Tx Conflicto': r.textoTx,
+                'Nivel de Coincidencia': r.tipoRol,
+                'Rol Asignado al Usuario': r.rolAsignado,
+                'Rol Simple Asociado': r.rolSimpleDerivado
+            }));
+
+            const ws = XLSX.utils.json_to_sheet(dataExport);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Conflictos_SoD');
+            XLSX.writeFile(wb, `Reporte_SoD_${txSol}.xlsx`);
+        }
+
+        function resetAll() {
+            location.reload();
+        }
+    </script>
 </body>
 </html>
