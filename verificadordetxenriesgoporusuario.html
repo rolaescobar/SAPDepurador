@@ -61,7 +61,7 @@
                             <i id="icon-db" data-lucide="database" class="w-5 h-5 text-slate-400"></i>
                         </div>
                         <h3 class="font-semibold text-slate-900">DBTRANSACCIONES.xlsx</h3>
-                        <p class="text-xs text-slate-500 mt-1">Col A: Rol compuesto | Col B: Rol simple | Col C: Transacción</p>
+                        <p class="text-xs text-slate-500 mt-1">Col A: RolCompuesto | Col C: RolSimple | Col E: Transacción</p>
                     </div>
                     <div class="mt-4">
                         <label class="cursor-pointer w-full inline-flex items-center justify-center px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-lg transition">
@@ -145,9 +145,7 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
                     <p class="text-xs font-medium text-slate-500">Estado de Solicitud</p>
-                    <div id="kpi-veredicto" class="mt-1 flex items-center gap-2 text-lg font-bold">
-                        <!-- Dinámico -->
-                    </div>
+                    <div id="kpi-veredicto" class="mt-1 flex items-center gap-2 text-lg font-bold"></div>
                 </div>
                 <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
                     <p class="text-xs font-medium text-slate-500">Conflictos Detectados (Total)</p>
@@ -192,9 +190,7 @@
                                 <th class="py-3 px-4 font-semibold">Rol Simple Contenedor</th>
                             </tr>
                         </thead>
-                        <tbody id="tbody-resultados" class="divide-y divide-slate-200 text-xs">
-                            <!-- Filas dinámicas -->
-                        </tbody>
+                        <tbody id="tbody-resultados" class="divide-y divide-slate-200 text-xs"></tbody>
                     </table>
                 </div>
 
@@ -212,28 +208,20 @@
     </main>
 
     <script>
-        // Inicializar iconos
         lucide.createIcons();
 
-        // Almacenamiento global de datos
         const state = {
             dbLoaded: false,
             conflictLoaded: false,
             usersLoaded: false,
-            // Mapa: Tx -> Array de { rolCompuesto, rolSimple, textoTx }
             dbTxMap: new Map(),
-            // Array de { funcion, txConflicto }
             conflictList: [],
-            // Array de { usuario, nombre, rol, fechaInicio, fechaFin, descripcion }
             userRoles: [],
-            // Resultados procesados
             resultados: []
         };
 
-        // Normalizador de cadenas para cruces exactos
         const norm = (val) => (val === undefined || val === null) ? '' : String(val).trim().toUpperCase();
 
-        // Manejador de carga de archivos Excel
         function handleFileUpload(event, type) {
             const file = event.target.files[0];
             if (!file) return;
@@ -243,7 +231,6 @@
                 const data = new Uint8Array(e.target.result);
                 const workbook = XLSX.read(data, { type: 'array' });
                 const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                // Leer como matriz de arreglos (header: 1) para respetar posiciones exactas de columna (A=0, B=1, C=2...)
                 const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: '' });
 
                 if (type === 'db') {
@@ -259,8 +246,13 @@
             reader.readAsArrayBuffer(file);
         }
 
-        // 1. Procesar DBTRANSACCIONES.xlsx
-        // Col A (0): Rol compuesto | Col B (1): Rol simple | Col C (2): Transaccion | Col D (3): Texto transacción
+        // 1. Procesar DBTRANSACCIONES.xlsx (6 columnas)
+        // Col A (0): RolCompuesto
+        // Col B (1): DescripciónRolCompuesto
+        // Col C (2): RolSimple
+        // Col D (3): DescripciónRolSimple
+        // Col E (4): Transacción
+        // Col F (5): Descripción Transacción
         function procesarDB(rows, fileName) {
             state.dbTxMap.clear();
             let count = 0;
@@ -268,16 +260,24 @@
             for (let i = 1; i < rows.length; i++) {
                 const row = rows[i];
                 const rolCompuesto = norm(row[0]);
-                const rolSimple = norm(row[1]);
-                const tx = norm(row[2]);
-                const textoTx = row[3] ? String(row[3]).trim() : '';
+                const descRolCompuesto = row[1] ? String(row[1]).trim() : '';
+                const rolSimple = norm(row[2]);
+                const descRolSimple = row[3] ? String(row[3]).trim() : '';
+                const tx = norm(row[4]);
+                const textoTx = row[5] ? String(row[5]).trim() : '';
 
                 if (!tx) continue;
 
                 if (!state.dbTxMap.has(tx)) {
                     state.dbTxMap.set(tx, []);
                 }
-                state.dbTxMap.get(tx).push({ rolCompuesto, rolSimple, textoTx });
+                state.dbTxMap.get(tx).push({
+                    rolCompuesto,
+                    descRolCompuesto,
+                    rolSimple,
+                    descRolSimple,
+                    textoTx
+                });
                 count++;
             }
 
@@ -291,7 +291,6 @@
             state.conflictList = [];
             const seenTx = new Set();
 
-            // Extraer nombre de transacción del nombre del archivo (ej. "ME51N.xlsx" -> "ME51N")
             const baseName = fileName.replace(/\.[^/.]+$/, "").trim().toUpperCase();
             document.getElementById('input-tx-solicitada').value = baseName;
 
@@ -314,7 +313,7 @@
         }
 
         // 3. Procesar RLUSUARIOS.xlsx
-        // Col A (0): Usuario | Col B (1): Nombre completo | Col C (2): Rol | Col G (6): Fecha inicio | Col H (7): Fecha fin
+        // Col A (0): Usuario | Col B (1): Nombre completo | Col C (2): Rol
         function procesarUsuarios(rows, fileName) {
             state.userRoles = [];
             const usuariosUnicos = new Map();
@@ -341,7 +340,6 @@
                 }
             }
 
-            // Poblar selector de usuarios
             const select = document.getElementById('select-usuario');
             select.innerHTML = `<option value="ALL">-- Todos los usuarios (${usuariosUnicos.size}) --</option>`;
             usuariosUnicos.forEach((nombre, codigo) => {
@@ -351,7 +349,6 @@
                 select.appendChild(opt);
             });
 
-            // Si solo hay un usuario en el archivo, seleccionarlo automáticamente
             if (usuariosUnicos.size === 1) {
                 select.selectedIndex = 1;
             }
@@ -382,13 +379,10 @@
             const txSolicitada = norm(document.getElementById('input-tx-solicitada').value) || 'N/A';
             const filtroUsuario = document.getElementById('select-usuario').value;
 
-            // Filtrar asignaciones de usuario según selección
             const asignacionesEvaluar = filtroUsuario === 'ALL'
                 ? state.userRoles
                 : state.userRoles.filter(u => u.usuario === filtroUsuario);
 
-            // Agrupar roles asignados por usuario para búsqueda rápida O(1)
-            // Map: usuario -> { nombre, rolesSet: Set<string> }
             const mapaUsuarios = new Map();
             asignacionesEvaluar.forEach(item => {
                 if (!mapaUsuarios.has(item.usuario)) {
@@ -403,10 +397,6 @@
             state.resultados = [];
             const duplicadosGuard = new Set();
 
-            // Flujo:
-            // 1. Iterar cada transacción en conflicto del archivo de riesgos
-            // 2. Buscar en DBTRANSACCIONES qué Roles Compuestos y Simples contienen esa transacción
-            // 3. Validar si el usuario tiene asignado ese Rol Compuesto (prioritario) o Rol Simple
             state.conflictList.forEach(({ funcion, txConflicto }) => {
                 const registrosDB = state.dbTxMap.get(txConflicto);
                 if (!registrosDB || registrosDB.length === 0) return;
@@ -416,9 +406,8 @@
                         const tieneCompuesto = dbItem.rolCompuesto && userData.rolesSet.has(dbItem.rolCompuesto);
                         const tieneSimple = dbItem.rolSimple && userData.rolesSet.has(dbItem.rolSimple);
 
-                        // Prioridad: Rol Compuesto (ya engloba los simples internamente)
                         if (tieneCompuesto) {
-                            const uniqueKey = `${codUsuario}|${funcion}|${txConflicto}|COMPUESTO|${dbItem.rolCompuesto}`;
+                            const uniqueKey = `${codUsuario}|${funcion}|${txConflicto}|COMPUESTO|${dbItem.rolCompuesto}|${dbItem.rolSimple}`;
                             if (!duplicadosGuard.has(uniqueKey)) {
                                 duplicadosGuard.add(uniqueKey);
                                 state.resultados.push({
@@ -430,11 +419,12 @@
                                     textoTx: dbItem.textoTx,
                                     tipoRol: 'Rol Compuesto',
                                     rolAsignado: dbItem.rolCompuesto,
-                                    rolSimpleDerivado: dbItem.rolSimple
+                                    descRolAsignado: dbItem.descRolCompuesto,
+                                    rolSimpleDerivado: dbItem.rolSimple,
+                                    descRolSimple: dbItem.descRolSimple
                                 });
                             }
                         } else if (tieneSimple) {
-                            // Si no tiene el compuesto, validar si tiene el rol simple asignado directamente
                             const uniqueKey = `${codUsuario}|${funcion}|${txConflicto}|SIMPLE|${dbItem.rolSimple}`;
                             if (!duplicadosGuard.has(uniqueKey)) {
                                 duplicadosGuard.add(uniqueKey);
@@ -447,7 +437,9 @@
                                     textoTx: dbItem.textoTx,
                                     tipoRol: 'Rol Simple Directo',
                                     rolAsignado: dbItem.rolSimple,
-                                    rolSimpleDerivado: dbItem.rolSimple
+                                    descRolAsignado: dbItem.descRolSimple,
+                                    rolSimpleDerivado: dbItem.rolSimple,
+                                    descRolSimple: dbItem.descRolSimple
                                 });
                             }
                         }
@@ -471,7 +463,6 @@
             const totalCompuestos = state.resultados.filter(r => r.tipoRol === 'Rol Compuesto').length;
             const totalSimples = state.resultados.filter(r => r.tipoRol === 'Rol Simple Directo').length;
 
-            // Actualizar KPIs
             document.getElementById('kpi-total-conflictos').textContent = total;
             document.getElementById('kpi-compuestos').textContent = totalCompuestos;
             document.getElementById('kpi-simples').textContent = totalSimples;
@@ -487,7 +478,6 @@
                 emptyState.classList.remove('hidden');
             }
 
-            // Renderizar filas
             state.resultados.forEach(row => {
                 const badgeClass = row.tipoRol === 'Rol Compuesto'
                     ? 'bg-rose-100 text-rose-800 border-rose-200'
@@ -509,8 +499,14 @@
                             ${row.tipoRol}
                         </span>
                     </td>
-                    <td class="py-3 px-4 font-mono font-semibold text-slate-900">${row.rolAsignado}</td>
-                    <td class="py-3 px-4 font-mono text-slate-500">${row.rolSimpleDerivado}</td>
+                    <td class="py-3 px-4">
+                        <span class="font-mono font-semibold text-slate-900">${row.rolAsignado}</span>
+                        ${row.descRolAsignado ? `<span class="block text-[11px] text-slate-400">${row.descRolAsignado}</span>` : ''}
+                    </td>
+                    <td class="py-3 px-4">
+                        <span class="font-mono text-slate-600">${row.rolSimpleDerivado}</span>
+                        ${row.descRolSimple ? `<span class="block text-[11px] text-slate-400">${row.descRolSimple}</span>` : ''}
+                    </td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -519,7 +515,6 @@
             section.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
-        // Búsqueda rápida en tabla
         function filtrarTabla() {
             const term = document.getElementById('search-table').value.toLowerCase();
             const rows = document.querySelectorAll('#tbody-resultados tr');
@@ -528,7 +523,6 @@
             });
         }
 
-        // Exportar resultados a Excel
         function exportarExcel() {
             if (state.resultados.length === 0) return;
 
@@ -542,7 +536,9 @@
                 'Descripción Tx Conflicto': r.textoTx,
                 'Nivel de Coincidencia': r.tipoRol,
                 'Rol Asignado al Usuario': r.rolAsignado,
-                'Rol Simple Asociado': r.rolSimpleDerivado
+                'Descripción Rol Asignado': r.descRolAsignado,
+                'Rol Simple Asociado': r.rolSimpleDerivado,
+                'Descripción Rol Simple': r.descRolSimple
             }));
 
             const ws = XLSX.utils.json_to_sheet(dataExport);
